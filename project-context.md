@@ -68,7 +68,7 @@ The field *structure* below reflects decisions made during Workstream B (golden 
 Field *values* (content) churn during eval, so worked examples live in `data-and-taxonomy.md`.
 
 Fields:
-`cluster_id / cluster_members[] / title / signal_strength / intent_type / confidence /
+`cluster_id / cluster_members[] / title / signal_strength / intent_type / dimension / confidence /
 problem_brief / key_quotes[] / source_refs[] /
 tasks[](each with: task + assignee_team + priority + deadline? + acceptance_criteria) /
 reply draft / review_flags[](each with: flag + reason + blocks) /
@@ -138,7 +138,8 @@ Vela Pay context docs to author (before the golden set exists): product one-page
 
 ## 8. Open / not yet decided
 
-- Taxonomy values, severity thresholds, signal scale, review triggers, rubric items — `[PENDING-EVIDENCE]`.
+- Taxonomy values, severity thresholds, signal scale, review triggers — `[PENDING-EVIDENCE]`.
+- Rubric: v1 complete (20 items, 13 Auto / 7 Human). Values `[FLUID]` pending eval results.
 - Query-time dimension filter — `(proposed)`, confirm during build.
 - Productization / monetization — `[DEFERRED]` until eval results exist.
 - Signal-strength: whether scoring may reference external context doc evidence (e.g. KI-x noting recurrence)

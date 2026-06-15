@@ -1,13 +1,13 @@
 # Asterline — Eval Rubric (v1)
-# 18 items derived from 3 worked examples (FB-05, FB-03, FB-20)
+# 20 items derived from 3 worked examples (FB-05, FB-03, FB-20)
 # Each item: field checked / check (yes/no) / mode / fail action
 #
 # Mode:
 #   Auto = programmatic runtime check (runs in-product on every output)
 #   Human = offline eval only (requires human judgment; not automated in v1)
 #
-# Auto items (12): R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17
-# Human items (6): R-05, R-07, R-10, R-11, R-12, R-18
+# Auto items (13): R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19
+# Human items (7): R-05, R-07, R-10, R-11, R-12, R-18, R-20
 #
 # Fail actions:
 #   hard_fail = work pack flagged as incomplete; blocked from export until resolved
@@ -26,7 +26,7 @@
 - **Field(s)**: key_quotes[]
 - **Check**: Array length ≤ 2
 - **Mode**: Auto (array length check)
-- **Fail action**: auto_fix (truncate to 2 most recent) + quality_flag: vague_criteria
+- **Fail action**: auto_fix (truncate to 2 most recent)
 
 ## R-03 — Quote verbatim fidelity
 - **Field(s)**: key_quotes[]
@@ -124,18 +124,32 @@
 - **Mode**: Human
 - **Fail action**: quality_flag: misleading_title
 
+## R-19 — Low confidence must trigger human review
+- **Field(s)**: `confidence`, `review_flags[]`
+- **Check**: When `confidence = Low`, `review_flags[]` must contain a `needs_human_review` entry
+- **Mode**: Auto
+- **Fail action**: `quality_flag: low_confidence`
+
+## R-20 — Reply draft must not contradict cited policy clauses
+- **Field(s)**: `reply_draft`, `source_refs[]`
+- **Check**: When `source_refs` is non-empty, `reply_draft` must not make commitments
+  that contradict the cited SP-x clause (e.g., promising a specific settlement date
+  when the relevant SP clause states partner bank timelines are outside Vela Pay's control)
+- **Mode**: Human
+- **Fail action**: `quality_flag: policy_conflict`
+
 ---
 
 ## Rubric summary by mode
 
 | Mode | Items | Notes |
 |---|---|---|
-| Auto (runtime) | R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17 | These 12 run programmatically on every pipeline output |
-| Human (offline) | R-05, R-07, R-10, R-11, R-12, R-18 | These 6 require human judgment; scored during offline eval against golden set |
+| Auto (runtime) | R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19 | These 13 run programmatically on every pipeline output |
+| Human (offline) | R-05, R-07, R-10, R-11, R-12, R-18, R-20 | These 7 require human judgment; scored during offline eval against golden set |
 
 ## Rubric summary by fail severity
 
 | Severity | Items | Effect |
 |---|---|---|
 | hard_fail | R-04, R-13, R-14, R-15, R-17 | Work pack blocked from export; must be resolved |
-| quality_flag only | All others | Work pack exported with flag; reviewer decides next action |
+| quality_flag only | All others, incl. R-19, R-20 | Work pack exported with flag; reviewer decides next action |

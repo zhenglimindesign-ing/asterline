@@ -22,6 +22,8 @@
 - complaint: Expresses dissatisfaction; not a direct bug or feature request
 - praise: Positive feedback requiring no action
 - noise: Unrelated to product, or insufficient information to act on
+Note: The column header in this document uses 'intent' for brevity.
+The corresponding field name in the work pack schema (04-taxonomy-and-schema.md) is 'intent_type'.
 
 ### Dimension (7 values)
 - Engineering: Code-level defect or limitation in product functionality

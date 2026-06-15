@@ -81,6 +81,8 @@
 
   "intent_type": "enum: actionable_bug | feature_request | complaint | praise | noise",
 
+  "dimension": "enum: Engineering | UX | Compliance | Support Process | Product/Roadmap | Finance & Reporting | Other/Uncategorized — cluster-level; majority value across cluster_members",
+
   "problem_brief": "string — 2-4 sentences describing the issue with absolute UTC+0 timestamps; no relative time references",
 
   "key_quotes": [
@@ -131,6 +133,7 @@
 | title | Yes | |
 | signal_strength | Yes | Cluster-level; computed after clustering |
 | intent_type | Yes | |
+| dimension | Yes | Cluster-level; majority value from cluster_members |
 | problem_brief | Yes | All time references must be absolute UTC+0 |
 | key_quotes | Yes | Array; [] if nothing worth quoting; max 2 items |
 | source_refs | Yes | Array; [] if no context doc clause matches |
@@ -139,6 +142,12 @@
 | reply_draft | Yes | null when intent=noise; string otherwise |
 | review_flags | Yes | Array; [] if no review needed |
 | quality_flags | Yes | Array; [] if no quality issues detected |
+
+### Known gaps — v1
+- Per-item `impact` and `urgency` labels exist in the golden set (data/03-golden-set-labeled.md)
+  and are used to derive `signal_strength`, but are not currently stored in work pack output.
+  This means signal_strength derivation is not fully traceable from the work pack alone.
+  Address in v2 or during pipeline build if the implementation is straightforward.
 
 ### Removed fields (vs. original §3 spec)
 - `qa_cases[]` — removed entirely. QA test cases are written by engineers after task pickup, not at triage stage. Work packs are triage artifacts.

@@ -10,6 +10,24 @@
 
 ---
 
+Date: 2026-06-15
+Chat: Vela Pay - 2
+What changed: Cross-review corrections (5 fixes) before GitHub upload
+Files modified: 03-golden-set-labeled.md, 04-taxonomy-and-schema.md, 05-rubric-v1.md, project-context.md
+
+Details:
+- 03: Added note clarifying 'intent' column = 'intent_type' in schema
+- 04: Added `dimension` field to work pack schema (was missing, blocked Decision #13 filter)
+- 04: Added known gap note — per-item impact/urgency not exposed in work pack output
+- 05: Fixed R-02 fail action (removed incorrectly applied vague_criteria flag)
+- 05: Added R-19 (low confidence → human review) and R-20 (reply vs policy contradiction)
+- project-context.md: Patched §3 field list and §8 rubric status
+
+Why: Pre-upload cross-review in Vela Pay - 2 found internal inconsistencies between
+golden set labels, schema field definitions, and rubric items.
+
+---
+
 | Date | What changed | Before | After | Why |
 |---|---|---|---|---|
 | 2026-06-14 | Synthetic feedback schema upgraded from text-only to structured | 25 items had raw_text only; no metadata | Added: feedback_id, timestamp (UTC+0), channel, contact_email (optional), account_id (optional), raw_text | Text-only feedback couldn't support traceability (no source_refs back to specific items), couldn't test PII redaction pipeline step, and didn't reflect realistic data structure |
