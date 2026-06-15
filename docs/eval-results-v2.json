@@ -1,0 +1,631 @@
+{
+  "run_id": "v2",
+  "model": "claude-haiku-4-5-20251001",
+  "prompt_version": "classify-v3",
+  "timestamp": "2026-06-15T12:30:19.608696+00:00",
+  "scores": {
+    "intent_accuracy": 0.9,
+    "dimension_accuracy": 0.95,
+    "impact_accuracy": 0.7,
+    "urgency_accuracy": 0.85,
+    "overall_accuracy": 0.55
+  },
+  "disagreements": [
+    {
+      "feedback_id": "FB-01",
+      "diff_count": 2,
+      "diffs": [
+        {
+          "field": "impact",
+          "ground_truth": "Medium",
+          "predicted": "High"
+        },
+        {
+          "field": "urgency",
+          "ground_truth": "Medium",
+          "predicted": "High"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-10",
+      "diff_count": 2,
+      "diffs": [
+        {
+          "field": "impact",
+          "ground_truth": "Low",
+          "predicted": "Medium"
+        },
+        {
+          "field": "urgency",
+          "ground_truth": "Low",
+          "predicted": "Medium"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-23",
+      "diff_count": 2,
+      "diffs": [
+        {
+          "field": "impact",
+          "ground_truth": "Low",
+          "predicted": "Medium"
+        },
+        {
+          "field": "urgency",
+          "ground_truth": "High",
+          "predicted": "Medium"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-03",
+      "diff_count": 1,
+      "diffs": [
+        {
+          "field": "impact",
+          "ground_truth": "Medium",
+          "predicted": "Low"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-05",
+      "diff_count": 1,
+      "diffs": [
+        {
+          "field": "dimension",
+          "ground_truth": "Finance & Reporting",
+          "predicted": "Support Process"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-07",
+      "diff_count": 1,
+      "diffs": [
+        {
+          "field": "impact",
+          "ground_truth": "Medium",
+          "predicted": "Low"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-12",
+      "diff_count": 1,
+      "diffs": [
+        {
+          "field": "intent_type",
+          "ground_truth": "actionable_bug",
+          "predicted": "complaint"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-13",
+      "diff_count": 1,
+      "diffs": [
+        {
+          "field": "impact",
+          "ground_truth": "Medium",
+          "predicted": "Low"
+        }
+      ]
+    },
+    {
+      "feedback_id": "FB-16",
+      "diff_count": 1,
+      "diffs": [
+        {
+          "field": "intent_type",
+          "ground_truth": "actionable_bug",
+          "predicted": "complaint"
+        }
+      ]
+    }
+  ],
+  "raw_results": [
+    {
+      "feedback_id": "FB-01",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "Medium",
+        "urgency": "Medium"
+      },
+      "prediction": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 2,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": false,
+        "urgency": false
+      }
+    },
+    {
+      "feedback_id": "FB-02",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Medium"
+      },
+      "prediction": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-03",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Low",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 1,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": false,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-05",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "High",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "actionable_bug",
+        "dimension": "Support Process",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 1,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": false,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-06",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-07",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Low",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 1,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": false,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-08",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-09",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "feature_request",
+        "dimension": "Finance & Reporting",
+        "impact": "Low",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "feature_request",
+        "dimension": "Finance & Reporting",
+        "impact": "Low",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-10",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Low",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 2,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": false,
+        "urgency": false
+      }
+    },
+    {
+      "feedback_id": "FB-12",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 1,
+      "field_matches": {
+        "intent_type": false,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-13",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "feature_request",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "feature_request",
+        "dimension": "Finance & Reporting",
+        "impact": "Low",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 1,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": false,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-14",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "complaint",
+        "dimension": "Compliance",
+        "impact": "High",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "complaint",
+        "dimension": "Compliance",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-15",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "Medium"
+      },
+      "prediction": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-16",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Support Process",
+        "impact": "High",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 1,
+      "field_matches": {
+        "intent_type": false,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-17",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "praise",
+        "dimension": "UX",
+        "impact": "N/A",
+        "urgency": "N/A"
+      },
+      "prediction": {
+        "intent_type": "praise",
+        "dimension": "UX",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-19",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "praise",
+        "dimension": "Compliance",
+        "impact": "N/A",
+        "urgency": "N/A"
+      },
+      "prediction": {
+        "intent_type": "praise",
+        "dimension": "Compliance",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-20",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "noise",
+        "dimension": "Other/Uncategorized",
+        "impact": "N/A",
+        "urgency": "N/A"
+      },
+      "prediction": {
+        "intent_type": "noise",
+        "dimension": "Other/Uncategorized",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-22",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    },
+    {
+      "feedback_id": "FB-23",
+      "pii_detected": true,
+      "ground_truth": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "Low",
+        "urgency": "High"
+      },
+      "prediction": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 2,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": false,
+        "urgency": false
+      }
+    },
+    {
+      "feedback_id": "FB-24",
+      "pii_detected": false,
+      "ground_truth": {
+        "intent_type": "feature_request",
+        "dimension": "UX",
+        "impact": "Low",
+        "urgency": "Low"
+      },
+      "prediction": {
+        "intent_type": "feature_request",
+        "dimension": "UX",
+        "impact": "Low",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null,
+      "diff_count": 0,
+      "field_matches": {
+        "intent_type": true,
+        "dimension": true,
+        "impact": true,
+        "urgency": true
+      }
+    }
+  ]
+}

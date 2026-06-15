@@ -105,3 +105,5 @@ The corresponding field name in the work pack schema (04-taxonomy-and-schema.md)
 3. **CLU-006-022 cluster boundary**: FB-06 (name mismatch) and FB-22 (2FA SMS failure) are both Engineering from ACC-1042, but are distinct issues. Pipeline clustering behavior here is a test case — expected to split them.
 
 4. **CLU-001 signal-strength**: Signal-strength=High justified by KI-1 context (documented recurring issue), not by in-dataset count (only 1 member). This creates an open design question: should signal-strength scoring be allowed to reference external context docs, or only in-dataset evidence?
+
+5. **FB-01 classification ceiling (v2 confirmed)**: Pipeline consistently predicts impact=High and urgency=High for FB-01 across all prompt versions. Golden set labels are Medium/Medium. Root cause: the "has workaround (manual CSV split)" signal lives in KI-1 (context doc), not in the raw_text. Classification stage has no RAG access, so this information is invisible. Expected to resolve when RAG is introduced in Layer 2. Do not attempt to fix via prompt — treat as architectural ceiling at classification stage.

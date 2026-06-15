@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MODEL = "claude-haiku-4-5-20251001"
-PROMPT_VERSION = "classify-v1"
+PROMPT_VERSION = "classify-v3"
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "classify.txt"
 
 _VALID = {

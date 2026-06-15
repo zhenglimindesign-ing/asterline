@@ -11,6 +11,50 @@
 ---
 
 Date: 2026-06-15
+Chat: Vela Pay-2
+Run: v1 → v2 (classify.txt v2 → v3)
+
+Changes made:
+- impact Low: added "feature requests where core payment flow works without the enhancement"
+- Rule 4 (new): feature_request urgency defaults to Low unless explicit deadline, business blocker, or compliance obligation stated
+- Rule 5 (new): impact calibration question — can user still send, receive, reconcile without this fix?
+
+Score delta:
+  intent_type:  90% → 90%  (—)
+  dimension:    90% → 95%  (+5%)
+  impact:       70% → 70%  (—)
+  urgency:      70% → 85%  (+15%)
+  overall:      45% → 55%  (+10%)
+
+Items fixed: FB-09 fully resolved (dimension + impact + urgency all correct)
+Items unchanged: FB-01 — confirmed architectural limit (KI-1 workaround info not visible at classification stage; no RAG in Layer 1)
+
+---
+
+Date: 2026-06-15
+Chat: Vela Pay-2
+Run: v0 → v1 (classify.txt v1 → v2)
+
+Changes made:
+- noise definition: added "general yes/no inquiry with no stated use case"
+- Finance & Reporting: added payment reference/memo fields, transaction labeling
+- impact High: clarified "no workaround" qualifier; recurring with workaround = Medium
+- Rule 1: added orthogonality example (memo field = feature_request + Finance & Reporting)
+- urgency High: clarified "actively blocking this user right now" qualifier
+
+Score delta:
+  intent_type:  85% → 90%  (+5%)
+  dimension:    80% → 90%  (+10%)
+  impact:       65% → 70%  (+5%)
+  urgency:      60% → 70%  (+10%)
+  overall:      40% → 45%  (+5%)
+
+Items fixed: FB-20 (noise correctly classified), FB-09 dimension resolved
+Items not fixed: FB-01 (impact/urgency over-estimated — architectural limit)
+
+---
+
+Date: 2026-06-15
 Chat: Vela Pay - 2
 What changed: Cross-review corrections (5 fixes) before GitHub upload
 Files modified: 03-golden-set-labeled.md, 04-taxonomy-and-schema.md, 05-rubric-v1.md, project-context.md

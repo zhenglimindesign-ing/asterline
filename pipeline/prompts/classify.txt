@@ -12,7 +12,7 @@ Definitions:
 - feature_request: Asks for a capability or option that doesn't currently exist
 - complaint: Expresses dissatisfaction but isn't a direct bug report or specific feature request (often process/communication/policy-related)
 - praise: Positive feedback requiring no action
-- noise: Unrelated to the product, or lacks sufficient information to act on
+- noise: Unrelated to the product; lacks sufficient information to act on; or is a general yes/no inquiry about a product capability (e.g., "Does this support X?") with no stated use case or context. A noise item cannot become a product task without significant follow-up.
 
 ### dimension
 One of: Engineering | UX | Compliance | Support Process | Product/Roadmap | Finance & Reporting | Other/Uncategorized
@@ -22,24 +22,24 @@ Definitions:
 - UX: The feature works as intended, but the interaction, presentation, or usability is poor
 - Compliance: Relates to how KYC/KYB/AML or account-verification policies are enforced
 - Support Process: An issue with support response time, workflow, or communication wording — the product feature itself may be functioning correctly
-- Product/Roadmap: A request for a capability that doesn't exist and would require new development
-- Finance & Reporting: Relates to reconciliation, report exports, fee or FX visibility
+- Product/Roadmap: A request for a capability that doesn't exist and would require new development — use this only when there is no clearer owning team (Engineering, Finance & Reporting, etc.)
+- Finance & Reporting: Relates to reconciliation, report exports, fee or FX visibility, payment reference or memo fields, transaction labeling, or any feature that helps finance teams track, annotate, or reconcile payments
 - Other/Uncategorized: Doesn't fit any of the above — use this rarely
 
 ### impact
 One of: High | Medium | Low | N/A
 
 Definitions:
-- High: Directly causes financial delay or loss, business process disruption, or affects multiple users / recurs
+- High: Directly causes financial delay or loss, OR causes business process disruption with no workaround, OR affects multiple users and recurs with no workaround. A known recurring issue that has a workaround is Medium, not High.
 - Medium: Creates significant extra work or friction but has a workaround; doesn't block the core flow
-- Low: Minor inconvenience; doesn't prevent completing the core task
+- Low: Minor inconvenience; doesn't prevent completing the core task. Also applies to feature requests for enhancements where users can still send payments, receive payments, and reconcile accounts without the requested capability.
 - N/A: Not applicable — use ONLY for praise and noise
 
 ### urgency
 One of: High | Medium | Low | N/A
 
 Definitions:
-- High: Immediate time pressure exists (e.g. upcoming payment deadline, locked account), OR a stated policy commitment may have been breached and requires prompt verification
+- High: Immediate time pressure exists (e.g. upcoming payment deadline, account currently locked and payments cannot proceed), OR a specific policy commitment has been provably breached for this particular case. A documented known recurring issue is NOT automatically urgency=High unless it is actively blocking this user right now.
 - Medium: Should be addressed but no immediate time pressure
 - Low: Can be handled within regular iteration cadence
 - N/A: Not applicable — use ONLY for praise and noise
@@ -51,12 +51,17 @@ Your confidence in the above classifications. Use Low when the feedback is ambig
 
 ## Important rules
 
-1. intent_type and dimension are ORTHOGONAL axes. intent answers "should this become an action?"; dimension answers "who owns this problem?". A feature_request can have dimension=Engineering. A complaint can have dimension=Support Process. They are independent.
+1. intent_type and dimension are ORTHOGONAL axes. intent answers "should this become an action?"; dimension answers "who owns this problem?". They are independent.
+   Example: A request for a memo/reference field in payment records is intent_type=feature_request (new capability) + dimension=Finance & Reporting (finance team owns this domain). Do NOT default to Product/Roadmap just because something requires new development — use Product/Roadmap only when there is no clearer owning team.
 
 2. For praise and noise: set impact = N/A and urgency = N/A.
 
 3. Return ONLY a JSON object. No markdown. No explanation. Example format:
 {"intent_type": "actionable_bug", "dimension": "Engineering", "impact": "High", "urgency": "High", "confidence": "High"}
+
+4. For feature_request items: urgency defaults to Low unless the user explicitly states a deadline, describes inability to operate their business without this feature, or mentions a compliance obligation requiring this capability.
+
+5. Impact calibration: Before assigning impact, ask — can the user still send payments, receive payments, access their funds, and reconcile accounts without this being fixed or added? If YES → impact is Low or Medium at most. If NO → impact may be High.
 
 ## Feedback to classify
 
