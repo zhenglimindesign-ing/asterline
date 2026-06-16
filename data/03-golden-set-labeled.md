@@ -106,4 +106,13 @@ The corresponding field name in the work pack schema (04-taxonomy-and-schema.md)
 
 4. **CLU-001 signal-strength**: Signal-strength=High justified by KI-1 context (documented recurring issue), not by in-dataset count (only 1 member). This creates an open design question: should signal-strength scoring be allowed to reference external context docs, or only in-dataset evidence?
 
-5. **FB-01 classification ceiling (v2 confirmed)**: Pipeline consistently predicts impact=High and urgency=High for FB-01 across all prompt versions. Golden set labels are Medium/Medium. Root cause: the "has workaround (manual CSV split)" signal lives in KI-1 (context doc), not in the raw_text. Classification stage has no RAG access, so this information is invisible. Expected to resolve when RAG is introduced in Layer 2. Do not attempt to fix via prompt — treat as architectural ceiling at classification stage.
+5. **Classification-stage ceiling (confirmed after 4 prompt iterations, v0->v4)**: Three items remain unresolved at the classification stage, for two distinct reasons.
+
+   Architectural (information not visible at this stage):
+   - FB-01: pipeline predicts impact=High/urgency=High; golden set is Medium/Medium. The "has workaround" fact lives in KI-1 (a context doc), not in raw_text. Classification (Layer 1) has no RAG access. This is NOT expected to resolve via further prompt tuning — it is architectural. Work pack generation (Layer 2, with RAG) will surface this context in content, but will not retroactively change the Layer 1 classification label.
+
+   Boundary ambiguity (inherent to the item, not a missing rule):
+   - FB-10: pipeline predicts impact=Medium; golden set is Low (language mismatch in support reply — minor, not blocking).
+   - FB-23: dimension is unstable across prompt versions, alternating between Finance & Reporting and Engineering (FX spread discrepancy touches both domains). Impact/urgency tension for this item is already documented in note #1 above.
+
+   Decision: stop prompt iteration on these three items. Final classification-stage scores: intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65%.
