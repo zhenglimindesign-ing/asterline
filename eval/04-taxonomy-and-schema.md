@@ -81,7 +81,7 @@
 
   "intent_type": "enum: actionable_bug | feature_request | complaint | praise | noise",
 
-  "dimension": "enum: Engineering | UX | Compliance | Support Process | Product/Roadmap | Finance & Reporting | Other/Uncategorized — cluster-level; majority value across cluster_members",
+  "dimension": "array of {dimension: enum, count: int} — cluster-level distribution across cluster_members, sorted by count desc then alphabetically (stable ordering, not a tie-break for picking one value). Single-entry array is the common case (actionable_bug/feature_request/complaint, where members usually agree on dimension). Multiple entries are expected for praise/noise bulk-merged clusters, where members are intentionally merged regardless of topic (see docs/11-cluster-spec.md). Revised 2026-06-16 from a single-enum design — see docs/06-iteration-log.md for why a forced single value was wrong for heterogeneous clusters.",
 
   "problem_brief": "string — 2-4 sentences describing the issue with absolute UTC+0 timestamps; no relative time references",
 
@@ -133,11 +133,11 @@
 | title | Yes | |
 | signal_strength | Yes | Cluster-level; computed after clustering |
 | intent_type | Yes | |
-| dimension | Yes | Cluster-level; majority value from cluster_members |
+| dimension | Yes | Array (distribution), never empty, never a single bare enum — see field definition above |
 | problem_brief | Yes | All time references must be absolute UTC+0 |
 | key_quotes | Yes | Array; [] if nothing worth quoting; max 2 items |
 | source_refs | Yes | Array; [] if no context doc clause matches |
-| confidence | Yes | |
+| confidence | Yes | Cluster-level; the most conservative (lowest) value among cluster_members' classification confidence — High > Medium > Low, take the min |
 | tasks | Yes | Array; [] when intent=noise or praise |
 | reply_draft | Yes | null when intent=noise; string otherwise |
 | review_flags | Yes | Array; [] if no review needed |

@@ -1,0 +1,61 @@
+You are generating a work pack for Asterline, a B2B cross-border payment platform feedback pipeline. A work pack turns a cluster of related user feedback into a triage artifact: a problem summary, supporting evidence, suggested tasks, and (where relevant) a customer-facing reply draft.
+
+This cluster's intent_type is: {intent_type}
+
+## Context documents (use these for source_refs and reply_draft — cite only real clauses, never invent one)
+
+{context_docs}
+
+## Feedback items in this cluster
+
+{members_block}
+
+## What to generate
+
+Return ONLY a JSON object with these fields. Do NOT include cluster_id, cluster_members, signal_strength, intent_type, dimension, or confidence — those are filled in separately from already-known data, not by you.
+
+```json
+{
+  "title": "concise label for the cluster's core problem or theme; not vague ('customer complaint'), not a verbatim raw_text sentence",
+  "problem_brief": "2-4 sentences describing the issue; ALL time references must be absolute UTC+0 timestamps (e.g. '2026-06-13T08:30:00Z'), never relative ('recently', '6 days ago')",
+  "key_quotes": ["at most 2 verbatim substrings copied exactly from the raw_text above — no paraphrasing, no summarizing, no fixing typos"],
+  "source_refs": ["clause IDs from the context documents above that genuinely apply, e.g. 'SP-3', 'KI-1' — empty array if nothing matches; NEVER invent a clause ID that isn't in the context documents"],
+  "tasks": [
+    {
+      "task": "specific, actionable description",
+      "assignee_team": "e.g. 'Engineering', 'Support Operations', 'Product'",
+      "priority": "High | Medium | Low",
+      "deadline": "ISO 8601 UTC string or null — only set when explicit time pressure exists in the feedback",
+      "acceptance_criteria": "specific and verifiable, not generic ('issue resolved')"
+    }
+  ],
+  "reply_draft": "customer-facing reply string, or null — see rules below",
+  "review_flags": [
+    {"flag": "needs_human_review", "reason": "why human sign-off is needed before this can proceed", "blocks": "which field this gates, e.g. 'reply_draft'"}
+  ],
+  "quality_flags": []
+}
+```
+
+## Rules for tasks[] and reply_draft by intent_type
+
+- **noise**: tasks = [], reply_draft = null, key_quotes = []. Only title and problem_brief matter.
+- **praise**: tasks = []. reply_draft is a short, genuine thank-you (not generic corporate filler).
+- **actionable_bug / feature_request / complaint**: tasks should reflect real follow-up work. reply_draft is a full customer-facing reply.
+
+## Tone rules for reply_draft (TG-1 through TG-6, from the context documents)
+
+1. Direct, not corporate. No filler ("we're sorry for any inconvenience," "thank you for your patience"). State what happened and what happens next.
+2. Precise about money and time. Never say "soon" or "shortly" if a specific timeframe is known from the Support Policy document. If no timeframe is known, say so explicitly rather than guessing.
+3. No blame-shifting language toward the user, even when a policy clause technically applies because of a user error.
+4. Plain language over financial jargon ("off-ramp," "settlement," "spread") unless the user used the term first.
+5. When the reply addresses a delayed or failed payment, the FIRST sentence must address the money/timing question directly — not background, not apology.
+6. Confident but not overpromising — never promise an outcome outside Vela Pay's direct control (e.g. a partner bank's exact resolution date).
+
+## review_flags judgment
+
+Set a `needs_human_review` flag (blocking `reply_draft`) when the reply touches a specific money amount, payment timing commitment, or a potential policy breach. This is your judgment call — a separate, deterministic check is also applied afterward for low-confidence clusters, so you don't need to handle that case yourself.
+
+## Output format
+
+Return ONLY the JSON object. No markdown code fences, no explanation before or after.

@@ -144,6 +144,5 @@ Vela Pay context docs to author (before the golden set exists): product one-page
 - Productization / monetization — `[DEFERRED]` until eval results exist.
 - Signal-strength: whether scoring may reference external context doc evidence (e.g. KI-x noting recurrence)
 in addition to in-dataset item count — `[PENDING-EVIDENCE]`
-- Dimension labels for praise/noise intents: whether dimension should be required, optional, or excluded
-for non-actionable intent types — `[PENDING-EVIDENCE]`
+- Dimension labels for praise/noise intents — `RESOLVED` (2026-06-16): always required and populated for every intent type, but `dimension` is now a distribution array rather than a single enum (eval/04-taxonomy-and-schema.md), so a praise/noise cluster spanning multiple topics lists all of them rather than forcing one arbitrary value.
 - Impact × Urgency combined "Critical" shorthand for High+High cases — `[PENDING-EVIDENCE]`

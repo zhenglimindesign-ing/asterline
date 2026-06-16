@@ -112,11 +112,21 @@ All code comments, docstrings, and file content must be written in **English**.
 
 ## Known gaps
 
-- **Taxonomy values, severity thresholds, review triggers** — still `[PENDING-EVIDENCE]`; values in `eval/04-taxonomy-and-schema.md` are `[FLUID]`.
-- **Query-time dimension filter** — `(proposed)`; not yet built.
-- **Signal-strength scoring referencing external context docs** — mostly moot now: the one case that motivated this question (CLU-001) was resolved by adding real in-dataset duplicates (FB-26/FB-27) rather than by deciding the general question. The general question (should a single-member cluster ever cite external doc evidence like KI-x recurrence to justify High) remains open in principle but has no live case forcing a decision — see `data/03-golden-set-labeled.md` note #4.
-- **Dimension labels for praise/noise** — still `[PENDING-EVIDENCE]`; unrelated to the Stage 5 merge-threshold decision (that was about whether to merge, not whether dimension is populated).
-- **Impact × Urgency "Critical" shorthand** — still `[PENDING-EVIDENCE]`.
-- **Clustering scale limit** — single-call clustering (`pipeline/cluster.py`) has only been validated up to 29 items. Hard guard at `MAX_SINGLE_CALL_ITEMS=50`. Upgrade trigger (do not raise the limit without this): a 100+ item synthetic stress test showing <90% recall on known duplicate pairs. Full rationale in `docs/11-cluster-spec.md`. Deliberately not built now — see iteration log 2026-06-16 for the cost/benefit reasoning.
-- **README.md** — still a 2-line placeholder. The locked decision (project-context.md §0) requires it to carry the case-study narrative. Deliberately deferred until `docs/07-case-study-draft.md` Sections 4–5 are filled, to avoid writing it twice. Do this immediately after the case study fill, same session if possible — do not let it slip to "later."
-- **Productization / monetization** — `[DEFERRED]` until eval results exist (they now do, for classification + clustering; work-pack generation results are still pending).
+**This is the single index for every known gap in the project.** Detailed reasoning lives in exactly one other place per gap (linked below) — this table is never the full explanation, and other docs should not duplicate it either. If you find a gap described in two places, that's a bug in this index — fix it here, don't add a third copy.
+
+| Gap | Status | Detail |
+|---|---|---|
+| Taxonomy values, severity thresholds, review triggers | `[PENDING-EVIDENCE]` | `eval/04-taxonomy-and-schema.md` — values marked `[FLUID]` |
+| Query-time dimension filter | `(proposed)`, not built | `project-context.md` §1 Decision #13 |
+| Impact × Urgency "Critical" shorthand | `[PENDING-EVIDENCE]` | `project-context.md` §8 |
+| Signal-strength referencing external context docs | Mostly moot | `data/03-golden-set-labeled.md` note #4 — the one live case (CLU-001) was resolved by adding real duplicates (FB-26/27), not by deciding the general question |
+| Dimension labels for praise/noise | `RESOLVED` 2026-06-16 | `project-context.md` §8 — dimension is now always populated as a distribution array, not a single forced value |
+| Clustering scale limit (single-call clustering validated only to 29 items) | Guard rail in place, not solved | `docs/11-cluster-spec.md` "Scale limit and upgrade trigger" — hard limit `MAX_SINGLE_CALL_ITEMS=50` in `pipeline/cluster.py`; upgrade trigger is a 100+ item stress test showing <90% recall on known duplicates |
+| R-03 quote-source ambiguity in multi-member clusters | Known limitation, v1 accepted | `docs/13-workpack-spec.md` — `key_quotes[]` has no per-quote attribution to a specific cluster member; verbatim check matches against the union of all members' raw_text instead |
+| source_refs validity check coupled to context-doc formatting | Known limitation, low risk | `docs/13-workpack-spec.md` — clause IDs are parsed at runtime from `data/01-vela-pay-context-docs.md`'s heading format, not hardcoded, but the parser still assumes that exact formatting convention |
+| PII redaction doesn't catch names | `[LOCK]`'d v1 limitation, not a bug | `data/02-synthetic-feedback-25.md` header — regex can't reliably match arbitrary names; v2 path is NER |
+| No ingest field validation | v1 limitation, deliberate | `docs/07-case-study-draft.md` §6 — FB-20's missing timestamp is a deliberate test of this gap, not an oversight |
+| requirements.txt has no version ceiling | Latent risk, not urgent | no dedicated doc — a future breaking change in the `anthropic` SDK could break a fresh clone; not stage-specific |
+| No single orchestration script (classify → cluster → generate run manually in sequence) | Minor convenience gap, growing with each stage | no dedicated doc — worth revisiting once Stage 6 adds a third manual step |
+| README.md / case study Stage 6 section | Pending | `docs/07-case-study-draft.md` — needs another pass once Stage 6 (work-pack generation) has output to report |
+| Productization / monetization | `[DEFERRED]` | `project-context.md` §8 — eval results now exist for classification + clustering; work-pack generation results are still pending |
