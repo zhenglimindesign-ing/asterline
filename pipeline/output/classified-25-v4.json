@@ -1,8 +1,8 @@
 {
   "model": "claude-haiku-4-5-20251001",
   "prompt_version": "classify-v5",
-  "timestamp": "2026-06-16T06:33:32.636433+00:00",
-  "item_count": 25,
+  "timestamp": "2026-06-16T12:53:32.506836+00:00",
+  "item_count": 29,
   "results": [
     {
       "feedback_id": "FB-01",
@@ -42,7 +42,7 @@
       "pii_detected": false,
       "classification": {
         "intent_type": "feature_request",
-        "dimension": "Product/Roadmap",
+        "dimension": "Engineering",
         "impact": "Medium",
         "urgency": "Low",
         "confidence": "High"
@@ -178,7 +178,7 @@
       "classification": {
         "intent_type": "complaint",
         "dimension": "Support Process",
-        "impact": "Medium",
+        "impact": "High",
         "urgency": "High",
         "confidence": "High"
       },
@@ -375,6 +375,66 @@
         "dimension": "Other/Uncategorized",
         "impact": "N/A",
         "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-26",
+      "timestamp": "2026-06-13T08:30:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-4456 (Cascade Freight)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-27",
+      "timestamp": "2026-06-14T13:50:00Z",
+      "channel": "email",
+      "account_id": "ACC-7733 (Orbit Logix)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-28",
+      "timestamp": "2026-06-15T09:10:00Z",
+      "channel": "feature request form",
+      "account_id": "ACC-3201 (Ashgrove Holdings)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-29",
+      "timestamp": "2026-06-16T13:50:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-6688 (Solway Group)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low",
         "confidence": "High"
       },
       "error": null

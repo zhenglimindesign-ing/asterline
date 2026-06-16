@@ -1,4 +1,4 @@
-"""Classify all 25 feedback items (not just the golden-set 20).
+"""Classify all feedback items in data/02-synthetic-feedback-25.md (not just the golden-set 20).
 
 This produces the full classified dataset that clustering (Stage 5) consumes.
 For the 20 golden-set items, this uses the pipeline's own prediction

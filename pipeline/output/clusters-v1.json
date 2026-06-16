@@ -1,14 +1,16 @@
 {
   "model": "claude-haiku-4-5-20251001",
   "prompt_version": "cluster-v3",
-  "timestamp": "2026-06-16T11:25:35.059234+00:00",
+  "timestamp": "2026-06-16T12:53:56.109421+00:00",
   "clusters": [
     {
       "cluster_id": "CLU-001",
       "cluster_members": [
-        "FB-01"
+        "FB-01",
+        "FB-26",
+        "FB-27"
       ],
-      "reason": "batch upload silently failing without error or confirmation; unique infrastructure issue distinct from other upload/payment problems",
+      "reason": "All three describe batch/bulk upload silently failing or hanging with large files (620\u2013700 rows), requiring manual splitting to work around the issue",
       "signal_strength": "High"
     },
     {
@@ -16,7 +18,7 @@
       "cluster_members": [
         "FB-02"
       ],
-      "reason": "dashboard payout amount does not match actual bank debit; isolated discrepancy issue",
+      "reason": "Single item; dashboard amount mismatch with actual debit and unexplained FX charges is distinct from other Finance & Reporting issues",
       "signal_strength": "Medium"
     },
     {
@@ -24,7 +26,7 @@
       "cluster_members": [
         "FB-03"
       ],
-      "reason": "webhook/API notifications for payout status changes; standalone feature request",
+      "reason": "Single item; webhook/API notification feature request for payout status updates is unrelated to other feature requests",
       "signal_strength": "Medium"
     },
     {
@@ -32,7 +34,7 @@
       "cluster_members": [
         "FB-04"
       ],
-      "reason": "mobile app session logout issue; distinct from FB-22's SMS 2FA delivery problem despite both being auth-related",
+      "reason": "Single item; mobile app frequent logout/2FA friction is distinct from FB-22's SMS delivery issue and FB-16's account lockout",
       "signal_strength": "Medium"
     },
     {
@@ -40,7 +42,7 @@
       "cluster_members": [
         "FB-05"
       ],
-      "reason": "payout funds not received after 6 days; specific transaction delivery delay investigation needed",
+      "reason": "Single item; payout delayed 6 days beyond stated SLA is a transaction-specific support escalation distinct from other issues",
       "signal_strength": "High"
     },
     {
@@ -48,7 +50,7 @@
       "cluster_members": [
         "FB-06"
       ],
-      "reason": "recipient name mismatch between confirmation screen and actual bank transfer; data consistency issue",
+      "reason": "Single item; recipient name mismatch between confirmation screen and actual bank transfer is distinct from other Engineering issues",
       "signal_strength": "High"
     },
     {
@@ -56,7 +58,7 @@
       "cluster_members": [
         "FB-07"
       ],
-      "reason": "recurring/scheduled payouts feature request; standalone capability gap",
+      "reason": "Single item; recurring/scheduled payout feature request is unrelated to other feature requests",
       "signal_strength": "Medium"
     },
     {
@@ -64,7 +66,7 @@
       "cluster_members": [
         "FB-08"
       ],
-      "reason": "approval workflow for large payouts; access control feature request from ACC-5519",
+      "reason": "Single item; approval workflow for large payouts is distinct from other feature requests",
       "signal_strength": "Medium"
     },
     {
@@ -72,7 +74,7 @@
       "cluster_members": [
         "FB-09"
       ],
-      "reason": "memo/reference field on payouts for accounting reconciliation; distinct from FB-08's approval workflow despite same account",
+      "reason": "Single item; memo/reference field on payouts is distinct from other feature requests",
       "signal_strength": "Medium"
     },
     {
@@ -80,7 +82,7 @@
       "cluster_members": [
         "FB-10"
       ],
-      "reason": "support replied in English to Spanish-language ticket; multilingual support process issue",
+      "reason": "Single item; support language mismatch complaint is distinct from other support process issues",
       "signal_strength": "Medium"
     },
     {
@@ -88,7 +90,7 @@
       "cluster_members": [
         "FB-11"
       ],
-      "reason": "card transaction shows wrong currency label in dashboard display; currency handling bug",
+      "reason": "Single item; card transaction currency display bug is distinct from other Finance & Reporting issues",
       "signal_strength": "Medium"
     },
     {
@@ -96,15 +98,15 @@
       "cluster_members": [
         "FB-12"
       ],
-      "reason": "dispute under review for 12+ days exceeding policy timeline; support process delay",
-      "signal_strength": "Medium"
+      "reason": "Single item; dispute review SLA breach complaint is distinct from other support process issues",
+      "signal_strength": "High"
     },
     {
       "cluster_id": "CLU-013",
       "cluster_members": [
         "FB-13"
       ],
-      "reason": "transaction history export limited to 90 days; standalone reporting functionality limitation",
+      "reason": "Single item; transaction export limited to 90-day window feature request is distinct from other requests",
       "signal_strength": "Medium"
     },
     {
@@ -112,7 +114,7 @@
       "cluster_members": [
         "FB-14"
       ],
-      "reason": "surprised by KYB requirement without advance notice at volume threshold; compliance communication issue",
+      "reason": "Single item; surprise KYB requirement complaint without advance notice is distinct from other compliance/onboarding issues",
       "signal_strength": "High"
     },
     {
@@ -120,7 +122,7 @@
       "cluster_members": [
         "FB-15"
       ],
-      "reason": "never received onboarding/welcome email after signup; account activation notification failure",
+      "reason": "Single item; missing onboarding email is a distinct onboarding delivery bug",
       "signal_strength": "Medium"
     },
     {
@@ -128,7 +130,7 @@
       "cluster_members": [
         "FB-16"
       ],
-      "reason": "locked out of admin account due to lost 2FA phone; urgent account recovery process needed",
+      "reason": "Single item; account lockout due to lost 2FA phone is a critical emergency support case distinct from FB-04's logout issue and FB-22's SMS delivery issue",
       "signal_strength": "High"
     },
     {
@@ -139,7 +141,7 @@
         "FB-19",
         "FB-25"
       ],
-      "reason": "all praise items grouped together to reduce reading volume regardless of specific topics",
+      "reason": "All praise items grouped together; no differentiated tasks or prioritization needed regardless of specific topic",
       "signal_strength": "High"
     },
     {
@@ -148,7 +150,7 @@
         "FB-20",
         "FB-21"
       ],
-      "reason": "all noise items grouped together to reduce reading volume regardless of specific content",
+      "reason": "All noise items grouped together; no actionable tasks required regardless of specific content",
       "signal_strength": "Medium"
     },
     {
@@ -156,7 +158,7 @@
       "cluster_members": [
         "FB-22"
       ],
-      "reason": "2FA SMS codes not arriving for specific mobile carrier users; distinct from FB-04's app logout and FB-16's account recovery",
+      "reason": "Single item; 2FA codes not arriving via SMS for specific carrier is distinct from FB-04's logout issue and FB-16's account lockout",
       "signal_strength": "High"
     },
     {
@@ -164,7 +166,7 @@
       "cluster_members": [
         "FB-23"
       ],
-      "reason": "currency conversion spread changed after confirmation; post-confirmation rate change bug",
+      "reason": "Single item; currency spread changing after confirmation is distinct from other Engineering bugs",
       "signal_strength": "Medium"
     },
     {
@@ -172,8 +174,17 @@
       "cluster_members": [
         "FB-24"
       ],
-      "reason": "dark mode feature request for dashboard; standalone UI preference feature",
+      "reason": "Single item; dark mode feature request is unrelated to other feature requests",
       "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-022",
+      "cluster_members": [
+        "FB-28",
+        "FB-29"
+      ],
+      "reason": "Both request ability to manage multiple subsidiary/business entity accounts under single login with consolidated view",
+      "signal_strength": "High"
     }
   ]
 }

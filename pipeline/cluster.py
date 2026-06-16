@@ -2,7 +2,7 @@
 compare the result against the golden set's cluster hypothesis.
 
 Design rationale: docs/11-cluster-spec.md
-  - Clustering: single LLM call over all 25 items (not pairwise, not embeddings).
+  - Clustering: single LLM call over all items at once (not pairwise, not embeddings).
   - signal_strength: deterministic Python rule (Axis 4 in eval/04-taxonomy-and-schema.md),
     not an LLM judgment — it is a fixed lookup over already-structured fields.
 

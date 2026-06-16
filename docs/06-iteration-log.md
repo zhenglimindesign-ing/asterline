@@ -12,6 +12,24 @@
 
 Date: 2026-06-16
 Chat: Vela Pay-2
+Run: Stage 5 — added clustering positive-control items (FB-26 to FB-29), validated on real data
+
+Dataset change (additive only, items 01-25 untouched): added FB-26/FB-27 (cross-account duplicates of FB-01's KI-1 batch-upload issue, deliberately worded differently from FB-01 and each other) and FB-28/FB-29 (cross-account duplicates of an RM-1 multi-entity feature request, also differently worded). Not added to the formal 20-item golden labeled set — these exist solely to test clustering's positive-merge capability, which nothing in the original 25 items tested. See data/03-golden-set-labeled.md "Clustering positive-control items" and docs/11-cluster-spec.md for full rationale, including two rounds of self-critique before writing the final wording (fixed a company-name collision with existing accounts, removed verbatim phrase overlap with FB-01 that would have made the test lexical-matching rather than semantic, and corrected the original plan from "an isolated new pair" to "extend FB-01's existing singleton hypothesis into a 3-way merge," since FB-01 documents the same root cause).
+
+Updated data/02-synthetic-feedback-25.md header stats (12/29 now map to known clauses, was 8/25) and CLAUDE.md's file inventory to reflect the new count. Re-ran classify_all.py (all 29 items classified, no errors) and cluster.py (cluster-v3, same prompt as the prior entry — no prompt change needed for this run).
+
+Result: PASS on both scenarios.
+- FB-01 + FB-26 + FB-27 merged into one cluster (exact match to the updated 3-way hypothesis). signal_strength=High via the "≥2 items, different accounts" path.
+- FB-28 + FB-29 merged into one cluster (exact match to hypothesis). signal_strength=High via the same path.
+
+This is the first time the cross-account merge path and the corresponding signal_strength=High derivation have been validated on real pipeline output (the smoke test validated the mechanism in isolation with hand-built items never added to any dataset; this validates it in the actual 29-item context with all the surrounding noise/distractor items present). Closes the asymmetry identified earlier in this stage: false-merge avoidance (CLU-006-022) and true-merge capability are now both validated on real data, not just one or the other.
+
+Full detail in docs/12-cluster-eval.md ("Positive-merge checkpoint" section).
+
+---
+
+Date: 2026-06-16
+Chat: Vela Pay-2
 Run: Stage 5 — cluster-v3, intent_type-based merge threshold + scale guard rail
 
 Changes made (after open debate, not unilateral — see chat for full reasoning):

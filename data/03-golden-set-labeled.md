@@ -84,7 +84,7 @@ The corresponding field name in the work pack schema (04-taxonomy-and-schema.md)
 
 | Cluster ID | Members | Signal-strength | Notes |
 |---|---|---|---|
-| CLU-001 | FB-01 | High | KI-1 is a documented recurring issue; single cluster member but external evidence of recurrence |
+| CLU-001 | FB-01, FB-26, FB-27 | High | KI-1 batch-upload failure reported by three different accounts in different wording — see "Clustering positive-control items" below. Updated 2026-06-16; was a single-member hypothesis (FB-01 only) before FB-26/FB-27 were added |
 | CLU-005 | FB-05 | High | Single item; High impact justifies High signal-strength |
 | CLU-006-022 | FB-06, FB-22 | High | Two items; different issues (name mismatch vs 2FA) but both Engineering, same account (ACC-1042) — may split into two clusters after pipeline run |
 | CLU-007 | FB-07 | Medium | Single item, Medium impact |
@@ -92,7 +92,15 @@ The corresponding field name in the work pack schema (04-taxonomy-and-schema.md)
 | CLU-012-015 | FB-12, FB-15 | Medium | Two items; different accounts (FB-12: ACC-7102, FB-15: ACC-8847); same dimension (Support Process); different sub-issues |
 | CLU-014 | FB-14 | High | Single item; High impact (payouts on hold) |
 | CLU-016 | FB-16 | High | Single item; High impact + High urgency |
+| CLU-028-029 | FB-28, FB-29 | High | RM-1 multi-entity feature request from two different accounts in different wording — see "Clustering positive-control items" below |
 | All others | FB-02,03,09,10,13,17,19,20,23,24 | See individual labels | No clustering evident; single-member clusters |
+
+### Clustering positive-control items (FB-26 to FB-29, added 2026-06-16)
+
+Not part of the formal 20-item golden set above (no intent/dimension/impact/urgency labels assigned) — these four items exist solely to validate clustering's positive-merge capability, which the original 25-item set never tested (every multi-member hypothesis above is a "should this split" test, not a "should this merge" test). See docs/11-cluster-spec.md and docs/06-iteration-log.md (2026-06-16 entries) for the full reasoning, including the prior smoke test that validated the merge mechanism in isolation before these were added to the real dataset.
+
+- FB-26, FB-27: cross-account duplicates of FB-01's KI-1 batch-upload issue, deliberately worded without reusing FB-01's phrasing, to test semantic (not lexical) duplicate detection.
+- FB-28, FB-29: cross-account duplicates of an RM-1 multi-entity feature request, worded differently — second scenario type (feature_request, not actionable_bug).
 
 ---
 

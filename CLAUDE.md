@@ -17,7 +17,7 @@ asterline/
 
   data/
     01-vela-pay-context-docs.md    ← RAG context docs (product, policy, tone, known issues)
-    02-synthetic-feedback-25.md    ← pipeline input: 25 synthetic feedback items
+    02-synthetic-feedback-25.md    ← pipeline input: 29 synthetic feedback items (25 original + 4 clustering positive-controls added 2026-06-16)
     03-golden-set-labeled.md       ← ground truth for offline eval
 
   eval/

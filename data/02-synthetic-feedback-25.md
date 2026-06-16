@@ -1,12 +1,19 @@
 # Vela Pay — Synthetic Feedback Dataset (v1)
-# 25 items · schema: feedback_id / timestamp / channel / contact_email / account_id / raw_text
+# 29 items · schema: feedback_id / timestamp / channel / contact_email / account_id / raw_text
+# (originally 25 items; FB-26 to FB-29 added 2026-06-16 as a clustering positive-control —
+#  see docs/11-cluster-spec.md and docs/06-iteration-log.md for why)
 #
 # Design notes:
-# - 8 items map to known context doc clauses (SP-x / KI-x / RM-x); 17 are novel issues
+# - 12 items map to known context doc clauses (SP-x / KI-x / RM-x); 17 are novel issues
 # - contact_email and account_id are optional (absent for app reviews / anonymous submissions)
 # - PII embedded in raw_text where realistic (email, phone) — regex-redactable
 #   Human names present but NOT regex-redactable — intentional known limitation of v1
 # - FB-20: timestamp missing — edge case for ingest validation testing
+# - FB-26/FB-27: deliberate cross-account duplicates of FB-01's KI-1 issue, worded
+#   differently — added because the original 25 items had no unambiguous "should merge"
+#   case to validate clustering's positive-merge capability (see iteration log, 2026-06-16)
+# - FB-28/FB-29: deliberate cross-account duplicates of an RM-1 feature request, worded
+#   differently — second clustering positive-control scenario (feature_request, not bug)
 # - All timestamps UTC+0
 # - Synthetic data only
 
@@ -430,3 +437,74 @@
 
   Setup took maybe 15 minutes start to finish, including KYB. Way less painful than
   I expected based on horror stories from other fintech signups.
+
+---
+
+## FB-26
+- timestamp: 2026-06-13T08:30:00Z
+- channel: support ticket
+- contact_email: priya.nair@cascadefreight.com
+- account_id: ACC-4456 (Cascade Freight)
+- source_match: KI-1
+- raw_text: |
+  Ticket #60102 | Priority: High | Subject: Can't get our payroll batch to upload
+
+  Tried running our usual monthly contractor payments through the bulk upload today
+  (just over 540 lines) and it basically froze — spinning for ages, never told us if
+  it worked or not. Ended up chopping the file in half and resubmitting, which finally
+  went through but ate up a chunk of our afternoon. This needs to actually tell us
+  something when it breaks.
+
+  — Priya Nair, Finance Lead, Cascade Freight
+
+---
+
+## FB-27
+- timestamp: 2026-06-14T13:50:00Z
+- channel: email
+- contact_email: marcus.webb@orbitlogix.com
+- account_id: ACC-7733 (Orbit Logix)
+- source_match: KI-1
+- raw_text: |
+  Subject: Issue with large payment batch
+
+  Hello, I wanted to flag a problem we ran into this week. We attempted to process
+  a supplier payment run of roughly 700 line items through the platform, and the
+  request appeared to hang indefinitely — no success message, no failure message,
+  nothing. We had no way of knowing whether the payments had gone out. After waiting
+  nearly 20 minutes, we cancelled and resubmitted the list in two smaller groups,
+  which completed without trouble. I'd appreciate understanding whether there's a
+  row limit we should be aware of going forward.
+
+  Regards,
+  Marcus Webb, Orbit Logix
+
+---
+
+## FB-28
+- timestamp: 2026-06-15T09:10:00Z
+- channel: feature request form
+- contact_email: hq@ashgroveholdings.com
+- account_id: ACC-3201 (Ashgrove Holdings)
+- source_match: RM-1
+- raw_text: |
+  Feature request: support for multiple subsidiary entities under one parent account
+
+  We manage several subsidiaries and currently have to log into a separate Vela Pay
+  account for each one. It would help a lot if we could manage all of them under a
+  single login with consolidated reporting.
+
+---
+
+## FB-29
+- timestamp: 2026-06-16T13:50:00Z
+- channel: support ticket
+- contact_email: admin@solwaygroup.com
+- account_id: ACC-6688 (Solway Group)
+- source_match: RM-1
+- raw_text: |
+  Ticket #60340 | Priority: Low | Subject: One login for multiple business units?
+
+  Our finance team has to log into three different Vela Pay accounts to manage our
+  group's different legal entities, and there's no way to see a combined view across
+  them. Is a multi-entity setup something on the roadmap?

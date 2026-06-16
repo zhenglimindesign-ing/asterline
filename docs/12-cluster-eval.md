@@ -1,6 +1,6 @@
 # Stage 5 — Cluster Evaluation Report
 
-Run: cluster-v3 | Model: claude-haiku-4-5-20251001 | Generated: 2026-06-16T11:25:35.059234+00:00
+Run: cluster-v3 | Model: claude-haiku-4-5-20251001 | Generated: 2026-06-16T12:53:56.109421+00:00
 
 Dev-time validation against the golden set's cluster hypothesis only.
 This has no effect on runtime/production pipeline behavior — clustering
@@ -36,12 +36,16 @@ or HITL logic is added as a result of this comparison.
 | FB-23 | singleton-FB-23 | CLU-020 | exact match |
 | FB-24 | singleton-FB-24 | CLU-021 | exact match |
 | FB-25 | (excluded from golden set) | CLU-017 | not in golden set |
+| FB-26 | CLU-001 | CLU-001 | exact match |
+| FB-27 | CLU-001 | CLU-001 | exact match |
+| FB-28 | CLU-028-029 | CLU-022 | exact match |
+| FB-29 | CLU-028-029 | CLU-022 | exact match |
 
 ## Category counts
 
 | Category | Count |
 |---|---|
-| exact match | 13 |
+| exact match | 17 |
 | not in golden set | 5 |
 | split-when-hypothesis-merged | 4 |
 | merged-when-hypothesis-split | 3 |
@@ -51,6 +55,16 @@ or HITL logic is added as a result of this comparison.
 FB-06 actual cluster: CLU-006  |  FB-22 actual cluster: CLU-019
 
 **Result: SPLIT, as expected.** The clustering correctly distinguished the name-mismatch issue (FB-06) from the 2FA issue (FB-22) despite both being Engineering items from the same account.
+
+## Positive-merge checkpoint: FB-01/FB-26/FB-27 and FB-28/FB-29
+
+The original 25-item dataset had no unambiguous "should merge" case — every multi-member hypothesis tested whether clustering correctly avoided a false merge, never whether it could perform a true one. FB-26 to FB-29 were added specifically to close this gap (see data/03-golden-set-labeled.md, "Clustering positive-control items").
+
+**Result: PASS on both scenarios.**
+- FB-01 + FB-26 + FB-27 (three different accounts, same KI-1 batch-upload root cause, deliberately worded without reusing each other's phrasing) merged correctly into one cluster. `signal_strength` computed to `High` via the "≥2 items, different accounts" path — the first time this path has fired on real pipeline output rather than the isolated smoke test.
+- FB-28 + FB-29 (two different accounts, same RM-1 multi-entity feature request, different wording) merged correctly into one cluster, also `signal_strength=High` via the same path.
+
+Combined with the earlier isolated smoke test (pipeline/smoke_test_cluster.py), this closes the asymmetry flagged earlier in this stage: the mechanism is now validated on both failure directions — avoiding false merges (CLU-006-022) and performing true merges (this checkpoint) — on the real pipeline output, not just a hand-built isolated test.
 
 ## Note on "merged-when-hypothesis-split" (FB-17, FB-19, FB-20)
 
