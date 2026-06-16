@@ -12,6 +12,19 @@
 
 Date: 2026-06-16
 Chat: Vela Pay-2
+Run: Stage 5 — cluster-v3, intent_type-based merge threshold + scale guard rail
+
+Changes made (after open debate, not unilateral — see chat for full reasoning):
+- Merge threshold now varies by intent_type. actionable_bug/feature_request/complaint keep the strict "same underlying problem" standard (validated by CLU-006-022 and the smoke test). praise/noise now bulk-merge into one cluster per intent_type regardless of topic, because these types generate no tasks and carry no differentiated urgency — there is no cost to merging on intent_type alone, and the goal for these types is reading-volume reduction, not topic precision.
+- Conceded: the original "praise almost always singleton" rule (cluster-v1/v2) was wrong. It answered "how likely are two praises about the exact same thing" instead of "what does clustering cost/buy for this intent_type." The corrected reasoning is in docs/11-cluster-spec.md.
+- Added MAX_SINGLE_CALL_ITEMS=50 guard rail to pipeline/cluster.py — raises ClusteringScaleError above this threshold instead of silently degrading. Documented an explicit, falsifiable upgrade trigger (100+ item stress test, <90% known-duplicate recall) for when to build a two-stage candidate-generation architecture, mirroring the upgrade-trigger pattern already used for the no-vector-DB decision (project-context.md §1 Decision #10). Decided NOT to build that architecture now: it can't be validated without a large stress-test dataset that doesn't exist yet, would reopen a [LOCK] decision if built with embeddings, and the current modular structure (PII/classify/judgment-prompt/signal_strength all independent) makes it an additive change later, not a rewrite — deferring carries low technical debt.
+
+Result (cluster-v3, same 25 items): FB-17/18/19/25 (all praise) merged into one cluster; FB-20/21 (all noise) merged into one cluster. CLU-006-022 still splits correctly. FB-12/15 still splits correctly. FB-02/11 (excluded items) still separate under the strict standard — this was an open debate (both readings defensible) resolved in favor of NOT merging, since they require different fixes (fee disclosure vs. display bug).
+
+---
+
+Date: 2026-06-16
+Chat: Vela Pay-2
 Run: Stage 5 — eval gap identified and smoke-tested
 
 Gap identified: the 25-item dataset was authored to maximize novel/unique issues (60% novel, per the v0 dataset-restructure entry above), which means it contains zero unambiguous "different accounts, same root problem" pairs. CLU-006-022 and CLU-012-015 only test the FALSE-merge direction (should these split). Nothing in the dataset tests whether clustering can correctly MERGE when it should. Removing the praise-singleton special case (cluster-v2, see below) did not produce any new merges, which by itself is ambiguous: it could mean either (a) the rule was the only problem and removing it has no other effect, or (b) the mechanism is structurally biased toward singletons regardless of rules. Could not distinguish between these from the 25-item run alone.

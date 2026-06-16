@@ -21,7 +21,14 @@ Explicitly NOT sufficient on their own:
 
 A cluster is justified when items would be resolved by the *same fix* or answered by the *same reply* — i.e. an engineer or support agent reading both would say "this is one ticket, not two."
 
-`praise` and `noise` items are expected to form singleton clusters in almost all cases — there is rarely a second item describing "the same compliment" or "the same noise." The golden set's hypothesis table confirms this (FB-17, FB-19, FB-20 are all single-member).
+### Merge threshold varies by intent_type (revised after review, 2026-06-16)
+
+The cost of a wrong merge differs by intent_type, so the merge standard differs too:
+
+- **actionable_bug, feature_request, complaint** — these become differentiated tasks and replies. A wrong merge misroutes work or conflates unrelated fixes. Apply the "same underlying problem" rule strictly.
+- **praise, noise** — these generate no tasks (`tasks=[]`) and carry no differentiated urgency. There is nothing to misroute, so there is no cost to merging on intent_type alone rather than topic. All `praise` items merge into one cluster; all `noise` items merge into one cluster. The goal for these two types is reducing reading volume, not topic precision.
+
+Earlier draft of this spec said praise/noise "almost always form singletons" — that was wrong. The original reasoning (low probability of two items praising the exact same thing) answered the wrong question. The actual question is "what does clustering cost/buy for this intent_type," and for praise/noise the answer is: bulk merging loses nothing (no action depends on topic granularity) and gains reading-volume reduction, which is the stated purpose of clustering for these types.
 
 Every item must end up in exactly one cluster, including singletons — no item is dropped.
 
@@ -52,6 +59,21 @@ This is a fixed rule over cluster membership + account_ids + impact values from 
   ]
 }
 ```
+
+## Scale limit and upgrade trigger
+
+The single-call approach has only been exercised at 25-29 items. It has not been validated at the scale the product's input design implies (project-context.md §1 Decision #5: paste / CSV upload / built-in data pack — a real CSV upload could be hundreds of rows).
+
+A controlled smoke test (pipeline/smoke_test_cluster.py, 4 hand-built items, isolated from the real dataset) confirmed the mechanism CAN merge genuine cross-account duplicates and correctly avoids false merges. This rules out a structural defect in the judgment logic itself. What remains untested is whether that same judgment quality holds when many items are reasoned about in one call — the likely failure mode is degraded recall (missing true duplicates among many candidates), not a hard context-window limit (Haiku's context window comfortably fits hundreds of short feedback items; the risk is attention/reasoning quality over many simultaneous comparisons, which is an empirical question, not a token-counting one).
+
+**Decision: do not build a two-stage architecture (candidate blocking + judgment) now.** Reasons:
+- Cannot be validated without a large stress-test dataset that does not yet exist — building it now would trade one unverified assumption (single-call doesn't scale) for another (the blocking step works), without closing the loop.
+- A blocking step based on embeddings/vector similarity would reopen project-context.md §1 Decision #10 (`[LOCK]`: no vector DB in v1) — out of scope for this stage without explicit reconsideration of that lock.
+- The current architecture is already cleanly decomposed (PII redaction, classification, the judgment prompt, the deterministic signal_strength rule are all independent modules). Adding a candidate-generation step later is additive — insert one new function before the existing judgment call — not a rewrite. Deferring does not create meaningful technical debt.
+
+**Guard rail implemented instead** (`pipeline/cluster.py`, `MAX_SINGLE_CALL_ITEMS = 50`): if input exceeds this threshold, the pipeline raises `ClusteringScaleError` rather than silently producing degraded results. The threshold is a conservative placeholder, not calibrated.
+
+**Upgrade trigger** (mirrors the pattern already used in project-context.md §1 Decision #10 and the §6 stress-test arm): build and run a synthetic stress test with 100+ items containing a known number of true-positive duplicate pairs. If single-call clustering recovers fewer than 90% of those known pairs, build the two-stage architecture. Do not raise `MAX_SINGLE_CALL_ITEMS` without running this test first.
 
 ## Test checkpoints (compare against golden set hypothesis after running)
 

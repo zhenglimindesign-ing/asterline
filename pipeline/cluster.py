@@ -37,7 +37,7 @@ from pipeline.pii import redact
 load_dotenv()
 
 MODEL = "claude-haiku-4-5-20251001"
-PROMPT_VERSION = "cluster-v2"
+PROMPT_VERSION = "cluster-v3"
 
 REPO_ROOT = Path(__file__).parent.parent
 PROMPT_PATH = Path(__file__).parent / "prompts" / "cluster.txt"
@@ -160,6 +160,20 @@ def parse_golden_hypothesis(path: Path) -> dict[str, tuple[str, frozenset]]:
     return mapping
 
 
+MAX_SINGLE_CALL_ITEMS = 50
+# Conservative placeholder, not yet calibrated against a real stress test.
+# Upgrade trigger (documented in docs/11-cluster-spec.md): if a synthetic stress
+# test with 100+ items and a known number of true-positive duplicate pairs shows
+# this single-call approach recovering less than 90% of those pairs, switch to a
+# two-stage architecture (cheap candidate generation, then this same judgment
+# prompt applied only within candidate groups). Do not raise this threshold
+# without first running that stress test.
+
+
+class ClusteringScaleError(RuntimeError):
+    """Raised when item count exceeds what single-call clustering has been validated for."""
+
+
 def categorize(actual_members: frozenset, hypothesis_members: Optional[frozenset]) -> str:
     if hypothesis_members is None:
         return "not in golden set"
@@ -174,6 +188,13 @@ def categorize(actual_members: frozenset, hypothesis_members: Optional[frozenset
 
 def main() -> None:
     feedback = load_feedback(str(FEEDBACK_PATH))
+    if len(feedback) > MAX_SINGLE_CALL_ITEMS:
+        raise ClusteringScaleError(
+            f"{len(feedback)} items exceeds the single-call clustering limit "
+            f"({MAX_SINGLE_CALL_ITEMS}). This approach has not been validated past "
+            f"this size — see docs/11-cluster-spec.md for the upgrade trigger. "
+            f"Do not raise MAX_SINGLE_CALL_ITEMS without running that stress test first."
+        )
     feedback_by_id = {f["feedback_id"]: f for f in feedback}
     classified = load_classified(CLASSIFIED_PATH)
 

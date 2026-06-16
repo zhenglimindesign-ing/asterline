@@ -1,14 +1,14 @@
 {
   "model": "claude-haiku-4-5-20251001",
-  "prompt_version": "cluster-v2",
-  "timestamp": "2026-06-16T07:38:31.913315+00:00",
+  "prompt_version": "cluster-v3",
+  "timestamp": "2026-06-16T11:25:35.059234+00:00",
   "clusters": [
     {
       "cluster_id": "CLU-001",
       "cluster_members": [
         "FB-01"
       ],
-      "reason": "batch upload silently failing with no error message or confirmation; unique infrastructure issue",
+      "reason": "batch upload silently failing without error or confirmation; unique infrastructure issue distinct from other upload/payment problems",
       "signal_strength": "High"
     },
     {
@@ -16,7 +16,7 @@
       "cluster_members": [
         "FB-02"
       ],
-      "reason": "dashboard amount mismatch with actual debit; undisclosed fees or FX adjustment not shown before confirmation",
+      "reason": "dashboard payout amount does not match actual bank debit; isolated discrepancy issue",
       "signal_strength": "Medium"
     },
     {
@@ -24,7 +24,7 @@
       "cluster_members": [
         "FB-03"
       ],
-      "reason": "feature request for webhook/API notifications on payout status changes",
+      "reason": "webhook/API notifications for payout status changes; standalone feature request",
       "signal_strength": "Medium"
     },
     {
@@ -32,7 +32,7 @@
       "cluster_members": [
         "FB-04"
       ],
-      "reason": "mobile app automatically logs out user frequently, requiring repeated 2FA flow",
+      "reason": "mobile app session logout issue; distinct from FB-22's SMS 2FA delivery problem despite both being auth-related",
       "signal_strength": "Medium"
     },
     {
@@ -40,7 +40,7 @@
       "cluster_members": [
         "FB-05"
       ],
-      "reason": "payout not received after 6 days, exceeding stated 1-3 business day SLA; requires transaction investigation",
+      "reason": "payout funds not received after 6 days; specific transaction delivery delay investigation needed",
       "signal_strength": "High"
     },
     {
@@ -48,7 +48,7 @@
       "cluster_members": [
         "FB-06"
       ],
-      "reason": "recipient name displayed incorrectly on confirmation screen versus actual bank transfer, causing bank review delays",
+      "reason": "recipient name mismatch between confirmation screen and actual bank transfer; data consistency issue",
       "signal_strength": "High"
     },
     {
@@ -56,7 +56,7 @@
       "cluster_members": [
         "FB-07"
       ],
-      "reason": "feature request for recurring/scheduled payouts to eliminate manual monthly CSV uploads",
+      "reason": "recurring/scheduled payouts feature request; standalone capability gap",
       "signal_strength": "Medium"
     },
     {
@@ -64,7 +64,7 @@
       "cluster_members": [
         "FB-08"
       ],
-      "reason": "feature request for multi-level approval workflow on payouts above configurable threshold",
+      "reason": "approval workflow for large payouts; access control feature request from ACC-5519",
       "signal_strength": "Medium"
     },
     {
@@ -72,7 +72,7 @@
       "cluster_members": [
         "FB-09"
       ],
-      "reason": "feature request for memo/reference field on payouts to enable accounting system reconciliation",
+      "reason": "memo/reference field on payouts for accounting reconciliation; distinct from FB-08's approval workflow despite same account",
       "signal_strength": "Medium"
     },
     {
@@ -80,7 +80,7 @@
       "cluster_members": [
         "FB-10"
       ],
-      "reason": "support team replied in English to Spanish-language ticket despite customer preference; language mismatch in support process",
+      "reason": "support replied in English to Spanish-language ticket; multilingual support process issue",
       "signal_strength": "Medium"
     },
     {
@@ -88,7 +88,7 @@
       "cluster_members": [
         "FB-11"
       ],
-      "reason": "dashboard transaction display shows wrong currency label for card purchase, causing incorrect running total at a glance",
+      "reason": "card transaction shows wrong currency label in dashboard display; currency handling bug",
       "signal_strength": "Medium"
     },
     {
@@ -96,7 +96,7 @@
       "cluster_members": [
         "FB-12"
       ],
-      "reason": "dispute resolution exceeds stated 5 business day SLA after 12 days with no status update",
+      "reason": "dispute under review for 12+ days exceeding policy timeline; support process delay",
       "signal_strength": "Medium"
     },
     {
@@ -104,7 +104,7 @@
       "cluster_members": [
         "FB-13"
       ],
-      "reason": "feature request for extended transaction export beyond 90-day limit to support 12-month accounting periods",
+      "reason": "transaction history export limited to 90 days; standalone reporting functionality limitation",
       "signal_strength": "Medium"
     },
     {
@@ -112,7 +112,7 @@
       "cluster_members": [
         "FB-14"
       ],
-      "reason": "complaint that KYB requirement triggered at $1,000 threshold with no advance notice, leaving customer unable to prepare documents",
+      "reason": "surprised by KYB requirement without advance notice at volume threshold; compliance communication issue",
       "signal_strength": "High"
     },
     {
@@ -120,7 +120,7 @@
       "cluster_members": [
         "FB-15"
       ],
-      "reason": "onboarding email never received after signup, causing customer to discover account through login attempt",
+      "reason": "never received onboarding/welcome email after signup; account activation notification failure",
       "signal_strength": "Medium"
     },
     {
@@ -128,79 +128,51 @@
       "cluster_members": [
         "FB-16"
       ],
-      "reason": "urgent 2FA lockout on admin account prevents payroll processing with time-sensitive deadline",
+      "reason": "locked out of admin account due to lost 2FA phone; urgent account recovery process needed",
       "signal_strength": "High"
     },
     {
       "cluster_id": "CLU-017",
       "cluster_members": [
-        "FB-17"
+        "FB-17",
+        "FB-18",
+        "FB-19",
+        "FB-25"
       ],
-      "reason": "praise for clean, uncluttered dashboard design",
-      "signal_strength": "Low"
+      "reason": "all praise items grouped together to reduce reading volume regardless of specific topics",
+      "signal_strength": "High"
     },
     {
       "cluster_id": "CLU-018",
       "cluster_members": [
-        "FB-18"
+        "FB-20",
+        "FB-21"
       ],
-      "reason": "praise for responsive support chat with quick resolution",
-      "signal_strength": "Low"
+      "reason": "all noise items grouped together to reduce reading volume regardless of specific content",
+      "signal_strength": "Medium"
     },
     {
       "cluster_id": "CLU-019",
       "cluster_members": [
-        "FB-19"
+        "FB-22"
       ],
-      "reason": "praise for fast KYB approval speed compared to competitors",
-      "signal_strength": "Low"
+      "reason": "2FA SMS codes not arriving for specific mobile carrier users; distinct from FB-04's app logout and FB-16's account recovery",
+      "signal_strength": "High"
     },
     {
       "cluster_id": "CLU-020",
       "cluster_members": [
-        "FB-20"
+        "FB-23"
       ],
-      "reason": "noise; general product inquiry with no specific issue",
-      "signal_strength": "Low"
+      "reason": "currency conversion spread changed after confirmation; post-confirmation rate change bug",
+      "signal_strength": "Medium"
     },
     {
       "cluster_id": "CLU-021",
       "cluster_members": [
-        "FB-21"
-      ],
-      "reason": "noise; vague complaint about app performance with no actionable details",
-      "signal_strength": "Low"
-    },
-    {
-      "cluster_id": "CLU-022",
-      "cluster_members": [
-        "FB-22"
-      ],
-      "reason": "2FA codes not arriving via SMS for specific mobile carrier; authentication system issue",
-      "signal_strength": "High"
-    },
-    {
-      "cluster_id": "CLU-023",
-      "cluster_members": [
-        "FB-23"
-      ],
-      "reason": "currency conversion spread changes after confirmation, displaying different rate in transaction details than confirmed",
-      "signal_strength": "Medium"
-    },
-    {
-      "cluster_id": "CLU-024",
-      "cluster_members": [
         "FB-24"
       ],
-      "reason": "feature request for dark mode in dashboard",
-      "signal_strength": "Low"
-    },
-    {
-      "cluster_id": "CLU-025",
-      "cluster_members": [
-        "FB-25"
-      ],
-      "reason": "praise for smooth and quick onboarding experience including KYB",
+      "reason": "dark mode feature request for dashboard; standalone UI preference feature",
       "signal_strength": "Low"
     }
   ]

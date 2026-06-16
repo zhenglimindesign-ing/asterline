@@ -1,6 +1,6 @@
 # Stage 5 — Cluster Evaluation Report
 
-Run: cluster-v2 | Model: claude-haiku-4-5-20251001 | Generated: 2026-06-16T07:38:31.913315+00:00
+Run: cluster-v3 | Model: claude-haiku-4-5-20251001 | Generated: 2026-06-16T11:25:35.059234+00:00
 
 Dev-time validation against the golden set's cluster hypothesis only.
 This has no effect on runtime/production pipeline behavior — clustering
@@ -27,26 +27,33 @@ or HITL logic is added as a result of this comparison.
 | FB-14 | CLU-014 | CLU-014 | exact match |
 | FB-15 | CLU-012-015 | CLU-015 | split-when-hypothesis-merged |
 | FB-16 | CLU-016 | CLU-016 | exact match |
-| FB-17 | singleton-FB-17 | CLU-017 | exact match |
-| FB-18 | (excluded from golden set) | CLU-018 | not in golden set |
-| FB-19 | singleton-FB-19 | CLU-019 | exact match |
-| FB-20 | singleton-FB-20 | CLU-020 | exact match |
-| FB-21 | (excluded from golden set) | CLU-021 | not in golden set |
-| FB-22 | CLU-006-022 | CLU-022 | split-when-hypothesis-merged |
-| FB-23 | singleton-FB-23 | CLU-023 | exact match |
-| FB-24 | singleton-FB-24 | CLU-024 | exact match |
-| FB-25 | (excluded from golden set) | CLU-025 | not in golden set |
+| FB-17 | singleton-FB-17 | CLU-017 | merged-when-hypothesis-split |
+| FB-18 | (excluded from golden set) | CLU-017 | not in golden set |
+| FB-19 | singleton-FB-19 | CLU-017 | merged-when-hypothesis-split |
+| FB-20 | singleton-FB-20 | CLU-018 | merged-when-hypothesis-split |
+| FB-21 | (excluded from golden set) | CLU-018 | not in golden set |
+| FB-22 | CLU-006-022 | CLU-019 | split-when-hypothesis-merged |
+| FB-23 | singleton-FB-23 | CLU-020 | exact match |
+| FB-24 | singleton-FB-24 | CLU-021 | exact match |
+| FB-25 | (excluded from golden set) | CLU-017 | not in golden set |
 
 ## Category counts
 
 | Category | Count |
 |---|---|
-| exact match | 16 |
+| exact match | 13 |
 | not in golden set | 5 |
 | split-when-hypothesis-merged | 4 |
+| merged-when-hypothesis-split | 3 |
 
 ## Key checkpoint: CLU-006-022 (FB-06, FB-22)
 
-FB-06 actual cluster: CLU-006  |  FB-22 actual cluster: CLU-022
+FB-06 actual cluster: CLU-006  |  FB-22 actual cluster: CLU-019
 
 **Result: SPLIT, as expected.** The clustering correctly distinguished the name-mismatch issue (FB-06) from the 2FA issue (FB-22) despite both being Engineering items from the same account.
+
+## Note on "merged-when-hypothesis-split" (FB-17, FB-19, FB-20)
+
+These three are NOT a regression. The golden set hypothesis predates the intent_type-based merge threshold decided in this chat (docs/11-cluster-spec.md, "Merge threshold varies by intent_type"): praise items (FB-17, FB-18, FB-19, FB-25) now merge into one cluster (CLU-017) and noise items (FB-20, FB-21) merge into one cluster (CLU-018), regardless of specific topic, because these intent_types carry no differentiated action and the goal is reading-volume reduction, not topic precision. The golden hypothesis table was written before this rule existed and still reflects the old singleton-per-praise assumption — it has not been updated to match, since it documents what was decided at the time, not a moving target.
+
+FB-12/FB-15 (split-when-hypothesis-merged) and FB-02/FB-11 (excluded items, never merged) are unchanged from the prior run — both remain correctly split under the strict bug/feature/complaint standard.
