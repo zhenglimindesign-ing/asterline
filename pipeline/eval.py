@@ -30,7 +30,7 @@ INTENT_LABELS = ["actionable_bug", "feature_request", "complaint", "praise", "no
 REPO_ROOT = Path(__file__).parent.parent
 FEEDBACK_PATH = REPO_ROOT / "data" / "02-synthetic-feedback-25.md"
 GOLDEN_PATH = REPO_ROOT / "data" / "03-golden-set-labeled.md"
-RESULTS_PATH = REPO_ROOT / "docs" / "eval-results-v2.json"
+RESULTS_PATH = REPO_ROOT / "docs" / "eval-results-v4.json"
 
 
 def load_golden_set(path: Path) -> dict[str, dict]:
@@ -181,7 +181,7 @@ def main() -> None:
     disagreements.sort(key=lambda x: x["diff_count"], reverse=True)
 
     output = {
-        "run_id": "v2",
+        "run_id": "v4",
         "model": MODEL,
         "prompt_version": PROMPT_VERSION,
         "timestamp": datetime.now(timezone.utc).isoformat(),

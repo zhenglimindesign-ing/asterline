@@ -63,6 +63,18 @@ Your confidence in the above classifications. Use Low when the feedback is ambig
 
 5. Impact calibration: Before assigning impact, ask — can the user still send payments, receive payments, access their funds, and reconcile accounts without this being fixed or added? If YES → impact is Low or Medium at most. If NO → impact may be High.
 
+6. Impact calibration examples:
+   - 'We need API/webhook notifications for payout status updates' →
+     impact=Medium. Core payments work, but manual status-checking at B2B
+     operational scale creates significant repeated work.
+   - 'It would be nice to have dark mode' →
+     impact=Low. Minor convenience, zero friction to payment operations.
+   - 'Our account is locked and we cannot send any payments' →
+     impact=High. Core payment flow completely blocked.
+   When in doubt between Low and Medium for a feature request: ask whether
+   a B2B finance team would need to do significant repeated manual work every
+   week because this feature is missing. If yes → Medium.
+
 ## Feedback to classify
 
 {raw_text}
