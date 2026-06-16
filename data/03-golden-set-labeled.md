@@ -112,7 +112,7 @@ Not part of the formal 20-item golden set above (no intent/dimension/impact/urge
 
 3. **CLU-006-022 cluster boundary**: FB-06 (name mismatch) and FB-22 (2FA SMS failure) are both Engineering from ACC-1042, but are distinct issues. Pipeline clustering behavior here is a test case — expected to split them.
 
-4. **CLU-001 signal-strength**: Signal-strength=High justified by KI-1 context (documented recurring issue), not by in-dataset count (only 1 member). This creates an open design question: should signal-strength scoring be allowed to reference external context docs, or only in-dataset evidence?
+4. **CLU-001 signal-strength** *(superseded 2026-06-16)*: Originally signal-strength=High was justified by KI-1 context (documented recurring issue), not by in-dataset count (only 1 member: FB-01). This raised an open design question — should signal-strength reference external context docs, or only in-dataset evidence? Moot for this specific cluster now that FB-26/FB-27 were added as genuine cross-account duplicates of FB-01 (see "Clustering positive-control items" below) — CLU-001 now reaches High via the in-dataset "≥2 items, different accounts" path, no external-evidence reasoning required. The general design question remains open in principle for any future single-member cluster with documented external recurrence, but is no longer live for CLU-001.
 
 5. **Classification-stage ceiling (confirmed after 4 prompt iterations, v0->v4)**: Three items remain unresolved at the classification stage, for two distinct reasons.
 
@@ -124,3 +124,5 @@ Not part of the formal 20-item golden set above (no intent/dimension/impact/urge
    - FB-23: dimension is unstable across prompt versions, alternating between Finance & Reporting and Engineering (FX spread discrepancy touches both domains). Impact/urgency tension for this item is already documented in note #1 above.
 
    Decision: stop prompt iteration on these three items. Final classification-stage scores: intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65%.
+
+6. **FB-02/FB-11 — related theme, deliberately not merged**: Both are dashboard amount/currency display issues (FB-02: undisclosed FX spread in payout total; FB-11: card transaction currency mislabeled). A genuine gray area — defensible either way. Decided NOT to merge: they require different fixes (a disclosure feature vs. a display bug), and the project's clustering rule is "would the same fix resolve both," not "do these share a surface theme." Recorded as a judgment call, not a pipeline error — if a future iteration merges them, that is not automatically a regression to fix.

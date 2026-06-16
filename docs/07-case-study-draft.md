@@ -1,7 +1,9 @@
 # Asterline — Case Study Draft
-# Status: Sections 1–3 and 6 drafted; Sections 4–5 intentionally left blank.
-# Sections 4–5 (Iteration Log / Results) require pipeline output data from the
-# Claude Code phase — they will be filled after eval execution.
+# Status: Sections 1-6 drafted through Stage 5 (classification + clustering).
+# Section 4-5 filled 2026-06-16 from pipeline output (docs/06-iteration-log.md,
+# eval-results-v0..v4.json, docs/12-cluster-eval.md). Will need another pass
+# after Stage 6 (work-pack generation) to add that stage's iteration/results.
+# Section 7 (Appendix) still pending — needs deploy links, not yet available.
 # Language: English (all deliverables per §14)
 
 ---
@@ -108,18 +110,75 @@ Hard-fail items (block export): R-04, R-13, R-14, R-15, R-17. All others add qua
 
 ---
 
-## 4. Iteration Log *(to be filled during Claude Code eval phase)*
+## 4. Iteration Log
 
-> This section will document 2–4 before/after examples showing how pipeline output quality changed across prompt versions.
-> Each entry: what the output looked like before → which rubric item failed → what changed (prompt? taxonomy? pipeline step?) → what the output looks like after.
-> Source: eval run logs from Claude Code phase.
+Full entry-by-entry log: `docs/06-iteration-log.md`. Four examples below, chosen to show different kinds of iteration — a clean prompt fix, a failed attempt that was reverted, a corrected design assumption, and an eval-design gap that required new data rather than a new prompt.
+
+### 4.1 Classification: noise misclassification (v0 → v1)
+
+**Before:** FB-20 ("does this support apple pay? just curious, not urgent") was classified as `feature_request`. Golden label: `noise`. The v0 prompt's noise definition didn't cover general yes/no product-capability questions with no stated use case.
+
+**What changed:** Added an explicit clause to the `noise` definition: "a general yes/no inquiry about a product capability... with no stated use case or context." Prompt only — no taxonomy or pipeline change.
+
+**After:** FB-20 correctly classified as `noise`. Side effect: dimension accuracy also improved (+10%) because several other intent corrections cascaded into correct dimension labels.
+
+### 4.2 Classification: a fix that made things worse, and was reverted (v2 → v3 attempt)
+
+**Before:** impact accuracy was 70% after v2. Three feature-request items (FB-03, FB-07, FB-13) were under-scored as `Low` when golden set said `Medium`.
+
+**What changed:** Replaced the impact-calibration rule with a 3-tier decision tree (blocked=High / friction-at-scale=Medium / minor=Low).
+
+**After:** impact accuracy dropped to 60% (−10%) and overall accuracy dropped to 50% (−5%). The "friction at scale" tier was too broad — it pulled correctly-labeled `Low` items up to `Medium`, including two that had been correct in v2. **Reverted.** Replaced instead with few-shot examples illustrating the Low/Medium boundary, which raised impact to 75% without the regression. The failed attempt's eval output was kept (`docs/eval-results-v3-reverted.json`) rather than deleted, specifically so this example could be written up.
+
+### 4.3 Clustering: a design assumption that didn't survive scrutiny (cluster-v1/v2 → v3)
+
+**Before:** the clustering prompt told the model that praise and noise items "almost always form singleton clusters," reasoning that two items praising the exact same thing is statistically unlikely in a small sample. Result: zero merges occurred anywhere in the dataset, including two praise items (FB-19, FB-25) that both specifically praised fast KYB/onboarding.
+
+**What changed:** the underlying reasoning was challenged directly — clustering's purpose for praise/noise isn't "deduplicate specific complaints," it's "reduce reading volume," because these intent types generate no differentiated tasks. The rule was rewritten: actionable types (bug/feature/complaint) keep a strict same-problem standard; praise and noise bulk-merge into one cluster each, regardless of topic, because there is no cost to a coarse merge when nothing downstream depends on topic precision.
+
+**After:** all praise items merged into one cluster, all noise items merged into one cluster, while the adversarial test case (CLU-006-022 — two different Engineering bugs from the same account) still correctly split. The original assumption wasn't a coding bug; it answered the wrong question.
+
+### 4.4 Eval design itself had a gap: the dataset couldn't test merging
+
+**Before:** clustering had been validated only on its ability to avoid false merges (CLU-006-022). Nothing in the 25-item dataset was an unambiguous "these should merge" case — every multi-member hypothesis was a should-this-split test. Removing the praise/noise special case (4.3) produced zero new merges, which was ambiguous evidence: either the rule fix had no other effect, or the merging mechanism itself was structurally biased toward singletons.
+
+**What changed:** built an isolated smoke test (`pipeline/smoke_test_cluster.py`) with 4 hand-built items never added to any committed dataset — confirmed the mechanism could merge genuine duplicates in isolation. Then added two real positive-control pairs to the dataset itself: FB-26/FB-27 (a third and second report of FB-01's known batch-upload issue, deliberately worded without reusing FB-01's phrasing) and FB-28/FB-29 (a feature-request duplicate, different scenario type). This was a data change, not a prompt change — the gap was in what the eval could test, not in pipeline behavior.
+
+**After:** FB-01 + FB-26 + FB-27 merged into one cluster on the real 29-item pipeline run (not just the isolated test), with `signal_strength` correctly computed as `High` via the "≥2 items, different accounts" path — the first time that code path fired on real data rather than a hand-built test. FB-28/FB-29 merged correctly as a second, independent scenario.
 
 ---
 
-## 5. Results *(to be filled after eval execution)*
+## 5. Results
 
-> Eval scores (per rubric item, per golden set item, per prompt version) across iterations.
-> Minimum viable evidence: a table showing rubric pass rates across 2–3 prompt versions.
+### 5.1 Classification (Layer 1) — scored against the 20-item golden set
+
+| Metric | v0 | v1 | v2 | v3 (reverted) | v4 (final) |
+|---|---|---|---|---|---|
+| intent_type | 85% | 90% | 90% | 90% | 90% |
+| dimension | 80% | 90% | 95% | 90% | 90% |
+| impact | 65% | 70% | 70% | 60% | 75% |
+| urgency | 60% | 70% | 85% | 85% | 85% |
+| overall (all 4 correct) | 40% | 45% | 55% | 50% | 65% |
+
+v3 is included specifically because it failed — overall accuracy dropped relative to v2, and the attempt was reverted. Full reasoning in 4.2 above and `docs/06-iteration-log.md`.
+
+**Remaining ceiling (not pursued further — see data/03-golden-set-labeled.md note #5):**
+- FB-01: an architectural limit, not a prompt limit — the fact that the issue has a workaround lives in a context document (KI-1), invisible to a classification stage with no RAG access.
+- FB-10, FB-23: boundary-ambiguity items, inherent to the data, not a missing rule.
+
+### 5.2 Clustering (Stage 5) — compared against a golden-set hypothesis, not scored as accuracy
+
+Clustering has no equivalent "ground truth accuracy" metric — the golden set's cluster groupings are hypotheses to be confirmed or revised by pipeline behavior, not fixed labels (see `data/03-golden-set-labeled.md` header). Validation instead targeted specific checkpoints:
+
+| Checkpoint | Purpose | Result |
+|---|---|---|
+| CLU-006-022 (FB-06, FB-22) | Avoid a false merge: same account, same dimension, different problems | PASS — split correctly |
+| Smoke test (4 isolated items) | Confirm the mechanism can merge at all | PASS — merged a genuine duplicate, kept controls separate |
+| FB-01 + FB-26 + FB-27 (real data) | Confirm true-merge on real pipeline output, not just an isolated test | PASS — merged; signal_strength=High via the cross-account path |
+| FB-28 + FB-29 (real data, second scenario) | Confirm merge capability generalizes beyond one bug type | PASS — merged; signal_strength=High |
+| Praise/noise bulk-merge (FB-17/18/19/25, FB-20/21) | Confirm the corrected intent_type-based merge threshold (4.3) | PASS — both groups merged into single clusters |
+
+Full comparison table (all 29 items vs. golden-set hypothesis): `docs/12-cluster-eval.md`.
 
 ---
 
@@ -131,7 +190,9 @@ Hard-fail items (block export): R-04, R-13, R-14, R-15, R-17. All others add qua
 
 **Context document scale.** RAG is implemented as direct prompt stuffing (4 documents, ~4,000 tokens). This works for demo purposes but doesn't scale. Upgrade trigger: >4 context documents or >8,000 tokens of context → switch to vector retrieval with citation.
 
-**Signal-strength uses in-dataset evidence only.** For CLU-001 (FB-01, CSV upload failure), signal-strength was labeled High based on the KI-1 known issues entry documenting recurrence — not because multiple feedback items appear in the dataset. This creates a design question: should signal-strength be allowed to reference context doc evidence, or only in-dataset item count? v1 leaves this ambiguous; v2 should define it explicitly.
+**Clustering scale.** Single-call clustering (all items reasoned about in one model call, no embeddings/blocking step) is validated only up to 29 items. A guard rail (`MAX_SINGLE_CALL_ITEMS=50`) fails loudly rather than silently degrading past that. Upgrade trigger, not yet exercised: a 100+ item stress test showing under 90% recall on known duplicate pairs. Deliberately not built now — would require a stress-test dataset that doesn't exist yet, and would reopen the no-vector-DB v1 lock if built with embeddings. Full reasoning in `docs/11-cluster-spec.md`.
+
+**Signal-strength's original ambiguity is resolved for the one case that raised it, not in general.** CLU-001 (FB-01) originally justified High signal-strength using KI-1's documented recurrence rather than in-dataset item count — an open question about whether external context-doc evidence should count. Resolved in practice by adding real duplicate items (FB-26/FB-27) rather than by deciding the general question; the general question remains open for any future single-member cluster with only external evidence.
 
 **No live integrations (v1).** Export is Markdown + JSON with Jira/Linear-shaped fields. No live API push to any issue tracker. v2 path: optional webhook or direct integration, with user-provided credentials.
 
