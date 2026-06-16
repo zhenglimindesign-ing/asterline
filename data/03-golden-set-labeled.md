@@ -89,7 +89,7 @@ The corresponding field name in the work pack schema (04-taxonomy-and-schema.md)
 | CLU-006-022 | FB-06, FB-22 | High | Two items; different issues (name mismatch vs 2FA) but both Engineering, same account (ACC-1042) — may split into two clusters after pipeline run |
 | CLU-007 | FB-07 | Medium | Single item, Medium impact |
 | CLU-008 | FB-08 | Medium | Single item, Medium impact |
-| CLU-012-015 | FB-12, FB-15 | Medium | Two items; same account (ACC-7102); different sub-issues |
+| CLU-012-015 | FB-12, FB-15 | Medium | Two items; different accounts (FB-12: ACC-7102, FB-15: ACC-8847); same dimension (Support Process); different sub-issues |
 | CLU-014 | FB-14 | High | Single item; High impact (payouts on hold) |
 | CLU-016 | FB-16 | High | Single item; High impact + High urgency |
 | All others | FB-02,03,09,10,13,17,19,20,23,24 | See individual labels | No clustering evident; single-member clusters |
