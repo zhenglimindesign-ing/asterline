@@ -1,0 +1,207 @@
+{
+  "model": "claude-haiku-4-5-20251001",
+  "prompt_version": "cluster-v1",
+  "timestamp": "2026-06-16T07:20:07.793058+00:00",
+  "clusters": [
+    {
+      "cluster_id": "CLU-001",
+      "cluster_members": [
+        "FB-01"
+      ],
+      "reason": "Single item describing batch CSV upload silently failing with no error messaging or confirmation.",
+      "signal_strength": "High"
+    },
+    {
+      "cluster_id": "CLU-002",
+      "cluster_members": [
+        "FB-02"
+      ],
+      "reason": "Single item describing undisclosed FX or fee charges appearing on bank statement but not shown pre-confirmation on dashboard.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-003",
+      "cluster_members": [
+        "FB-03"
+      ],
+      "reason": "Single item requesting webhook/API notifications for payout status updates.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-004",
+      "cluster_members": [
+        "FB-04"
+      ],
+      "reason": "Single item describing mobile app logging users out frequently, forcing repeated 2FA re-entry.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-005",
+      "cluster_members": [
+        "FB-05"
+      ],
+      "reason": "Single item reporting payout not received after 6 days, exceeding stated 1-3 business day SLA.",
+      "signal_strength": "High"
+    },
+    {
+      "cluster_id": "CLU-006",
+      "cluster_members": [
+        "FB-06"
+      ],
+      "reason": "Single item describing recipient name mismatch between confirmation screen and actual bank record, causing bank delays.",
+      "signal_strength": "High"
+    },
+    {
+      "cluster_id": "CLU-007",
+      "cluster_members": [
+        "FB-07"
+      ],
+      "reason": "Single item requesting recurring/scheduled payout functionality to eliminate manual monthly re-uploads.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-008",
+      "cluster_members": [
+        "FB-08"
+      ],
+      "reason": "Single item requesting approval workflow feature for payouts above configurable threshold.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-009",
+      "cluster_members": [
+        "FB-09"
+      ],
+      "reason": "Single item requesting memo/reference field on payouts for accounting system reconciliation.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-010",
+      "cluster_members": [
+        "FB-10"
+      ],
+      "reason": "Single item complaining about support responding in English to Spanish-language tickets.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-011",
+      "cluster_members": [
+        "FB-11"
+      ],
+      "reason": "Single item describing card transaction displaying wrong currency in dashboard with unconverted amounts.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-012",
+      "cluster_members": [
+        "FB-12"
+      ],
+      "reason": "Single item reporting dispute stuck in review status for 12 days, exceeding stated 5 business day SLA.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-013",
+      "cluster_members": [
+        "FB-13"
+      ],
+      "reason": "Single item requesting extended transaction history export beyond 90-day limitation for year-end accounting.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-014",
+      "cluster_members": [
+        "FB-14"
+      ],
+      "reason": "Single item complaining about sudden unexpected KYB requirement without advance notice, causing payout hold.",
+      "signal_strength": "High"
+    },
+    {
+      "cluster_id": "CLU-015",
+      "cluster_members": [
+        "FB-15"
+      ],
+      "reason": "Single item reporting missing onboarding/welcome email after signup.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-016",
+      "cluster_members": [
+        "FB-16"
+      ],
+      "reason": "Single item describing account lockout due to lost 2FA phone, blocking payroll processing.",
+      "signal_strength": "High"
+    },
+    {
+      "cluster_id": "CLU-017",
+      "cluster_members": [
+        "FB-17"
+      ],
+      "reason": "Praise item; standalone compliment about dashboard cleanliness and UX.",
+      "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-018",
+      "cluster_members": [
+        "FB-18"
+      ],
+      "reason": "Praise item; standalone compliment about fast, effective support response.",
+      "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-019",
+      "cluster_members": [
+        "FB-19"
+      ],
+      "reason": "Praise item; standalone compliment about fast KYB approval process.",
+      "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-020",
+      "cluster_members": [
+        "FB-20"
+      ],
+      "reason": "Noise item; low-signal question about Apple Pay support.",
+      "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-021",
+      "cluster_members": [
+        "FB-21"
+      ],
+      "reason": "Noise item; vague complaint without actionable details.",
+      "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-022",
+      "cluster_members": [
+        "FB-22"
+      ],
+      "reason": "Single item reporting 2FA SMS codes not arriving for specific users on same carrier.",
+      "signal_strength": "High"
+    },
+    {
+      "cluster_id": "CLU-023",
+      "cluster_members": [
+        "FB-23"
+      ],
+      "reason": "Single item reporting currency conversion spread changing after confirmation, displaying higher rate than confirmed.",
+      "signal_strength": "Medium"
+    },
+    {
+      "cluster_id": "CLU-024",
+      "cluster_members": [
+        "FB-24"
+      ],
+      "reason": "Feature request; standalone request for dark mode dashboard option.",
+      "signal_strength": "Low"
+    },
+    {
+      "cluster_id": "CLU-025",
+      "cluster_members": [
+        "FB-25"
+      ],
+      "reason": "Praise item; standalone compliment about smooth onboarding experience.",
+      "signal_strength": "Low"
+    }
+  ]
+}

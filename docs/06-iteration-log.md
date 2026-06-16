@@ -10,6 +10,29 @@
 
 ---
 
+Date: 2026-06-16
+Chat: Vela Pay-2
+Run: Stage 5 — clustering (cluster-v1), all 25 items
+
+Approach: single LLM call over all 25 classified items (not pairwise, not embeddings — see docs/11-cluster-spec.md for rationale). signal_strength computed deterministically in Python per Axis 4 (eval/04-taxonomy-and-schema.md), not by the model.
+
+Result: 25 clusters returned, all singletons. Compared against golden set hypothesis (docs/12-cluster-eval.md):
+  exact match: 16
+  not in golden set (5 items excluded from golden labeling): 5
+  split-when-hypothesis-merged: 4 (FB-06/FB-22 and FB-12/FB-15)
+
+Key checkpoint — CLU-006-022 (FB-06 name-mismatch vs FB-22 2FA-SMS, same account, both Engineering): SPLIT, as designed test expected. Confirms the clustering rule (same problem, not same account/dimension) holds on the adversarial case it was built to catch.
+
+Also split: FB-12/FB-15, the golden set's other hypothesized merge. On inspection this looks like a correct split, not a miss — the items are a dispute-review delay and a missing onboarding email, sharing only dimension=Support Process. The golden set's own note already says "different sub-issues," and this hypothesis pairing's stated rationale (same account) was already corrected as a documentation error earlier in this chat (see fix: correct golden set CLU-012-015 account note).
+
+Open question flagged, not yet resolved: zero merges occurred across all 25 items. Three pairs share a stated theme per the golden set's exclusion notes (FB-04/FB-22 login friction, FB-11/FB-02 dashboard currency display, FB-19/FB-25 fast-onboarding praise) but were not tested by a forced merge/split decision — the model never considered merging them, it produced singletons by default. FB-11/FB-02 in particular may describe the same underlying dashboard display defect from two angles and is worth a manual look. Documented in docs/12-cluster-eval.md ("Observation: all 25 clusters are singletons") rather than treated as resolved.
+
+Bug fixed during this run: golden hypothesis table parser mis-split the "All others" row's shorthand member list (e.g. "FB-02,03,09" parsed "03" as its own id instead of "FB-03"), causing 9 items to show as "excluded from golden set" when they were actually golden-set singletons. Fixed in pipeline/cluster.py parse_golden_hypothesis().
+
+Files: pipeline/prompts/cluster.txt, pipeline/cluster.py, pipeline/output/clusters-v1.json, docs/11-cluster-spec.md, docs/12-cluster-eval.md
+
+---
+
 Date: 2026-06-15
 Chat: Vela Pay-2
 Run: v3 → v4 (classify.txt v4 → v5, accepted)

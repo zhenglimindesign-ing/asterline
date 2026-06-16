@@ -1,0 +1,383 @@
+{
+  "model": "claude-haiku-4-5-20251001",
+  "prompt_version": "classify-v5",
+  "timestamp": "2026-06-16T06:33:32.636433+00:00",
+  "item_count": 25,
+  "results": [
+    {
+      "feedback_id": "FB-01",
+      "timestamp": "2026-05-15T09:14:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-1042 (Acme Logistics)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-02",
+      "timestamp": "2026-05-17T11:32:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-9921 (Vantage Trading)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-03",
+      "timestamp": "2026-05-18T14:05:00Z",
+      "channel": "feature request form",
+      "account_id": "ACC-3387 (Brightline Media)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-04",
+      "timestamp": "2026-05-20T08:47:00Z",
+      "channel": "app review",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-05",
+      "timestamp": "2026-05-22T10:18:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-2210 (Meridian Consulting)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Support Process",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-06",
+      "timestamp": "2026-05-24T16:30:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-7102 (Fieldwork Agency)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-07",
+      "timestamp": "2026-05-26T09:00:00Z",
+      "channel": "feature request form",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-08",
+      "timestamp": "2026-05-27T13:22:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-5519 (Northwind Operations)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Product/Roadmap",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-09",
+      "timestamp": "2026-05-26T15:44:00Z",
+      "channel": "feature request form",
+      "account_id": "ACC-5519 (Northwind Operations)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-10",
+      "timestamp": "2026-05-29T10:05:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-6034 (Del Sol Exports)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-11",
+      "timestamp": "2026-05-30T09:17:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-1187 (Harbor Goods)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-12",
+      "timestamp": "2026-06-01T11:45:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-7102 (Fieldwork Agency)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "complaint",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-13",
+      "timestamp": "2026-06-01T14:22:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-2210 (Meridian Consulting)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "Finance & Reporting",
+        "impact": "Medium",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-14",
+      "timestamp": "2026-06-02T08:55:00Z",
+      "channel": "email",
+      "account_id": "ACC-8847 (Little Bay Goods)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "complaint",
+        "dimension": "Compliance",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-15",
+      "timestamp": "2026-06-02T10:12:00Z",
+      "channel": "email",
+      "account_id": "ACC-8847 (Little Bay Goods)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Support Process",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-16",
+      "timestamp": "2026-06-03T07:48:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-5519 (Northwind Operations)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Support Process",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-17",
+      "timestamp": "2026-06-03T19:34:00Z",
+      "channel": "app review",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "praise",
+        "dimension": "UX",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-18",
+      "timestamp": "2026-06-04T09:00:00Z",
+      "channel": "survey response",
+      "account_id": "ACC-1187 (Harbor Goods)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "praise",
+        "dimension": "Support Process",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-19",
+      "timestamp": "2026-06-04T11:15:00Z",
+      "channel": "survey response",
+      "account_id": "ACC-9921 (Vantage Trading)",
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "praise",
+        "dimension": "Other/Uncategorized",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-20",
+      "timestamp": null,
+      "channel": "support ticket",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "noise",
+        "dimension": "Other/Uncategorized",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-21",
+      "timestamp": "2026-06-06T14:03:00Z",
+      "channel": "app review",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "noise",
+        "dimension": "Other/Uncategorized",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-22",
+      "timestamp": "2026-06-08T08:59:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-1042 (Acme Logistics)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "High",
+        "urgency": "High",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-23",
+      "timestamp": "2026-06-09T13:44:00Z",
+      "channel": "support ticket",
+      "account_id": "ACC-6034 (Del Sol Exports)",
+      "pii_detected": true,
+      "classification": {
+        "intent_type": "actionable_bug",
+        "dimension": "Engineering",
+        "impact": "Medium",
+        "urgency": "Medium",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-24",
+      "timestamp": "2026-06-10T10:30:00Z",
+      "channel": "feature request form",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "feature_request",
+        "dimension": "UX",
+        "impact": "Low",
+        "urgency": "Low",
+        "confidence": "High"
+      },
+      "error": null
+    },
+    {
+      "feedback_id": "FB-25",
+      "timestamp": "2026-06-12T16:22:00Z",
+      "channel": "app review",
+      "account_id": null,
+      "pii_detected": false,
+      "classification": {
+        "intent_type": "praise",
+        "dimension": "Other/Uncategorized",
+        "impact": "N/A",
+        "urgency": "N/A",
+        "confidence": "High"
+      },
+      "error": null
+    }
+  ]
+}
