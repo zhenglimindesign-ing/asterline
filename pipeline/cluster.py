@@ -37,7 +37,7 @@ from pipeline.pii import redact
 load_dotenv()
 
 MODEL = "claude-haiku-4-5-20251001"
-PROMPT_VERSION = "cluster-v1"
+PROMPT_VERSION = "cluster-v2"
 
 REPO_ROOT = Path(__file__).parent.parent
 PROMPT_PATH = Path(__file__).parent / "prompts" / "cluster.txt"

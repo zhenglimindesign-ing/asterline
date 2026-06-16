@@ -12,6 +12,20 @@
 
 Date: 2026-06-16
 Chat: Vela Pay-2
+Run: Stage 5 — eval gap identified and smoke-tested
+
+Gap identified: the 25-item dataset was authored to maximize novel/unique issues (60% novel, per the v0 dataset-restructure entry above), which means it contains zero unambiguous "different accounts, same root problem" pairs. CLU-006-022 and CLU-012-015 only test the FALSE-merge direction (should these split). Nothing in the dataset tests whether clustering can correctly MERGE when it should. Removing the praise-singleton special case (cluster-v2, see below) did not produce any new merges, which by itself is ambiguous: it could mean either (a) the rule was the only problem and removing it has no other effect, or (b) the mechanism is structurally biased toward singletons regardless of rules. Could not distinguish between these from the 25-item run alone.
+
+Action: built pipeline/smoke_test_cluster.py — an isolated test using 4 hand-built items never added to any committed dataset (2 genuine cross-account duplicates describing the same batch-upload failure in different wording, 2 unrelated controls). Uses the same prompt and model as cluster.py.
+
+Result: PASS. The duplicate pair merged correctly; both controls stayed separate. This confirms the clustering mechanism is capable of merging — the all-singleton result on the real 25-item dataset is a data coverage gap, not a mechanism defect.
+
+Decision pending: whether to add 1-2 new feedback items to data/02-synthetic-feedback-25.md that are genuine cross-account duplicates of an existing known issue (e.g. two more reports of KI-1 batch-upload failure), to give the golden set hypothesis table a true positive merge case and let signal_strength=High fire via the "≥2 items, different accounts" path (currently only reachable via "single item, impact=High" in this dataset). This would be additive only — existing items 01-25 would not be modified, so all completed classification-stage eval results remain valid as-is.
+
+---
+
+Date: 2026-06-16
+Chat: Vela Pay-2
 Run: Stage 5 — clustering (cluster-v1), all 25 items
 
 Approach: single LLM call over all 25 classified items (not pairwise, not embeddings — see docs/11-cluster-spec.md for rationale). signal_strength computed deterministically in Python per Axis 4 (eval/04-taxonomy-and-schema.md), not by the model.

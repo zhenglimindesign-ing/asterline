@@ -1,6 +1,6 @@
 # Stage 5 — Cluster Evaluation Report
 
-Run: cluster-v1 | Model: claude-haiku-4-5-20251001 | Generated: 2026-06-16T07:20:07.793058+00:00
+Run: cluster-v2 | Model: claude-haiku-4-5-20251001 | Generated: 2026-06-16T07:38:31.913315+00:00
 
 Dev-time validation against the golden set's cluster hypothesis only.
 This has no effect on runtime/production pipeline behavior — clustering
@@ -50,17 +50,3 @@ or HITL logic is added as a result of this comparison.
 FB-06 actual cluster: CLU-006  |  FB-22 actual cluster: CLU-022
 
 **Result: SPLIT, as expected.** The clustering correctly distinguished the name-mismatch issue (FB-06) from the 2FA issue (FB-22) despite both being Engineering items from the same account.
-
-## Observation: all 25 clusters are singletons
-
-The model did not merge any items, including FB-12 + FB-15 (the only other golden-set hypothesis pair besides CLU-006-022). On inspection this split looks correct, not conservative: FB-12 is a card-dispute review delay, FB-15 is a missing onboarding email — genuinely different problems that only share `dimension=Support Process`. The golden set's own note for this pair already says "different sub-issues," so the hypothesis itself was speculative, not confirmed ground truth.
-
-That said, the golden set's exclusion notes (header comments, items not in the labeled table) flag three pairs across the full 25-item set that share a stated theme and were never tested by the model merging or not:
-
-- FB-04 + FB-22 — both about login/2FA friction, though FB-04 is session-timeout-driven re-login and FB-22 is SMS delivery failure (different root cause; correctly kept separate, in retrospect)
-- FB-11 + FB-02 — both about dashboard currency/amount display issues (FB-02: undisclosed FX spread in total; FB-11: wrong currency label) — arguably closer to "same underlying display bug" than FB-12/FB-15 were
-- FB-19 + FB-25 — both praise mentioning fast KYB/onboarding — closer in theme than most other praise pairs
-
-None of these were merged. Given the prompt explicitly tells the model "praise and noise items almost always form singleton clusters," FB-19/FB-25 may have been primed toward staying separate regardless of content similarity. FB-11/FB-02 is the pair most worth a second look — they may describe the same dashboard display defect from two angles.
-
-This is a precision-over-recall outcome: zero false merges (good — the CLU-006-022 trap was avoided), but possibly under-merging on FB-11/FB-02. Flagging for review rather than treating "0 merges" as automatically correct.

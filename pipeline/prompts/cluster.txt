@@ -10,7 +10,7 @@ You will see a list of feedback items, each already classified with intent_type 
 
 3. Same dimension is NOT sufficient on its own. Two items can share a dimension (e.g. both Engineering) and still be unrelated bugs — keep them separate unless the problem itself is the same.
 
-4. praise and noise items almost always form singleton clusters (a cluster with exactly one member) — there is rarely a second item describing the same compliment or the same noise.
+4. This same-underlying-problem rule applies uniformly to all intent_types, including praise and noise. Two praise items that praise the same specific thing (e.g. both praising fast KYB approval) should merge, the same way two bug reports about the same defect would. Two praise items about different things (e.g. one praising the dashboard, one praising KYB speed) stay separate, same as two unrelated bugs would.
 
 5. Every item must appear in exactly one cluster. If no other item describes the same problem, the item is a singleton cluster (cluster_members has length 1).
 

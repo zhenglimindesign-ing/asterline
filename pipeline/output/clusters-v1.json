@@ -1,14 +1,14 @@
 {
   "model": "claude-haiku-4-5-20251001",
-  "prompt_version": "cluster-v1",
-  "timestamp": "2026-06-16T07:20:07.793058+00:00",
+  "prompt_version": "cluster-v2",
+  "timestamp": "2026-06-16T07:38:31.913315+00:00",
   "clusters": [
     {
       "cluster_id": "CLU-001",
       "cluster_members": [
         "FB-01"
       ],
-      "reason": "Single item describing batch CSV upload silently failing with no error messaging or confirmation.",
+      "reason": "batch upload silently failing with no error message or confirmation; unique infrastructure issue",
       "signal_strength": "High"
     },
     {
@@ -16,7 +16,7 @@
       "cluster_members": [
         "FB-02"
       ],
-      "reason": "Single item describing undisclosed FX or fee charges appearing on bank statement but not shown pre-confirmation on dashboard.",
+      "reason": "dashboard amount mismatch with actual debit; undisclosed fees or FX adjustment not shown before confirmation",
       "signal_strength": "Medium"
     },
     {
@@ -24,7 +24,7 @@
       "cluster_members": [
         "FB-03"
       ],
-      "reason": "Single item requesting webhook/API notifications for payout status updates.",
+      "reason": "feature request for webhook/API notifications on payout status changes",
       "signal_strength": "Medium"
     },
     {
@@ -32,7 +32,7 @@
       "cluster_members": [
         "FB-04"
       ],
-      "reason": "Single item describing mobile app logging users out frequently, forcing repeated 2FA re-entry.",
+      "reason": "mobile app automatically logs out user frequently, requiring repeated 2FA flow",
       "signal_strength": "Medium"
     },
     {
@@ -40,7 +40,7 @@
       "cluster_members": [
         "FB-05"
       ],
-      "reason": "Single item reporting payout not received after 6 days, exceeding stated 1-3 business day SLA.",
+      "reason": "payout not received after 6 days, exceeding stated 1-3 business day SLA; requires transaction investigation",
       "signal_strength": "High"
     },
     {
@@ -48,7 +48,7 @@
       "cluster_members": [
         "FB-06"
       ],
-      "reason": "Single item describing recipient name mismatch between confirmation screen and actual bank record, causing bank delays.",
+      "reason": "recipient name displayed incorrectly on confirmation screen versus actual bank transfer, causing bank review delays",
       "signal_strength": "High"
     },
     {
@@ -56,7 +56,7 @@
       "cluster_members": [
         "FB-07"
       ],
-      "reason": "Single item requesting recurring/scheduled payout functionality to eliminate manual monthly re-uploads.",
+      "reason": "feature request for recurring/scheduled payouts to eliminate manual monthly CSV uploads",
       "signal_strength": "Medium"
     },
     {
@@ -64,7 +64,7 @@
       "cluster_members": [
         "FB-08"
       ],
-      "reason": "Single item requesting approval workflow feature for payouts above configurable threshold.",
+      "reason": "feature request for multi-level approval workflow on payouts above configurable threshold",
       "signal_strength": "Medium"
     },
     {
@@ -72,7 +72,7 @@
       "cluster_members": [
         "FB-09"
       ],
-      "reason": "Single item requesting memo/reference field on payouts for accounting system reconciliation.",
+      "reason": "feature request for memo/reference field on payouts to enable accounting system reconciliation",
       "signal_strength": "Medium"
     },
     {
@@ -80,7 +80,7 @@
       "cluster_members": [
         "FB-10"
       ],
-      "reason": "Single item complaining about support responding in English to Spanish-language tickets.",
+      "reason": "support team replied in English to Spanish-language ticket despite customer preference; language mismatch in support process",
       "signal_strength": "Medium"
     },
     {
@@ -88,7 +88,7 @@
       "cluster_members": [
         "FB-11"
       ],
-      "reason": "Single item describing card transaction displaying wrong currency in dashboard with unconverted amounts.",
+      "reason": "dashboard transaction display shows wrong currency label for card purchase, causing incorrect running total at a glance",
       "signal_strength": "Medium"
     },
     {
@@ -96,7 +96,7 @@
       "cluster_members": [
         "FB-12"
       ],
-      "reason": "Single item reporting dispute stuck in review status for 12 days, exceeding stated 5 business day SLA.",
+      "reason": "dispute resolution exceeds stated 5 business day SLA after 12 days with no status update",
       "signal_strength": "Medium"
     },
     {
@@ -104,7 +104,7 @@
       "cluster_members": [
         "FB-13"
       ],
-      "reason": "Single item requesting extended transaction history export beyond 90-day limitation for year-end accounting.",
+      "reason": "feature request for extended transaction export beyond 90-day limit to support 12-month accounting periods",
       "signal_strength": "Medium"
     },
     {
@@ -112,7 +112,7 @@
       "cluster_members": [
         "FB-14"
       ],
-      "reason": "Single item complaining about sudden unexpected KYB requirement without advance notice, causing payout hold.",
+      "reason": "complaint that KYB requirement triggered at $1,000 threshold with no advance notice, leaving customer unable to prepare documents",
       "signal_strength": "High"
     },
     {
@@ -120,7 +120,7 @@
       "cluster_members": [
         "FB-15"
       ],
-      "reason": "Single item reporting missing onboarding/welcome email after signup.",
+      "reason": "onboarding email never received after signup, causing customer to discover account through login attempt",
       "signal_strength": "Medium"
     },
     {
@@ -128,7 +128,7 @@
       "cluster_members": [
         "FB-16"
       ],
-      "reason": "Single item describing account lockout due to lost 2FA phone, blocking payroll processing.",
+      "reason": "urgent 2FA lockout on admin account prevents payroll processing with time-sensitive deadline",
       "signal_strength": "High"
     },
     {
@@ -136,7 +136,7 @@
       "cluster_members": [
         "FB-17"
       ],
-      "reason": "Praise item; standalone compliment about dashboard cleanliness and UX.",
+      "reason": "praise for clean, uncluttered dashboard design",
       "signal_strength": "Low"
     },
     {
@@ -144,7 +144,7 @@
       "cluster_members": [
         "FB-18"
       ],
-      "reason": "Praise item; standalone compliment about fast, effective support response.",
+      "reason": "praise for responsive support chat with quick resolution",
       "signal_strength": "Low"
     },
     {
@@ -152,7 +152,7 @@
       "cluster_members": [
         "FB-19"
       ],
-      "reason": "Praise item; standalone compliment about fast KYB approval process.",
+      "reason": "praise for fast KYB approval speed compared to competitors",
       "signal_strength": "Low"
     },
     {
@@ -160,7 +160,7 @@
       "cluster_members": [
         "FB-20"
       ],
-      "reason": "Noise item; low-signal question about Apple Pay support.",
+      "reason": "noise; general product inquiry with no specific issue",
       "signal_strength": "Low"
     },
     {
@@ -168,7 +168,7 @@
       "cluster_members": [
         "FB-21"
       ],
-      "reason": "Noise item; vague complaint without actionable details.",
+      "reason": "noise; vague complaint about app performance with no actionable details",
       "signal_strength": "Low"
     },
     {
@@ -176,7 +176,7 @@
       "cluster_members": [
         "FB-22"
       ],
-      "reason": "Single item reporting 2FA SMS codes not arriving for specific users on same carrier.",
+      "reason": "2FA codes not arriving via SMS for specific mobile carrier; authentication system issue",
       "signal_strength": "High"
     },
     {
@@ -184,7 +184,7 @@
       "cluster_members": [
         "FB-23"
       ],
-      "reason": "Single item reporting currency conversion spread changing after confirmation, displaying higher rate than confirmed.",
+      "reason": "currency conversion spread changes after confirmation, displaying different rate in transaction details than confirmed",
       "signal_strength": "Medium"
     },
     {
@@ -192,7 +192,7 @@
       "cluster_members": [
         "FB-24"
       ],
-      "reason": "Feature request; standalone request for dark mode dashboard option.",
+      "reason": "feature request for dark mode in dashboard",
       "signal_strength": "Low"
     },
     {
@@ -200,7 +200,7 @@
       "cluster_members": [
         "FB-25"
       ],
-      "reason": "Praise item; standalone compliment about smooth onboarding experience.",
+      "reason": "praise for smooth and quick onboarding experience including KYB",
       "signal_strength": "Low"
     }
   ]
