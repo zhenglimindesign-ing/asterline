@@ -48,7 +48,7 @@ from pipeline.pii import redact
 load_dotenv()
 
 MODEL = "claude-sonnet-4-6"
-PROMPT_VERSION = "generate-v1"
+PROMPT_VERSION = "generate-v2"
 
 REPO_ROOT = Path(__file__).parent.parent
 PROMPT_PATH = Path(__file__).parent / "prompts" / "generate.txt"

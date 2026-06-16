@@ -56,6 +56,8 @@ Return ONLY a JSON object with these fields. Do NOT include cluster_id, cluster_
 
 Set a `needs_human_review` flag (blocking `reply_draft`) when the reply touches a specific money amount, payment timing commitment, or a potential policy breach. This is your judgment call — a separate, deterministic check is also applied afterward for low-confidence clusters, so you don't need to handle that case yourself.
 
+When the cluster has more than one member (check the feedback items above), and your flag reason involves a money/payment-state assertion (e.g. "payment did not go out"), be specific that the assertion is being generalized across multiple accounts/tickets and may not hold identically for every one of them — don't write a generic "verify against ticket records" reason; name the actual risk (a claim true for the cluster's representative case might not be true for every individual member).
+
 ## Output format
 
 Return ONLY the JSON object. No markdown code fences, no explanation before or after.

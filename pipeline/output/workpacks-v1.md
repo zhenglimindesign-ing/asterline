@@ -1,13 +1,13 @@
 # Asterline — Work Packs
 
-## CLU-001 — Batch CSV upload silently fails with no error message above 500-row limit
+## CLU-001 — Batch CSV upload silently fails above 500-row limit with no error feedback
 - intent_type: actionable_bug
 - dimension: Engineering (3)
 - signal_strength: High
 - confidence: High
 - cluster_members: FB-01, FB-26, FB-27
 
-**Problem brief:** Multiple customers have reported that batch payout CSV uploads exceeding 500 rows fail without any error message or confirmation — the page either hangs indefinitely or appears to do nothing, leaving users uncertain whether payments were dispatched. Affected customers have independently discovered the workaround of splitting files into smaller batches, but only after significant manual effort and lost time. This is a confirmed known issue (KI-1) that has now surfaced across at least three separate high-priority tickets, indicating the lack of a user-visible error message is causing operational disruption at scale. No absolute timestamps for individual submissions are available in the feedback text; incidents were reported within the current support queue.
+**Problem brief:** Multiple business customers report that batch payout CSV uploads exceeding 500 rows hang indefinitely with no error message, no confirmation, and no indication of whether payments were dispatched. This is a known platform issue (KI-1) in which the silent failure leaves senders unable to determine payment status and forces manual file-splitting as a workaround. The issue has been reported across at least three separate tickets and affects payroll and supplier payment runs of 540–700 rows. No absolute timestamps for the underlying bug's introduction are available in the provided feedback; the earliest customer reference to a prior occurrence is described as 'back in March' with no year specified.
 
 **Key quotes:**
 > no error, no confirmation, page just sat there for 10+ minutes
@@ -16,26 +16,28 @@
 **Source refs:** KI-1
 
 **Tasks:**
-- [High] Implement a clear, user-visible error message when a batch CSV upload exceeds the 500-row limit — message should state the limit explicitly and instruct the user to split the file before resubmitting (assignee: Engineering, deadline: None)
-  Acceptance criteria: When a CSV with more than 500 rows is submitted, an inline error message appears within the upload flow (not a silent hang) that: (1) states the 500-row maximum, (2) confirms no payments were sent, and (3) prompts the user to split the file. Verified by QA test with a 501-row file and a 700-row file.
-- [Medium] Evaluate and roadmap an increase to the 500-row batch upload limit, documenting any backend constraints that currently enforce it (assignee: Engineering, deadline: None)
-  Acceptance criteria: A technical assessment is produced and shared with Product detailing: current limit rationale, estimated safe upper bound (e.g. 1,000 or 2,000 rows), and any infrastructure changes required to raise it.
-- [Medium] Update the in-product CSV upload UI and help documentation to display the 500-row limit prominently before a user attempts an oversized upload (e.g. in the upload modal and tooltip) (assignee: Product, deadline: None)
-  Acceptance criteria: The 500-row limit is visible in the upload modal prior to file selection, and the help article for batch payouts is updated to include the limit and the split-file workaround.
-- [Medium] Proactively notify any other customers who have previously contacted support about this issue (including ticket #58213 and #60102) once the error-message fix is live (assignee: Support Operations, deadline: None)
-  Acceptance criteria: All customers with logged tickets referencing the silent batch upload failure receive a follow-up message confirming the fix has been deployed, with no customer needing to re-raise the issue to learn it was resolved.
+- [High] Add a clear, immediate error message when a CSV upload exceeds the 500-row limit — the message should state the row limit explicitly and instruct the user to split the file, rather than silently timing out or hanging (assignee: Engineering, deadline: None)
+  Acceptance criteria: When a user uploads a CSV with more than 500 rows, the platform returns a visible, inline error message within 5 seconds of upload attempt that (a) names the 500-row limit, (b) confirms no payments were sent, and (c) advises splitting the file; the upload spinner does not continue indefinitely
+- [High] Investigate and scope raising the batch upload row limit above 500 — evaluate infrastructure constraints and determine whether the cap can be increased to accommodate common payroll/supplier run sizes (600–1000+ rows) (assignee: Engineering, deadline: None)
+  Acceptance criteria: A written technical assessment is produced that states: the feasibility of raising the limit, the proposed new limit if feasible, and an estimated delivery timeline; assessment reviewed by Product before customer communication
+- [Medium] Update in-app help text and CSV upload documentation to prominently surface the 500-row limit and the file-splitting workaround so users are warned before attempting an oversized upload (assignee: Product, deadline: None)
+  Acceptance criteria: The CSV upload screen and any linked help article display the row limit before upload is attempted; the workaround (split into batches of ≤500 rows) is described in plain language
+- [Medium] Update support team's response template for this issue to include the 500-row limit figure explicitly, so affected customers are not told only that it is a 'known limitation' without actionable detail (assignee: Support Operations, deadline: None)
+  Acceptance criteria: A revised support macro exists that (a) states the 500-row cap, (b) confirms no payments were sent when the silent failure occurs, and (c) provides the file-splitting workaround; macro is circulated to all support agents handling payout tickets
 
 **Reply draft:**
-> Your payments did not go out — the upload stopped before processing because the file exceeded the current 500-row limit.
+> Your payments did not go out — when the upload hangs without a confirmation, no transactions are sent.
 
-This is a known bug: when a CSV has more than 500 rows, the upload fails silently with no error message, which makes it impossible to tell whether the batch completed. That's on us to fix, and it's actively in our engineering queue.
+The platform currently has a 500-row limit on batch CSV uploads. Files above that size don't complete and, as you've experienced, don't show an error either. That silent failure is a known bug we're actively working to fix.
 
-In the meantime, the reliable workaround is to split your file into batches of 500 rows or fewer and resubmit each one separately. Each sub-batch should complete normally, as you've already found.
+In the meantime, splitting your file into batches of 500 rows or fewer will go through reliably, as you've already found.
 
-We'll follow up directly once the fix is live — at that point you'll see a clear error message if a file is too large, rather than the current silent hang.
+We're prioritising two fixes from this: an immediate error message that tells you when a file is too large (so you're never left guessing about payment status), and an investigation into raising the row limit to cover payroll and supplier runs of the size you're processing. We don't have a confirmed delivery date for those yet, but we'll follow up on this ticket when we do.
+
+If you have an upcoming payroll run before then and want to confirm your file is within the limit before uploading, reply here and we can check it with you.
 
 **Review flags:**
-- needs_human_review: Reply confirms to the customer that no payments were dispatched (a money-state assertion). Although this is consistent with KI-1 behaviour, a human agent should verify against the actual ticket records for each affected customer before sending, in case any partial processing occurred. (blocks: reply_draft)
+- needs_human_review: The reply asserts 'your payments did not go out' as a universal statement. While KI-1 confirms the upload fails silently and does not complete, this claim is being generalized across three separate tickets (FB-01, FB-26, FB-27) representing different accounts, different upload times, and potentially different system states. If any individual member's upload did partially process or if payments were queued and later dispatched without notification, the assertion would be incorrect for that customer. Each ticket should be verified against transaction records before the reply is sent to confirm zero payments were dispatched in each case. (blocks: reply_draft)
 
 ---
 
