@@ -12,6 +12,46 @@
 
 Date: 2026-06-15
 Chat: Vela Pay-2
+Run: v3 → v4 (classify.txt v4 → v5, accepted)
+
+Changes made:
+- Rule 5 restored to v2 wording (reverted from failed v3)
+- Rule 6 (new): few-shot impact examples added — webhook/notifications → Medium; dark mode → Low; locked account → High; B2B repeated manual work test for Low/Medium boundary
+
+Score delta vs v2:
+  intent_type:  90% → 90%  (—)
+  dimension:    95% → 90%  (−5%, FB-23 dimension regression)
+  impact:       70% → 75%  (+5%) ✓
+  urgency:      85% → 85%  (—)
+  overall:      55% → 65%  (+10%) ✓
+
+Items fixed: FB-03, FB-07, FB-13 (all Low→Medium, now correct)
+Regressions: FB-23 dimension (Finance & Reporting → Engineering, inherently ambiguous item); FB-15 (1 diff)
+Decision: accept v4 as classification stage ceiling. FB-23 dimension is inherently unstable — further prompt tuning risks continued whack-a-mole. FB-01 remains architectural limit (no RAG in Layer 1).
+
+Classification phase final scores:
+  intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65%
+
+---
+
+Date: 2026-06-15
+Chat: Vela Pay-2
+Run: v2 → v3 attempt (classify.txt v3, reverted — never committed)
+
+Change attempted:
+- Rule 5 replaced with 3-tier calibration: (a) blocked=High (b) significant friction at scale=Medium (c) minor convenience=Low
+
+Result: NEGATIVE — reverted.
+  impact: 70% → 60% (−10%)
+  overall: 55% → 50% (−5%)
+  FB-03/07/13 not improved; FB-08 and FB-15 regressed.
+Root cause: tier (b) "significant extra steps at operational scale" was too broad — pulled correctly-labeled Low items up to Medium.
+Decision: revert Rule 5 to v2 wording; try few-shot examples instead.
+
+---
+
+Date: 2026-06-15
+Chat: Vela Pay-2
 Run: v1 → v2 (classify.txt v2 → v3)
 
 Changes made:
