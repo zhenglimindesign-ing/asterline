@@ -1,7 +1,7 @@
 [
   {
     "title": "Batch CSV upload silently fails above 500-row limit with no error feedback",
-    "problem_brief": "Multiple business customers report that batch payout CSV uploads exceeding 500 rows hang indefinitely with no error message, no confirmation, and no indication of whether payments were dispatched. This is a known platform issue (KI-1) in which the silent failure leaves senders unable to determine payment status and forces manual file-splitting as a workaround. The issue has been reported across at least three separate tickets and affects payroll and supplier payment runs of 540\u2013700 rows. No absolute timestamps for the underlying bug's introduction are available in the provided feedback; the earliest customer reference to a prior occurrence is described as 'back in March' with no year specified.",
+    "problem_brief": "Multiple customers have reported that uploading batch payout CSV files exceeding 500 rows causes the platform to hang indefinitely, displaying no error message, no confirmation, and no indication of whether payments were processed. This is a known issue (KI-1) that has been reproduced across at least three separate tickets involving files of 540, 620, and 700 rows. Affected users have been forced to manually split their files into smaller batches, with one team reporting approximately one hour of additional ops work on a time-sensitive payroll run. The silent failure mode is the primary harm: customers cannot distinguish between a processing delay and a complete failure, creating risk that payments may be believed sent when they were not.",
     "key_quotes": [
       "no error, no confirmation, page just sat there for 10+ minutes",
       "We had no way of knowing whether the payments had gone out."
@@ -11,39 +11,46 @@
     ],
     "tasks": [
       {
-        "task": "Add a clear, immediate error message when a CSV upload exceeds the 500-row limit \u2014 the message should state the row limit explicitly and instruct the user to split the file, rather than silently timing out or hanging",
+        "task": "Implement a user-facing error message that fires immediately when a CSV upload exceeds the 500-row limit, clearly stating the limit and instructing users to split their file. The error must appear before any processing attempt, not after a timeout.",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "When a user uploads a CSV with more than 500 rows, the platform returns a visible, inline error message within 5 seconds of upload attempt that (a) names the 500-row limit, (b) confirms no payments were sent, and (c) advises splitting the file; the upload spinner does not continue indefinitely"
+        "acceptance_criteria": "Uploading a CSV with 501 or more rows displays an explicit error message (visible on the upload UI, not just in logs) within 2 seconds of submission, stating the 500-row limit and providing a retry path. No silent hang occurs. Verified via manual QA with files of 501, 600, and 700 rows."
       },
       {
-        "task": "Investigate and scope raising the batch upload row limit above 500 \u2014 evaluate infrastructure constraints and determine whether the cap can be increased to accommodate common payroll/supplier run sizes (600\u20131000+ rows)",
+        "task": "Add a server-side validation guard that prevents batch uploads above 500 rows from being queued or partially processed, ensuring the silent-completion failure mode cannot occur even if the front-end error is bypassed (e.g. via API).",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "A written technical assessment is produced that states: the feasibility of raising the limit, the proposed new limit if feasible, and an estimated delivery timeline; assessment reviewed by Product before customer communication"
+        "acceptance_criteria": "API and UI batch upload endpoints both return a 4xx error with a structured message when row count exceeds 500. No partial processing occurs for over-limit files. Confirmed via integration tests against the upload endpoint."
       },
       {
-        "task": "Update in-app help text and CSV upload documentation to prominently surface the 500-row limit and the file-splitting workaround so users are warned before attempting an oversized upload",
+        "task": "Update the in-app CSV upload documentation and any onboarding tooltips to prominently state the 500-row limit per batch, and add an indicator in the UI showing row count as a file is selected.",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "The CSV upload screen and any linked help article display the row limit before upload is attempted; the workaround (split into batches of \u2264500 rows) is described in plain language"
+        "acceptance_criteria": "The upload UI displays the current file's row count and the 500-row limit before the user submits. Help text referencing the limit is present on the upload screen. Confirmed via design review and QA."
       },
       {
-        "task": "Update support team's response template for this issue to include the 500-row limit figure explicitly, so affected customers are not told only that it is a 'known limitation' without actionable detail",
-        "assignee_team": "Support Operations",
+        "task": "Evaluate raising the batch row limit above 500 as a medium-term improvement, given that multiple high-volume customers (payroll, supplier payments) regularly exceed it. Produce a scoping estimate for engineering effort and any partner/infrastructure constraints.",
+        "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A revised support macro exists that (a) states the 500-row cap, (b) confirms no payments were sent when the silent failure occurs, and (c) provides the file-splitting workaround; macro is circulated to all support agents handling payout tickets"
+        "acceptance_criteria": "A written scoping note exists that documents the feasibility, estimated effort, and any blockers to raising the limit, and is shared with the roadmap backlog. No implementation required at this stage."
+      },
+      {
+        "task": "Reply to all three affected tickets (Ticket #58213, Ticket #60102, and the unnamed supplier payment ticket) with the current workaround (split into batches of \u2264500 rows) and confirm that a fix for the silent failure is in progress.",
+        "assignee_team": "Support Operations",
+        "priority": "High",
+        "deadline": null,
+        "acceptance_criteria": "All three tickets have a sent customer reply acknowledging the issue, confirming the 500-row workaround, and noting that an error-message fix is being worked on. Replies are logged in the ticketing system."
       }
     ],
-    "reply_draft": "Your payments did not go out \u2014 when the upload hangs without a confirmation, no transactions are sent.\n\nThe platform currently has a 500-row limit on batch CSV uploads. Files above that size don't complete and, as you've experienced, don't show an error either. That silent failure is a known bug we're actively working to fix.\n\nIn the meantime, splitting your file into batches of 500 rows or fewer will go through reliably, as you've already found.\n\nWe're prioritising two fixes from this: an immediate error message that tells you when a file is too large (so you're never left guessing about payment status), and an investigation into raising the row limit to cover payroll and supplier runs of the size you're processing. We don't have a confirmed delivery date for those yet, but we'll follow up on this ticket when we do.\n\nIf you have an upcoming payroll run before then and want to confirm your file is within the limit before uploading, reply here and we can check it with you.",
+    "reply_draft": "Your batch did not complete because there is a current limit of 500 rows per CSV upload \u2014 files above that size do not process and do not show an error message, which is the platform's fault, not yours. Splitting the file into batches of 500 or fewer rows is the working fix right now, as you found.\n\nWe are actively working on two things: first, adding a clear error message so this never hangs silently again; second, reviewing whether the 500-row ceiling itself should be raised. We do not have a confirmed release date for either change yet and will not guess at one, but both are logged as active engineering items.\n\nIf you have upcoming payroll or supplier payment runs before the fix ships, splitting at \u2264500 rows per file will work reliably. If you want, we can flag your account so you receive direct notification when the fix is live.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply asserts 'your payments did not go out' as a universal statement. While KI-1 confirms the upload fails silently and does not complete, this claim is being generalized across three separate tickets (FB-01, FB-26, FB-27) representing different accounts, different upload times, and potentially different system states. If any individual member's upload did partially process or if payments were queued and later dispatched without notification, the assertion would be incorrect for that customer. Each ticket should be verified against transaction records before the reply is sent to confirm zero payments were dispatched in each case.",
+        "reason": "The reply implicitly asserts that no payments went out during the failed uploads across all three tickets. This is the most likely scenario given KI-1's known behaviour, but it has not been individually verified per account. For Ticket #58213 and Ticket #60102 the users confirmed retransmission succeeded after splitting, which suggests the original did not process \u2014 but the unnamed supplier payment ticket (FB-27) only states the user 'cancelled and resubmitted,' and it is not confirmed at the system level that no duplicate or partial batch was queued. A human agent should verify payment state in the platform ledger for each ticket before sending, to avoid a situation where one customer's payments did partially process and the reply incorrectly implies they did not.",
         "blocks": "reply_draft"
       }
     ],
@@ -65,8 +72,8 @@
     "confidence": "High"
   },
   {
-    "title": "Pre-confirmation payout amount does not match actual debit \u2014 unitemized $12.40 discrepancy",
-    "problem_brief": "A user reports that their dashboard displayed a payout amount of $5,000.00 at the confirmation step, but their bank statement shows a debit of $5,012.40. The $12.40 difference is not itemized anywhere in the dashboard or transaction record. This is consistent with KI-3, which documents that FX conversion fees are currently baked into totals rather than shown as a separate line item. However, the more serious concern is that the additional charge was not disclosed before confirmation, which may contradict the platform's policy that FX spread is shown to the user prior to confirming a transaction (SP-8).",
+    "title": "Pre-confirmation payout amount doesn't match actual debit \u2014 undisclosed $12.40 charge",
+    "problem_brief": "A customer reports that the dashboard displayed a payout of $5,000.00 before confirmation, but their bank statement shows a debit of $5,012.40, with the $12.40 difference not itemized anywhere on the platform. The discrepancy appears to be an undisclosed FX conversion fee (referred to in context as a 'spread'), which per SP-8 must be shown to the user before they confirm the transaction. This constitutes a potential policy breach: either the FX spread was not surfaced pre-confirmation as required, or there is an unidentified charge with no visible line item. The issue may also be related to KI-3, which notes that the exportable CSV report does not include the FX spread as a separate line item, suggesting a broader pattern of FX cost visibility gaps in the product.",
     "key_quotes": [
       "The extra $12.40 isn't itemized anywhere \u2014 is this an FX adjustment?",
       "it should be shown before we confirm, not discovered afterward"
@@ -77,45 +84,36 @@
     ],
     "tasks": [
       {
-        "task": "Investigate transaction referenced in Ticket #58301 to determine whether the $12.40 discrepancy represents an FX conversion fee, a system error, or an unauthorized charge, and confirm whether the amount was displayed to the user before confirmation as required by SP-8.",
+        "task": "Investigate Ticket #58301 to determine whether the $12.40 difference between the displayed pre-confirmation amount ($5,000.00) and the actual debit ($5,012.40) represents an FX spread, a fee, or an unidentified charge \u2014 and confirm whether the charge was or was not displayed to the user prior to confirmation as required by SP-8.",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Root cause of the $12.40 discrepancy is identified and documented; confirmation of whether SP-8 pre-disclosure occurred or failed for this specific transaction; customer is notified of the finding."
+        "acceptance_criteria": "Root cause of the $12.40 discrepancy is identified and documented; it is confirmed whether SP-8 was violated (i.e. the amount was not shown pre-confirmation); findings are logged against Ticket #58301 and shared with Product and Engineering."
       },
       {
-        "task": "Audit the payout confirmation flow to determine whether the FX conversion fee is consistently displayed as a distinct, visible line item before the user confirms \u2014 and whether any code path allows a charge to be applied post-confirmation that was not shown pre-confirmation.",
+        "task": "Audit the pre-confirmation flow in the dashboard to verify that the FX conversion fee (spread) is correctly calculated, displayed as a separate line item, and reflected in the total shown before the user confirms \u2014 reproducing the condition under which Ticket #58301's discrepancy occurred.",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Confirmation flow audit completed; any path where a fee is applied without pre-confirmation disclosure is identified and either fixed or formally documented as a known issue with a tracked fix; result reported to Product."
+        "acceptance_criteria": "The pre-confirmation screen is verified to always show: (1) base payout amount, (2) FX conversion fee as a separate itemized line, and (3) total debit matching what will actually be charged. If a bug is found where the spread is omitted or miscalculated in the displayed total, a fix is scoped and a ticket is filed with severity and timeline."
       },
       {
-        "task": "Accelerate roadmap item for KI-3: add FX conversion fee as a separate, labeled line item in both the pre-confirmation display and the exportable transaction CSV report.",
+        "task": "Assess whether the FX spread itemization gap documented in KI-3 (spread baked into CSV export totals rather than shown as a separate line) is related to or symptomatic of the same underlying issue causing the pre-confirmation display discrepancy reported in Ticket #58301, and update the KI-3 scope if applicable.",
         "assignee_team": "Product",
-        "priority": "High",
+        "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A tracked ticket exists for KI-3 resolution; the pre-confirmation UI change and the CSV report change are scoped and scheduled; no release without both the amount being shown before confirmation and appearing as a distinct line in transaction history."
+        "acceptance_criteria": "A written assessment confirms whether KI-3 and Ticket #58301 share a root cause; if yes, the KI-3 known issue entry is updated to reflect the broader scope (including pre-confirmation display), and a prioritization decision is documented."
       }
     ],
-    "reply_draft": "The $12.40 difference between what the dashboard showed and what was debited is what we need to account for \u2014 and we're looking into it now.\n\nIf it reflects a currency conversion fee, it should have appeared as a separate line item before you confirmed the payout, not after. We're checking whether that disclosure step worked correctly for your transaction.\n\nWe'll follow up with a clear breakdown of the $12.40 once we've confirmed what it covers. If it turns out the fee wasn't shown before confirmation as it should have been, we'll let you know what that means for your account.\n\nWe expect to have an answer for you shortly \u2014 and we'll be specific about timing as soon as we have it.",
+    "reply_draft": "The $12.40 difference between the amount shown on your dashboard and the amount debited from your bank needs to be looked into \u2014 we want to confirm exactly what that charge is and whether it was displayed to you before you confirmed.\n\nOur policy is that any conversion fee is shown upfront before you confirm a transaction (SP-8), so if that didn't happen here, that's something we need to fix. We're reviewing your transaction now to identify the source of the $12.40 and confirm whether it was itemized correctly at the point of confirmation.\n\nWe'll follow up with a full breakdown of the charge once our investigation is complete. If it turns out the fee wasn't shown to you before confirmation, we'll let you know what remediation applies.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply references a specific money amount ($12.40) and touches on a potential SP-8 policy breach (charge not disclosed before confirmation). A human agent must verify the transaction record and confirm whether the disclosure failure occurred before this reply is sent, to avoid making an implicit admission or commitment that may be inaccurate or premature.",
+        "reason": "The reply acknowledges a potential SP-8 policy breach (FX spread not shown pre-confirmation) and references a specific unreconciled money amount ($12.40). A human agent must verify the transaction record for Ticket #58301 before sending \u2014 specifically: (1) confirm what the $12.40 charge actually is, (2) confirm whether it was or was not displayed pre-confirmation, and (3) confirm whether any remediation (e.g. refund) is owed before the reply commits to an investigation-only posture.",
         "blocks": "reply_draft"
       }
     ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"The extra $12.40 isn't itemized anywhere \u2014 is this an FX adjustment?\""
-      },
-      {
-        "flag": "ambiguous_timestamp",
-        "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-002",
     "cluster_members": [
       "FB-02"
@@ -131,48 +129,41 @@
     "confidence": "High"
   },
   {
-    "title": "Webhook / API payout status notifications not available",
-    "problem_brief": "A customer has requested programmatic payout status notifications \u2014 specifically webhooks or an API polling endpoint \u2014 to receive updates when a payout transitions between statuses (pending, sent, completed, failed). The absence of this integration means customers must manually check the dashboard to track payout state, creating operational overhead for teams that manage payouts within their own internal systems. This capability is not present in the current v1 product and does not appear on the published roadmap as of the time this work pack was generated.",
+    "title": "Webhook and API notifications for real-time payout status updates",
+    "problem_brief": "A customer has requested programmatic payout status notifications \u2014 specifically webhooks or an API polling endpoint \u2014 that fire when a payout transitions between states (pending, sent, completed, failed). Without this, their internal systems must poll the dashboard manually, creating integration friction and operational overhead. This capability is not present in the current v1 product, which offers only a dashboard UI and CSV exports. No roadmap item directly matches this request, though it is closely adjacent to the automation gap addressed by RM-2.",
     "key_quotes": [
       "webhook (or API polling endpoint) when a payout moves between statuses (pending/sent/completed/failed)",
       "update our internal systems automatically instead of checking the dashboard manually"
     ],
-    "source_refs": [],
+    "source_refs": [
+      "RM-2"
+    ],
     "tasks": [
       {
-        "task": "Log and formally triage the webhook/API payout status notification request in the product backlog, linking it to FB-03 and any existing similar requests",
+        "task": "Log and formally triage the webhook/API payout status notification request against the existing product backlog; determine whether this should be scoped as a standalone feature or bundled with the RM-2 scheduled/recurring payouts initiative",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A backlog item exists referencing this feature request, including the specific status transitions required (pending/sent/completed/failed), and is visible in roadmap planning tooling"
+        "acceptance_criteria": "Request is recorded in the backlog with a documented scoping decision (standalone vs. bundled with RM-2) and an owner assigned; customer is associated with the feature request for future comms"
       },
       {
-        "task": "Assess technical feasibility and effort estimate for implementing outbound webhooks for payout status transitions, and optionally a polling endpoint as an alternative",
+        "task": "Conduct a discovery spike to define technical requirements for a payout status webhook system: event schema (pending/sent/completed/failed), delivery guarantees, retry logic, authentication model, and API polling alternative",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A written feasibility note is produced covering: proposed event schema, authentication model, retry/failure handling approach, and rough engineering effort estimate in story points or weeks"
+        "acceptance_criteria": "A written technical spec or RFC covering event schema, at-least-once delivery semantics, retry/backoff behavior, HMAC or equivalent signature verification, and a comparison of webhook-push vs. polling-pull trade-offs is reviewed and signed off by Product and Engineering leads"
       },
       {
-        "task": "Survey other customers and review support/sales channels to quantify demand for payout status webhooks before prioritisation decision",
+        "task": "Assess demand signal for webhook/API payout status notifications across the customer base to inform prioritization; identify other accounts with similar integration needs",
         "assignee_team": "Product",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A demand summary is produced listing the number of accounts that have requested this feature, their payout volume tier, and any pattern in use case (e.g. payroll automation, marketplace payouts)"
+        "acceptance_criteria": "A demand summary is produced listing the number of accounts that have requested programmatic payout status access (via support tickets, sales calls, or NPS responses), with a recommended priority tier based on revenue impact and integration complexity"
       }
     ],
-    "reply_draft": "Thanks for the detail on what you need \u2014 webhook notifications for payout status changes (pending \u2192 sent \u2192 completed \u2192 failed) so your internal systems stay in sync without manual dashboard checks.\n\nThis isn't available in the current product. There's no webhook or API polling endpoint for payout status yet. We've logged your request with the specifics you described and it will feed directly into roadmap prioritisation.\n\nWe can't give a delivery timeline right now, but we'll follow up once this is scheduled or if we need further input on your integration requirements.",
+    "reply_draft": "Thanks for the detailed request \u2014 this gives us exactly what we need to evaluate it properly.\n\nWebhook or API-based payout status notifications aren't available in the current version of Vela Pay. Right now, payout status is visible in the dashboard and in the exportable transaction reports, but there's no programmatic event stream to trigger updates in external systems.\n\nWe've logged your request with the specific status transitions you outlined (pending \u2192 sent \u2192 completed \u2192 failed) and flagged it for our product team. I can't give you a delivery timeline right now, but I'll make sure you're contacted directly when this moves onto the active roadmap or when we have more to share.\n\nIf it's useful in the interim, the transaction report CSV export is available on demand from the dashboard \u2014 not a real-time feed, but it may help with periodic reconciliation while we work toward a proper integration option.",
     "review_flags": [],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'webhook (or API polling endpoint) when a payout moves between statuses (pending/sent/completed/failed)'"
-      },
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'update our internal systems automatically instead of checking the dashboard manually'"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-003",
     "cluster_members": [
       "FB-03"
@@ -188,48 +179,48 @@
     "confidence": "High"
   },
   {
-    "title": "Mobile app session expiry forces repeated full login and 2FA re-authentication",
-    "problem_brief": "A user reports that the Vela Pay mobile app terminates their session approximately every two days, requiring them to complete the full login and two-factor authentication flow each time. The frequency of logouts is disruptive for routine, low-stakes actions such as checking a balance. No timestamp is available for when this behaviour began, as the feedback item carries no submission date metadata. This appears to be a session persistence or token expiry bug on the mobile client, and is not covered by any current known issue in the product documentation.",
+    "title": "Mobile app session expiry forces repeated full login and 2FA",
+    "problem_brief": "A user reports that the Vela Pay mobile app terminates their session every few days, requiring them to complete the full login and two-factor authentication flow each time. The frequency of forced logouts is disproportionate to normal session management expectations and creates friction for routine tasks such as checking a balance. No timestamp is available for when this behaviour began, as the feedback does not specify a date. This issue does not map to any currently documented known issue in the product, suggesting it may be an unreported bug in session token management or expiry configuration.",
     "key_quotes": [
       "Logs me out constantly",
-      "every couple of days and I have to go through the full\nlogin + 2FA flow again"
+      "logs me out every couple of days and I have to go through the full\nlogin + 2FA flow again"
     ],
     "source_refs": [],
     "tasks": [
       {
-        "task": "Reproduce the mobile app session expiry issue: instrument session token lifecycle (issuance, refresh, expiry) on iOS and Android clients to determine whether sessions are expiring prematurely or refresh tokens are not being persisted correctly.",
+        "task": "Investigate mobile app session token expiry behaviour \u2014 determine whether session TTL is misconfigured, whether token refresh is failing silently, or whether a logout is being triggered by an unhandled error state",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Root cause of premature session termination is identified and documented, with a reproducible test case confirmed on at least one platform (iOS or Android)."
+        "acceptance_criteria": "Root cause of premature session expiry identified and documented; engineering confirms whether this is a configuration issue or a code defect, and provides a reproducible test case or logs showing the trigger condition"
       },
       {
-        "task": "Once root cause is confirmed, implement a fix so that an authenticated mobile session persists across reasonable inactivity periods without forcing a full re-login and 2FA, while remaining compliant with any session security requirements. Define and document the intended session lifetime policy.",
+        "task": "If root cause is confirmed as a defect, implement a fix so that mobile sessions persist for the expected duration without requiring repeated full login + 2FA unless a genuine security event (e.g. new device, suspicious activity) occurs",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Authenticated users are not logged out more frequently than the documented session lifetime policy specifies; re-login and 2FA are not required for low-inactivity intervals (e.g. returning to the app within 48 hours on the same device). Regression test added to CI pipeline."
+        "acceptance_criteria": "QA verifies that a logged-in mobile session remains active across the expected session window without unexpected logouts under normal usage conditions; regression test added to CI pipeline"
       },
       {
-        "task": "Add this session expiry behaviour to the Known Issues list and determine whether other users have reported the same pattern (search support tickets and app store reviews for 'logged out', 'login loop', '2FA every day' variants).",
+        "task": "Check whether this session expiry issue is being reported by other users \u2014 search support tickets and app store reviews for similar complaints to assess breadth",
         "assignee_team": "Support Operations",
-        "priority": "Low",
+        "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Known Issues log updated if confirmed as a systemic issue; a count of affected users or reports is produced and shared with Product."
+        "acceptance_criteria": "A written summary is produced confirming either (a) this appears to be an isolated report, or (b) N additional affected users have been identified, with ticket IDs listed"
       },
       {
-        "task": "Review whether the session timeout interval is a configurable security parameter set too aggressively short, and assess whether a user-controlled 'stay logged in on this device' option is appropriate for a B2B finance context.",
+        "task": "If confirmed as a known issue, add it to the Known Issues register (KI list) with a workaround note until a fix is shipped",
         "assignee_team": "Product",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A documented decision on desired session lifetime and any 'remember device' UX, approved by Security and Product, ready to hand to Engineering as a spec."
+        "acceptance_criteria": "Known Issues register updated with a clear description of the symptom, affected surface (mobile app), and any available workaround; internal status visible to support team"
       }
     ],
-    "reply_draft": "Thanks for flagging this. Being logged out every couple of days and pushed through the full login and 2FA flow each time is not the intended behaviour \u2014 sessions should persist across normal use on the same device.\n\nWe're looking into what's causing the premature logouts. We don't have a fix timeline to share yet, but we'll update you once we know more. If it helps in the meantime, ensuring the app is fully up to date may reduce the frequency \u2014 though we can't confirm that addresses the root cause until our investigation is complete.",
+    "reply_draft": "Your session is expiring more frequently than it should \u2014 this isn't expected behaviour and we're looking into it.\n\nWe're investigating what's causing the mobile app to log you out every few days. We don't have a fix timeline confirmed yet, but the issue has been flagged to our engineering team.\n\nIn the meantime, there's no workaround that removes the 2FA step (that's a security requirement we keep in place), but if you run into anything else or the logouts increase in frequency, let us know \u2014 it helps us pinpoint the cause faster.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply makes an implicit commitment that the behaviour is unintended and will be fixed. If the premature logout turns out to be a deliberate security policy (e.g. a short session timeout set by the security team), the reply would be inaccurate. A human should confirm the intended session lifetime before this is sent.",
+        "reason": "The reply states we are 'looking into it' and that no fix timeline is confirmed \u2014 a human should verify this is accurate against current engineering backlog status before sending, to avoid setting false expectations or contradicting any existing internal communication to this user.",
         "blocks": "reply_draft"
       }
     ],
@@ -249,11 +240,11 @@
     "confidence": "High"
   },
   {
-    "title": "Payout to contractor exceeding typical off-ramp window by several days",
-    "problem_brief": "A sender reports that a payout dispatched to a contractor in an unspecified country (transaction ref VP-994821) has not been received as of the time the ticket was filed. The ticket was submitted as urgent and references a 1\u20133 business day expectation from Vela Pay's policy page; the actual elapsed time has exceeded that window. KI-4 identifies a known issue where recipients in a subset of supported countries experience partner-bank processing delays beyond the standard 1\u20133 business days, sometimes reaching a week. The exact dispatch timestamp is unavailable in the feedback, so no absolute UTC timestamp can be confirmed; human review is required to retrieve the precise transaction timestamp and current status from internal records before a timeline commitment can be made in the reply.",
+    "title": "Off-ramp delay exceeding stated 1\u20133 business day window for contractor payout",
+    "problem_brief": "A payout sent to a contractor in Country A (transaction ref VP-994821) has not been received as of the time this ticket was filed, despite the sender's expectation of a 1\u20133 business day completion window per Vela Pay's stated policy. The delay is impacting a payroll obligation and causing direct reputational friction between the sender and their contractor. Country A may be one of the destinations currently under review for extended partner bank processing times (KI-4), which can push resolution beyond the typical window to up to approximately seven calendar days. Because no absolute dispatch timestamp was provided in the raw feedback, the precise elapsed duration cannot be confirmed without cross-referencing internal records for VP-994821; all timing assertions in this work pack are therefore conditional on that verification.",
     "key_quotes": [
-      "We sent a payout to one of our contractors 6 days ago and they still haven't received\nthe funds.",
-      "This is a payroll\npayment and the contractor (based in [Country A]) is messaging us asking what's going\non \u2014 it's getting awkward on our end."
+      "This is a payroll payment and the contractor (based in [Country A]) is messaging us asking what's going on",
+      "Can someone please look into this today? Transaction ref: VP-994821."
     ],
     "source_refs": [
       "SP-3",
@@ -261,39 +252,32 @@
     ],
     "tasks": [
       {
-        "task": "Look up transaction VP-994821 in the payments ledger: confirm dispatch timestamp, current status in the off-ramp pipeline, and which partner bank / country corridor is involved.",
+        "task": "Pull transaction VP-994821 from internal records: confirm dispatch timestamp, current status in the partner off-ramp chain, and whether Country A is on the KI-4 extended-delay watch list. Document findings before any customer reply is sent.",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": "2026-06-13T17:00:00Z",
-        "acceptance_criteria": "Internal case note updated with: confirmed dispatch UTC timestamp, current partner-bank status, corridor identified, and whether the delay matches the KI-4 affected-country list."
+        "acceptance_criteria": "A written status note is attached to ticket #58502 confirming: (1) exact UTC dispatch time, (2) last known off-ramp status event, (3) whether Country A is a KI-4-affected destination, and (4) estimated resolution window from the partner, if obtainable."
       },
       {
-        "task": "Escalate transaction VP-994821 to the relevant off-ramp partner for a status update and estimated completion, following the SP-3 escalation process.",
+        "task": "Escalate VP-994821 to the relevant off-ramp partner to request a status update and, where possible, an estimated completion timestamp. Log all partner communications against the ticket.",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": "2026-06-13T17:00:00Z",
-        "acceptance_criteria": "Escalation ticket opened with partner and reference number logged in the internal case; any partner-provided ETA documented."
+        "acceptance_criteria": "Escalation is confirmed sent to the partner and a response (or acknowledgement of no-SLA) is recorded on the ticket. If a partner-side ETA is obtained, it is shared with the customer in a follow-up message."
       },
       {
-        "task": "Check whether the destination country for VP-994821 is on the KI-4 under-review list of corridors experiencing extended off-ramp delays; if so, flag for the Product team to expedite partner review for that corridor.",
+        "task": "Assess whether Country A should be formally added to the KI-4 affected-destinations list and whether the 1\u20133 business day policy language in SP-3 needs a country-specific caveat in the help centre or dashboard.",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Country corridor confirmed as on or off the KI-4 affected list; if on the list, a tracking note is added to the KI-4 issue with this ticket as supporting evidence."
-      },
-      {
-        "task": "After transaction status is confirmed, draft and send the approved customer reply to the ticket submitter with accurate timing information and escalation outcome.",
-        "assignee_team": "Support Operations",
-        "priority": "High",
-        "deadline": "2026-06-13T20:00:00Z",
-        "acceptance_criteria": "Reply sent to customer with specific, accurate status of VP-994821 and a realistic next-update commitment; no vague timing language used."
+        "acceptance_criteria": "A decision is documented: either Country A is added to the KI-4 list with a target remediation date, or it is explicitly cleared with a recorded rationale. If the policy language is to be updated, a draft change is submitted for review within one sprint."
       }
     ],
-    "reply_draft": "We've located transaction VP-994821 and are escalating it now to the local banking partner handling the final delivery to your contractor.\n\nThe delay goes beyond the typical 1\u20133 business day window, and we're treating it as a priority. We've raised an escalation with the partner and will have a status update for you by [INSERT PARTNER RESPONSE DEADLINE ONCE CONFIRMED].\n\nWe can't guarantee a specific completion date on the partner's end, but we'll update you as soon as we have a confirmed timeline. If anything changes in the meantime \u2014 including if a reversal becomes the right path \u2014 we'll reach out immediately.\n\nWe'll be back in touch by [INSERT UPDATE TIMESTAMP].",
+    "reply_draft": "We've located transaction VP-994821 and are looking into why the funds haven't reached your contractor yet.\n\nTransfers to recipients in some countries can take longer than the typical 1\u20133 business day window due to processing times at local banking partners \u2014 this is outside our direct control, but we've escalated your transaction to our partner now to get a status update.\n\nWe'll come back to you with a concrete update \u2014 including any estimated completion date the partner can give us \u2014 as soon as we have it. We won't leave you waiting on a vague timeline: if we get a specific date, we'll pass it on; if we can't get one, we'll tell you that directly.\n\nIn the meantime, if it helps to have anything in writing to share with your contractor, let us know and we can provide a confirmation of the payment dispatch on our side.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply references a specific transaction (VP-994821) with timing and escalation commitments that depend on internal ledger data and partner response windows not yet confirmed. A support agent must verify the transaction status, dispatch timestamp, and partner ETA before the reply placeholders can be filled and the message sent. Sending with inaccurate timing information would constitute an overpromise in breach of TG-2 and TG-6.",
+        "reason": "The reply implies the payment was successfully dispatched on Vela Pay's side and attributes the delay solely to the partner off-ramp. This has not yet been verified against internal records for VP-994821 \u2014 if the transaction is actually stuck or failed on Vela Pay's side rather than the partner's, the reply would be materially incorrect and could create a policy or liability issue. Human confirmation of the transaction's actual internal status is required before this reply is sent.",
         "blocks": "reply_draft"
       }
     ],
@@ -318,59 +302,68 @@
     "confidence": "High"
   },
   {
-    "title": "Recipient name displayed on confirmation screen does not match name transmitted to receiving bank",
-    "problem_brief": "A sender reports that the confirmation screen displayed the recipient name as 'J. Okafor', but the name that appeared on the actual bank transfer record was 'J. Okefor' \u2014 a different spelling. This discrepancy caused the recipient's bank to flag the transfer for review, delaying the deposit by approximately 2 business days. The root cause is unclear: it is unknown whether the confirmation screen pulls from a different data source than the one used to generate the outbound transfer instruction, or whether a transformation/truncation step introduced the mismatch. No existing known issue in the context documents covers this specific name-field discrepancy.",
+    "title": "Recipient name mismatch between confirmation screen and bank transfer record",
+    "problem_brief": "A user reported (Ticket #58620) that the confirmation screen displayed a recipient name ('J. Okafor') that differed from the name transmitted to the recipient's bank ('J. Okefor'), causing the recipient's bank to flag the transfer for review. The discrepancy resulted in a 2-day deposit delay. The root cause appears to be a data inconsistency between the name shown on Vela Pay's confirmation screen and the name actually sent to the downstream banking partner. The source of the confirmation screen's name field \u2014 and at what point the name diverges from what is transmitted \u2014 is currently unknown and requires engineering investigation.",
     "key_quotes": [
       "The confirmation screen showed the recipient name as \"J. Okafor\" but the actual transfer that landed in their bank shows a different spelling (\"J. Okefor\")",
       "Where does the confirmation screen pull the name from?"
     ],
-    "source_refs": [],
+    "source_refs": [
+      "SP-3"
+    ],
     "tasks": [
       {
-        "task": "Audit the data pipeline between recipient profile storage, the confirmation screen display layer, and the outbound transfer instruction generation to identify where 'J. Okafor' is transformed into 'J. Okefor'. Determine whether the confirmation screen reads from a different field or snapshot than the field used to populate the transfer instruction.",
+        "task": "Investigate the data pipeline for recipient name display on the confirmation screen vs. the name transmitted to the downstream banking partner \u2014 identify at which point the name value diverges (e.g. UI rendering, API serialization, partner data mapping) and whether any transformation or truncation is applied",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "The exact code path and data source for the recipient name field is documented for both (a) the confirmation screen and (b) the outbound transfer payload. Any divergence between the two sources is identified and a root cause is confirmed."
+        "acceptance_criteria": "A documented root cause identifying the exact system layer where the name mismatch is introduced, with a code or config reference; all name values passed to the confirmation screen and to the banking partner for Ticket #58620 are traceable and reconciled in the investigation write-up"
       },
       {
-        "task": "Once root cause is confirmed, implement a fix so that the recipient name displayed on the confirmation screen is byte-for-byte identical to the name transmitted in the outbound transfer instruction. Add an automated test asserting this equivalence for new and existing recipient profiles.",
+        "task": "Audit other recent payout transactions to determine whether the name mismatch between confirmation screen and bank transmission is isolated to Ticket #58620 or a broader systemic issue affecting multiple recipients",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Automated test passes confirming the confirmation screen name and the transfer payload name are identical across a sample of at least 100 existing recipient records. No regression introduced on batch payout flows."
+        "acceptance_criteria": "A quantified report of transactions within the last 90 days where the name on the confirmation screen differed from the name transmitted to the banking partner, with a count and sample of affected transactions; if zero other cases found, the audit methodology is documented"
       },
       {
-        "task": "Review historical transfers to assess whether the name-field mismatch has affected other transactions beyond this ticket, and determine the scope of potential bank-side delays or rejections caused by this bug.",
+        "task": "Implement a fix or data validation check to ensure the recipient name shown on the confirmation screen is identical to the name transmitted to the banking partner, and add an automated test covering name field consistency end-to-end",
+        "assignee_team": "Engineering",
+        "priority": "High",
+        "deadline": null,
+        "acceptance_criteria": "A passing automated test verifies that the name value on the confirmation screen matches the name field in the outbound API payload to the banking partner for a representative set of name formats (including names with initials, diacritics, and spacing variants); no regression in existing payout flow tests"
+      },
+      {
+        "task": "Escalate Ticket #58620 to the banking partner to request the 2-day review flag on the recipient's deposit be cleared, and update the customer on the outcome",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "A report is produced listing any transactions where the confirmation-screen name and transmitted name differed, with counts and impacted customer IDs. Findings are shared with Product and Engineering."
+        "acceptance_criteria": "Escalation to the partner is confirmed sent; customer is updated with the partner's response or, if no resolution timeline is available from the partner, the customer is explicitly informed that a timeline cannot be guaranteed per SP-3"
       },
       {
-        "task": "Add this confirmed bug to the Known Issues register (KI series) once root cause is validated, and determine whether a user-facing advisory or proactive outreach to affected senders is warranted.",
+        "task": "Add this name mismatch scenario to the known issues log and assess whether a dashboard warning or pre-confirmation name validation should be added to the product backlog to prevent recurrence",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Known issue entry is created with an accurate description and workaround (if any). A decision is documented on whether proactive customer communication is required."
+        "acceptance_criteria": "A brief product assessment is documented covering: (1) whether a pre-send name validation against the expected format would catch this class of error, and (2) a go/no-go recommendation for adding it to the roadmap, with rationale"
       }
     ],
-    "reply_draft": "The 2-day delay on this transfer was caused by a mismatch between the recipient name shown on your confirmation screen ('J. Okafor') and the name that was sent to the receiving bank ('J. Okefor'). That discrepancy is what triggered the bank's review.\n\nThis is a bug on our side \u2014 the name shown on the confirmation screen should be identical to what we transmit. We're investigating where that divergence is introduced and will fix it.\n\nFor this specific transfer: the funds have now reached the recipient's account, so no further action is needed on your end. If the delay caused any downstream issue you'd like us to look into, let us know.\n\nWe'll follow up once we have a confirmed fix in place.",
+    "reply_draft": "Your recipient's deposit was delayed because the name on the transfer record didn't match what the confirmation screen showed \u2014 we're investigating why those two values differed.\n\nHere's what we know: the confirmation screen displayed 'J. Okafor' but the name transmitted to the recipient's bank was 'J. Okefor'. That discrepancy caused the bank to flag the transfer for review. We're tracing exactly where in the process the name changed and will share a clear answer once we have it.\n\nIn parallel, we're escalating to the recipient's banking partner to ask them to clear the review flag. We can't commit to a specific date from their side \u2014 that's within their control \u2014 but we'll follow up with you directly as soon as we have a response.\n\nWe'll be back in touch with both the root cause and the status of the escalation. If the deposit has already cleared on the recipient's end, please let us know so we can close the escalation.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply states 'the funds have now reached the recipient's account' \u2014 this is an assumption based on the 2-day delay being described in the past tense, but the ticket does not explicitly confirm final delivery. A support agent must verify current transfer status before sending.",
+        "reason": "The reply references escalating to the banking partner to clear the review flag on the recipient's deposit \u2014 a support agent should verify the current deposit status (whether it has already cleared or is still held) before sending, to avoid making a commitment to escalate a situation that may already be resolved or that requires a different action based on the live transaction state.",
         "blocks": "reply_draft"
       }
     ],
     "quality_flags": [
       {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'The confirmation screen showed the recipient name as \"J. Okafor\" but the actual transfer that landed in their bank shows a different spelling (\"J. Okefor\")'"
+        "flag": "ambiguous_timestamp",
+        "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft"
       },
       {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'Where does the confirmation screen pull the name from?'"
+        "flag": "tone_violation",
+        "reason": "first sentence of reply_draft does not reference transaction/amount/timing"
       }
     ],
     "cluster_id": "CLU-006",
@@ -388,48 +381,44 @@
     "confidence": "High"
   },
   {
-    "title": "No recurring or scheduled payout functionality forces manual CSV re-upload every cycle",
-    "problem_brief": "Users must manually re-upload the same CSV file each payroll cycle because Vela Pay has no option to schedule or repeat a payout run. This is a documented roadmap item (RM-2) that has not yet been built. The absence of recurring payouts creates significant repetitive overhead for small finance teams running fixed monthly payroll. No absolute timestamp is available in the feedback to anchor when this was submitted.",
+    "title": "No scheduled or recurring payout support forces manual re-upload each payroll cycle",
+    "problem_brief": "Users with fixed recurring payroll runs must manually re-upload the same CSV every month because Vela Pay has no scheduled or recurring payout functionality. This is a known roadmap item (RM-2) that has not yet been built. The friction is disproportionate for small finance teams who run identical payouts on a regular cadence and gain nothing from the manual re-upload step. There is no known timestamp for when this capability will be available.",
     "key_quotes": [
-      "right now we have to re-upload the same CSV every single month for payroll",
-      "A \"repeat monthly\" option, even just for a fixed list of recipients/amounts, would be huge for small teams like ours."
+      "we have to re-upload the same CSV every single month for payroll",
+      "A 'repeat monthly' option, even just for a fixed list of recipients/amounts, would be huge for small teams like ours"
     ],
     "source_refs": [
       "RM-2"
     ],
     "tasks": [
       {
-        "task": "Add this feedback item to the RM-2 recurring/scheduled payouts backlog and update the internal demand count to reflect this use case (fixed recipient list, fixed amounts, monthly cadence)",
+        "task": "Promote RM-2 (scheduled/recurring payouts) to active product scoping: define MVP scope covering at minimum a 'repeat monthly' option for a saved recipient list with fixed amounts, and produce a requirements document for engineering estimation",
+        "assignee_team": "Product",
+        "priority": "High",
+        "deadline": null,
+        "acceptance_criteria": "A scoped requirements document for recurring/scheduled payouts exists, MVP boundaries are agreed, and the feature has an assigned milestone or sprint target on the public-facing or internal roadmap"
+      },
+      {
+        "task": "Log this feedback item against the RM-2 roadmap entry and update the internal demand signal count to reflect confirmed customer interest from at least one SME payroll use case",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "RM-2 backlog entry is updated with at least one tagged use-case example covering fixed-recipient monthly payroll; demand count incremented by 1"
+        "acceptance_criteria": "RM-2 ticket or roadmap entry is updated with a reference to this feedback and the running count of affected customers/use cases is incremented"
       },
       {
-        "task": "Define and document the MVP scope for recurring payouts, including: repeat interval options (monthly minimum), fixed vs. variable amount handling, recipient list management, and how it interacts with existing CSV batch upload (KI-1 row limit)",
-        "assignee_team": "Product",
-        "priority": "Medium",
-        "deadline": null,
-        "acceptance_criteria": "A written scoping document exists covering the above dimensions, reviewed by at least one engineer and one support/ops stakeholder, and linked to the RM-2 roadmap item"
-      },
-      {
-        "task": "Assess technical feasibility and estimated effort for a 'repeat monthly' scheduled payout feature, including backend scheduling, idempotency handling, and any compliance or KYB/KYC re-check requirements on recurring transactions",
+        "task": "Identify whether a self-service workaround (e.g. saving a recipient template or pre-filling a CSV from a previous upload) can be surfaced in the dashboard to reduce re-upload friction in the interim before RM-2 ships",
         "assignee_team": "Engineering",
-        "priority": "Medium",
+        "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "Effort estimate and feasibility notes are documented and shared with Product; any compliance blockers are flagged to the Compliance team"
+        "acceptance_criteria": "A documented assessment confirms either: (a) a viable interim workaround exists and is added to the help centre or dashboard UI, or (b) no meaningful interim improvement is feasible without the full RM-2 build"
       }
     ],
-    "reply_draft": "Thanks for the clear description of the workflow \u2014 this is exactly the kind of use case that's shaped how we're thinking about this feature.\n\nScheduled and recurring payouts aren't available yet. You're right that the current flow requires a fresh CSV upload each cycle, which adds unnecessary manual work for a fixed payroll run.\n\nThis is something we're actively planning to build. We can't commit to a release date right now, but your request \u2014 specifically the fixed-recipient, fixed-amount monthly payroll case \u2014 is the core scenario we're designing for. We'll reach out when there's a concrete update to share.",
+    "reply_draft": "Recurring payouts aren't available yet \u2014 every payout currently requires a fresh CSV upload or manual entry. This is something we're actively working to change. The feature you're describing (a repeat option for a fixed recipient list and amounts) is on our roadmap, and your feedback is being logged directly against it to help prioritise timing.\n\nWe can't give you a confirmed delivery date right now, but we'll update you when that changes. In the meantime, if there's anything we can do to make the monthly re-upload faster \u2014 for example, guidance on structuring your CSV for quicker re-use \u2014 reach out and we'll take a look.",
     "review_flags": [],
     "quality_flags": [
       {
         "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'right now we have to re-upload the same CSV every single month for payroll'"
-      },
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'A \"repeat monthly\" option, even just for a fixed list of recipients/amounts, would be huge for small teams like ours.'"
+        "reason": "quote not found verbatim in any cluster member's raw_text: \"A 'repeat monthly' option, even just for a fixed list of recipients/amounts, would be huge for small teams like ours\""
       }
     ],
     "cluster_id": "CLU-007",
@@ -447,8 +436,8 @@
     "confidence": "High"
   },
   {
-    "title": "Configurable payout approval workflow for threshold-based authorization",
-    "problem_brief": "A customer with growing team membership has flagged that any admin can immediately execute payouts of any size, with no second-approval gate. They specifically require a finance-director approval step for payouts exceeding $5,000, and have framed the absence of this control as an active financial risk. This request maps directly to RM-3, a documented roadmap item covering role-based approval workflows with threshold-based approval chains, which is not yet built.",
+    "title": "Approval workflow missing for high-value payouts above configurable threshold",
+    "problem_brief": "A customer reports that their current Vela Pay account lacks any approval step before payouts are sent, meaning any admin can dispatch large payments \u2014 including those over $5,000 \u2014 without a second authorizer's sign-off. This is a recognized gap in the v1 role model, which provides only admin/finance/viewer roles without an approval chain. As the customer's team grows, the absence of a configurable approval threshold creates financial control and internal compliance risk. This feature is on the product roadmap (RM-3) but has not yet been built.",
     "key_quotes": [
       "any admin can just send it immediately",
       "Can you add an approval step for payouts above a configurable threshold?"
@@ -458,48 +447,30 @@
     ],
     "tasks": [
       {
-        "task": "Add Ticket #58701 as a named supporting instance to the RM-3 roadmap item; record the specific use case (threshold: $5,000, approver role: finance director, risk driver: team expansion) to inform requirements scoping",
+        "task": "Add this ticket to the RM-3 feature demand log and confirm the customer is subscribed to roadmap updates for role-based approval workflows",
+        "assignee_team": "Support Operations",
+        "priority": "Low",
+        "deadline": null,
+        "acceptance_criteria": "Ticket #58701 is linked to the RM-3 backlog item and the customer account is tagged for notification when RM-3 ships or enters beta"
+      },
+      {
+        "task": "Review and update the RM-3 product specification to explicitly include: (1) admin-configurable per-threshold approval rules, (2) multi-step approval chain (at least two distinct approver roles), and (3) audit log of approval decisions \u2014 in line with this and prior requests",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "RM-3 backlog item is updated with this customer's use case, threshold value, and role-specific requirement; customer account is tagged for outreach when RM-3 ships"
+        "acceptance_criteria": "RM-3 spec document includes configurable threshold field, named approver role(s), approval audit trail, and has been reviewed by at least one requesting customer's use-case against the spec"
       },
       {
-        "task": "Assess demand signal for RM-3 across existing customer base to inform prioritization; produce a short stakeholder summary of frequency, company size, and threshold values requested",
-        "assignee_team": "Product",
-        "priority": "Medium",
+        "task": "Assess whether a lightweight interim workaround (e.g. documentation guidance on using viewer/finance roles to restrict who can initiate payouts) can reduce customer risk until RM-3 is built, and document it in the support knowledge base",
+        "assignee_team": "Support Operations",
+        "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A prioritization memo or ticket update exists that quantifies known demand for RM-3 and makes a concrete recommendation on scheduling relative to other roadmap items"
-      },
-      {
-        "task": "Define MVP requirements for RM-3: configurable payout threshold, assignable approver role(s), approval notification mechanism, and behavior when approver is unavailable (e.g. timeout or escalation path)",
-        "assignee_team": "Product",
-        "priority": "Medium",
-        "deadline": null,
-        "acceptance_criteria": "A written requirements spec or user story set for RM-3 MVP is reviewed and accepted by Product and Engineering leads, covering at minimum: threshold configurability, role assignment, notification, and edge-case handling"
-      },
-      {
-        "task": "Implement RM-3 approval workflow in dashboard: threshold-based approval gate, approver notification, and audit log of approval/rejection actions",
-        "assignee_team": "Engineering",
-        "priority": "Medium",
-        "deadline": null,
-        "acceptance_criteria": "Admins can set a configurable payout threshold; payouts at or above the threshold are held pending approval from a designated approver role; approver receives in-app and/or email notification; all approval and rejection actions are recorded in the transaction audit log; payouts below threshold continue to send immediately"
+        "acceptance_criteria": "A documented workaround or explicit confirmation that no sufficient workaround exists is added to the internal knowledge base and shared with the customer"
       }
     ],
-    "reply_draft": "Thanks for the detail on how you need this to work \u2014 a configurable approval threshold with a designated finance-director approver is a clear requirement.\n\nThis isn't available yet. We have it on our roadmap (approval workflows with threshold-based authorization before payouts send), but we don't have a delivery date confirmed yet.\n\nWe've logged your specific setup \u2014 threshold at $5,000, approval by a finance director \u2014 against that roadmap item so your use case is part of the requirements when we build it. We'll reach out when it's closer to shipping.\n\nIn the meantime, the only partial mitigation within the current role model is limiting which team members hold the admin role. That doesn't give you the approval chain you need, but it does reduce the number of people who can send without authorization.",
-    "review_flags": [
-      {
-        "flag": "needs_human_review",
-        "reason": "Reply references a roadmap item with no confirmed delivery date. A human should verify the current internal status of RM-3 before sending, to ensure the reply neither overpromises a timeline nor undersells progress that may have been made since this document was authored.",
-        "blocks": "reply_draft"
-      }
-    ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'Can you add an approval step for payouts above a configurable threshold?'"
-      }
-    ],
+    "reply_draft": "Your current account roles \u2014 admin, finance, and viewer \u2014 don't include an approval chain, so there's no way to require a second sign-off before a payout goes out. That's the gap you've identified.\n\nConfigurable approval workflows (where payouts above a set threshold require a second admin's approval before sending) are on our roadmap. We don't have a confirmed release date to share yet, but this request is being logged against that item and you'll be notified when it moves into development or beta.\n\nIn the meantime, the most direct way to reduce the risk is to limit which team members hold the admin role \u2014 finance-role users can't initiate payouts independently in the same way. That won't give you a formal approval gate, but it narrows who can send without oversight. Let us know if you'd like help reviewing your current role assignments.",
+    "review_flags": [],
+    "quality_flags": [],
     "cluster_id": "CLU-008",
     "cluster_members": [
       "FB-08"
@@ -515,8 +486,8 @@
     "confidence": "High"
   },
   {
-    "title": "No memo or reference field on payouts for accounting reconciliation",
-    "problem_brief": "Users currently have no way to attach an internal reference number or memo (e.g. an invoice number) to individual payout transactions. This makes it difficult to match payouts against records in external accounting systems after the fact. The gap is compounded by KI-3, which notes that FX cost detail is also missing from exported reports, further degrading reconciliation quality for finance teams. No absolute timestamp is available in the submitted feedback; this item was triaged as received.",
+    "title": "No memo or reference field on outbound payouts for accounting reconciliation",
+    "problem_brief": "Users cannot attach an internal reference number or memo to individual payouts at the time of sending. This makes it difficult to match payout records in Vela Pay's dashboard against invoices or line items in an external accounting system. The limitation applies to both single payouts and batch CSV uploads. No workaround is currently available within the product to tag a payout beyond the recipient identity.",
     "key_quotes": [
       "attach an internal reference number or memo to each payout (e.g. our own invoice number) so it's easier to match against our accounting system later",
       "right now there's no way to tag a payout with anything beyond the recipient"
@@ -526,50 +497,30 @@
     ],
     "tasks": [
       {
-        "task": "Add an optional free-text memo/reference field to the single payout and batch CSV payout flows, storing the value against the transaction record",
+        "task": "Scope and design a memo/reference field for outbound payouts \u2014 covering single payouts, manual entry, and batch CSV uploads \u2014 that is stored against each transaction record and surfaced in the dashboard and exported CSV reports",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A memo/reference field is available on the payout creation UI and in the CSV template; the value is saved to the transaction record and persists in the dashboard transaction detail view"
+        "acceptance_criteria": "A product spec exists that defines the field (data type, character limit, optional vs. required), covers all payout entry paths (single payout, manual entry, CSV batch), and specifies how the field appears in the transaction history view and in exported CSV reports"
       },
       {
-        "task": "Expose the memo/reference field as a dedicated column in the exportable transaction CSV report",
+        "task": "Implement memo/reference field on the payout creation flow (single and batch CSV), persisting the value to the transaction record and including it as a dedicated column in exportable CSV reports",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Exported CSV includes a 'Reference / Memo' column that is populated for any transaction where a value was entered, and blank (not omitted) where none was provided"
+        "acceptance_criteria": "Users can enter a free-text reference/memo on any outbound payout; the value is visible on the transaction detail page; the exported CSV report includes a dedicated 'Reference/Memo' column populated with the value for each payout where one was provided"
       },
       {
-        "task": "Evaluate including the memo/reference field in batch CSV upload template and document the column spec in the help centre",
+        "task": "Update the CSV batch upload template and documentation to include the new optional memo/reference column, with a sample value and field description",
         "assignee_team": "Product",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "Batch CSV template includes an optional 'memo' column; help centre article documents the column name, max character limit, and behaviour when left empty"
-      },
-      {
-        "task": "While scoping the memo field, assess whether KI-3 (FX spread not shown as a separate line item in CSV exports) can be addressed in the same engineering cycle to deliver a more complete reconciliation improvement",
-        "assignee_team": "Product",
-        "priority": "Low",
-        "deadline": null,
-        "acceptance_criteria": "A written scoping decision is documented: either the two changes are bundled in one release, or a clear rationale explains why they are sequenced separately"
+        "acceptance_criteria": "The downloadable CSV template includes a 'reference' or 'memo' column; the help documentation explains the field's purpose, character limit, and that it is optional"
       }
     ],
-    "reply_draft": "Thanks for the clear example \u2014 attaching an invoice number or internal reference to payouts for reconciliation is a gap we've heard from other finance teams too.\n\nThis isn't something the platform supports today: payouts can only be tagged with recipient details, and there's no memo or reference field that carries through to your transaction history or exported reports.\n\nWe've logged this as a feature request and it's being reviewed for a future release. We can't give you a confirmed delivery date right now, but we'll update you when it moves to the build stage.\n\nIn the meantime, if you're working around the gap today, one option is to include the invoice reference in the recipient name or a dedicated recipient label field if your workflow allows \u2014 though we recognise that's imperfect for clean reconciliation.",
+    "reply_draft": "Thanks for the specific use case \u2014 this is a clear gap. There's currently no way to attach a reference number or memo to a payout, which makes matching records against your own invoicing system unnecessarily manual.\n\nThis is on our radar as a planned improvement. We don't have a confirmed release date to share yet, but the request \u2014 particularly the need for the reference to appear in exported reports \u2014 is exactly the detail that helps us scope it correctly.\n\nWe'll note your account against this feature so we can follow up when it ships.",
     "review_flags": [],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"attach an internal reference number or memo to each payout (e.g. our own invoice number) so it's easier to match against our accounting system later\""
-      },
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"right now there's no way to tag a payout with anything beyond the recipient\""
-      },
-      {
-        "flag": "ambiguous_timestamp",
-        "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-009",
     "cluster_members": [
       "FB-09"
@@ -586,7 +537,7 @@
   },
   {
     "title": "Support team responding in English to Spanish-language tickets",
-    "problem_brief": "A business customer submitted support tickets in Spanish on at least two separate occasions and received replies written entirely in English. The customer personally reads English but has a colleague who handles most of their support tickets and does not, creating a practical barrier to ticket resolution for their team. No absolute timestamp is available in the feedback for when these incidents occurred, as the raw text does not specify dates.",
+    "problem_brief": "A business customer reports that support tickets submitted in Spanish have been answered entirely in English on at least two occasions. The customer is personally unaffected due to English proficiency, but a colleague who handles most of their support tickets cannot read English, creating a practical barrier to accessing support. No absolute timestamps are available in the submitted feedback; the ticket reference is #58740.",
     "key_quotes": [
       "I submitted my ticket in Spanish and got a reply entirely in English.",
       "my colleague who handles most of our tickets doesn't, and this has happened twice now."
@@ -594,41 +545,30 @@
     "source_refs": [],
     "tasks": [
       {
-        "task": "Audit support queue handling rules to determine whether language detection or language-matching logic exists for inbound tickets, and document the current gap for non-English ticket routing.",
+        "task": "Investigate ticket #58740 and the prior related ticket to confirm both were submitted in Spanish and received English-only replies; document the language detection or routing logic (or absence thereof) that led to these mismatches.",
         "assignee_team": "Support Operations",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A written assessment is produced that identifies whether any language-matching policy or tooling exists, and clearly documents the gap if none does."
+        "acceptance_criteria": "Root cause of the language mismatch is identified and documented \u2014 whether it is agent error, absence of a language-matching rule, or a missing language option in the ticketing system."
       },
       {
-        "task": "Implement or configure a language-detection rule in the ticketing system so that tickets submitted in Spanish (and other non-English languages) are either routed to a bilingual agent or trigger a reply in the language the customer wrote in.",
+        "task": "Define and implement a support language policy: tickets submitted in Spanish (and other non-English languages) must receive replies in the same language. Determine whether this requires multilingual agents, translation tooling, or a routing rule, and implement the chosen solution.",
         "assignee_team": "Support Operations",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Tickets submitted in Spanish receive first replies in Spanish. QA sample of at least 10 Spanish-language tickets post-implementation confirms correct language matching with zero English-only replies."
+        "acceptance_criteria": "A documented language-matching policy exists and is applied in the ticketing workflow; a test Spanish-language ticket receives a Spanish-language reply without manual escalation."
       },
       {
-        "task": "Establish a support policy or SOP documenting the expected language-matching behavior for non-English inbound tickets, including escalation path when no bilingual agent is available.",
+        "task": "Audit recent ticket history to identify any other customers who submitted non-English tickets and received English-only replies; proactively follow up with those customers in their original language.",
         "assignee_team": "Support Operations",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A documented SOP is published internally covering language-matching requirements, agent assignment logic, and escalation fallback, signed off by the Support Operations lead."
+        "acceptance_criteria": "Audit is complete; all identified affected customers have received a follow-up in their submitted language."
       }
     ],
-    "reply_draft": "Thanks for flagging this \u2014 and for noting it has happened twice, not just once.\n\nYour tickets were submitted in Spanish and should have been answered in Spanish. They weren't, and that's a problem on our end, particularly given that your colleague who manages most of your tickets doesn't read English.\n\nWe're looking at how tickets are routed and replied to when they come in a language other than English, and this is a direct input into fixing that. We don't have a specific timeline to share yet, but we'll follow up once we have a concrete update on what changes.\n\nIn the meantime, if you submit future tickets in Spanish and receive an English reply again, please reply to that ticket in Spanish and note the issue \u2014 we'll flag it for manual reassignment to a Spanish-speaking agent while the broader fix is in progress.",
-    "review_flags": [
-      {
-        "flag": "needs_human_review",
-        "reason": "The reply commits to a follow-up update and references an internal process change that does not yet exist. A human should confirm the promise of follow-up is operationally backed before the reply is sent.",
-        "blocks": "reply_draft"
-      }
-    ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"my colleague who handles most of our tickets doesn't, and this has happened twice now.\""
-      }
-    ],
+    "reply_draft": "We've seen that two of your Spanish-language tickets received replies in English \u2014 that's a gap in how we're routing and responding, and we're fixing it.\n\nGoing forward, tickets your team submits in Spanish will be answered in Spanish. We're also reviewing whether other customers have run into the same issue.\n\nIf there's anything outstanding from those earlier tickets that didn't get resolved clearly, send them our way and we'll respond in Spanish.",
+    "review_flags": [],
+    "quality_flags": [],
     "cluster_id": "CLU-010",
     "cluster_members": [
       "FB-10"
@@ -644,63 +584,52 @@
     "confidence": "High"
   },
   {
-    "title": "Dashboard displays card transaction currency label incorrectly (EUR shown as USD with raw EUR amount)",
-    "problem_brief": "A customer reports that a card transaction made in EUR is being displayed in the dashboard transaction list with a USD currency label, while showing the raw EUR amount as the number rather than converting it to USD. The visual result is an incorrect-looking running balance total, even though the actual charge to the stablecoin balance appears to be correct. This is a display/labelling bug in the dashboard's transaction list rendering logic, where the currency code and amount value are mismatched for foreign-currency card transactions. No absolute timestamp for the occurrence was provided in the feedback; the issue was reported via ticket #58812.",
+    "title": "Card transaction currency label mismatch in dashboard display",
+    "problem_brief": "A dashboard bug causes card transactions charged in a foreign currency (EUR in this case) to be displayed with an incorrect currency label (USD) while using the foreign currency's raw amount as the number, without applying any conversion. This makes the transaction list and running total visually misleading, even though the actual balance deduction appears to be calculated correctly. The issue is a display-layer inconsistency between the currency code shown and the amount value rendered. No absolute timestamp is available in the submitted feedback; the ticket reference is #58812.",
     "key_quotes": [
       "the dashboard transaction list shows it labeled as USD with the EUR amount as the number (no conversion applied in the display)",
-      "the actual charge to our balance seems correct"
+      "makes the running total look wrong at a glance, even though the actual charge to our balance seems correct"
     ],
-    "source_refs": [
-      "KI-2"
-    ],
+    "source_refs": [],
     "tasks": [
       {
-        "task": "Investigate and reproduce the dashboard transaction list bug where card purchases made in a non-USD currency (confirmed: EUR) are displayed with an incorrect currency label (USD) and the unconverted foreign-currency amount, rather than the USD-equivalent amount with correct label.",
+        "task": "Reproduce the currency label/amount mismatch in the dashboard transaction list for foreign-currency card purchases (confirmed with EUR; check all non-USD card transaction currencies). Identify whether the bug is in the data layer (wrong currency code stored) or the display layer (correct data rendered with wrong label).",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A EUR-denominated card transaction is confirmed to display with the correct currency label (EUR or USD-equivalent, per intended UX) and the correct converted amount in the dashboard transaction list, with no mismatch between currency code and numeric value. Regression tested across at least two other non-USD card transaction currencies."
+        "acceptance_criteria": "Root cause identified and documented; confirm whether the stored transaction data is correct or also affected. Reproduction steps recorded for at least one additional non-USD currency beyond EUR."
       },
       {
-        "task": "Audit dashboard transaction list rendering logic to determine whether the currency label/amount mismatch affects other non-USD currencies beyond EUR, and document scope of impact.",
+        "task": "Fix the dashboard so that card transactions display the correct currency code paired with the correctly converted amount in the user's balance currency, or clearly display the original foreign-currency amount with its correct currency code and a separate converted amount.",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A written report confirming which currencies are affected, the root cause in the rendering layer, and whether the running balance total is visually impacted for all affected currencies or only EUR."
+        "acceptance_criteria": "Dashboard transaction list shows the correct currency label and amount for foreign-currency card purchases. Running total accurately reflects actual balance deductions. Verified across at least EUR and one other non-USD currency."
       },
       {
-        "task": "Confirm with the customer (ticket #58812) whether their actual balance deduction and any FX conversion were processed correctly, and flag to Engineering if the underlying transaction data is also malformed (not just a display issue).",
-        "assignee_team": "Support Operations",
-        "priority": "Medium",
+        "task": "Check whether the running total calculation displayed in the dashboard is actually correct despite the label mismatch, or whether the visual error masks an underlying calculation error for some users.",
+        "assignee_team": "Engineering",
+        "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Customer confirms the charged amount and balance impact are correct. If any discrepancy is found in the underlying transaction data, an escalation ticket is opened with Engineering within 1 business day of confirmation."
+        "acceptance_criteria": "Confirmed via data audit that balance deductions for foreign-currency card transactions match expected converted amounts. Any discrepancy between displayed and actual balance triggers a separate incident."
       },
       {
-        "task": "Add this display bug to the known issues tracker and assess whether a dashboard UI fix or interim user guidance (e.g. in-app tooltip or support article) should be prioritised while the engineering fix is in progress.",
+        "task": "Add this display bug to the known issues register and assess whether other currency combinations (beyond EUR/USD) are affected.",
         "assignee_team": "Product",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "Bug is logged in the product issue tracker with severity, affected scope, and a decision on interim mitigation documented."
+        "acceptance_criteria": "Known issues register updated with scope of affected currencies. Stakeholders notified of fix timeline once Engineering completes root-cause analysis."
       }
     ],
-    "reply_draft": "Your actual balance and the charge amount look correct \u2014 this is a display bug in the transaction list, not a problem with how the payment was processed.\n\nWhat's happening: when a card purchase is made in EUR, the dashboard is incorrectly labelling it as USD and showing the raw EUR amount rather than the converted figure. That's what's making the running total look off.\n\nWe've logged this as a bug (ticket #58812) and our engineering team is investigating. We'll update you once we have a fix timeline. In the meantime, your real balance reflects the correct charged amount \u2014 the transaction list label is the only thing that's wrong.\n\nIf you want to double-check the exact amount deducted for that transaction, you can export your transaction report from the dashboard, which will show the underlying figures.",
+    "reply_draft": "Your balance deduction looks correct \u2014 the underlying charge processed as expected. What's wrong is how the transaction appears in the dashboard: the currency label shows USD when it should show EUR, and the amount displayed is the raw EUR figure without conversion applied. This is a display bug on our end, and we're investigating it now. We'll update you once a fix is in place. In the meantime, your actual balance reflects the correct converted amount, so reconciliation figures drawn from your balance should be accurate \u2014 only the transaction list label is misleading.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply asserts that the actual charge and balance are correct based solely on the customer's own statement ('the actual charge to our balance seems correct'). Before sending, Support Operations should verify this independently against the transaction record to ensure no actual monetary discrepancy exists before it is communicated as confirmed.",
+        "reason": "The reply asserts that the actual balance deduction is correct and that only the display label is wrong. This claim is based solely on the user's own observation in ticket #58812 and has not been verified against transaction records. If the root cause turns out to affect the stored amount rather than only the display layer, this assertion would be incorrect and potentially misleading about the user's financial position.",
         "blocks": "reply_draft"
       }
     ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'the dashboard transaction list shows it labeled as USD with the EUR amount as the number (no conversion applied in the display)'"
-      },
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'the actual charge to our balance seems correct'"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-011",
     "cluster_members": [
       "FB-11"
@@ -716,52 +645,47 @@
     "confidence": "High"
   },
   {
-    "title": "Card dispute unresolved after 12 days \u2014 exceeds 5-business-day policy window",
-    "problem_brief": "A customer submitted a card transaction dispute via the dashboard and has received no resolution or communication after 12 days. Per SP-4, disputes are to be reviewed within 5 business days of submission. The dispute status remains 'under review' in the dashboard, indicating the SLA has been breached by at least double the committed timeframe. The customer has attached a screenshot confirming the stale status and is requesting a manual check.",
+    "title": "Card dispute unresolved beyond the 5-business-day policy window",
+    "problem_brief": "A user submitted a card transaction dispute via the dashboard and, as of the time of submission, has received no response or status change after 12 days \u2014 more than double the 5-business-day review window stated in SP-4. The dispute status remains 'under review' with no communication from the support team. This represents a potential policy breach that requires an immediate check of the dispute's internal status and a direct response to the customer. Because no absolute timestamp for the dispute submission was included in the feedback, the exact breach date cannot be calculated here and must be confirmed against ticket records for Ticket #59014.",
     "key_quotes": [
       "Your policy says disputes are reviewed within 5 business days \u2014 it's now been more than double that.",
-      "Dashboard still shows \"under review\""
+      "Dashboard still shows \"under review\"."
     ],
     "source_refs": [
       "SP-4"
     ],
     "tasks": [
       {
-        "task": "Locate dispute associated with Ticket #59014 and determine why it has not been reviewed or resolved within the SP-4 5-business-day window; identify whether this is a process failure, queue backlog, or system issue causing the status to remain stuck.",
+        "task": "Pull the dispute record for Ticket #59014 and determine current internal status, who (if anyone) owns it, and whether any communication was sent to the customer since submission.",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Root cause of delay is identified; dispute is either resolved or escalated to the appropriate reviewer with a confirmed owner and target completion date; customer is notified of the outcome or next step."
+        "acceptance_criteria": "Internal dispute status confirmed, ownership assigned, and a log of all customer-facing communications since submission produced and attached to the ticket."
       },
       {
-        "task": "Audit the dispute queue to determine if other open disputes are also exceeding the 5-business-day SLA; if multiple cases are affected, escalate as a systemic issue.",
+        "task": "Investigate why this dispute was not resolved or escalated within the 5-business-day window defined in SP-4, and identify whether a systemic queue or routing issue caused the delay.",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "A list of all disputes currently exceeding the SP-4 SLA is produced; if more than one case is affected, a systemic flag is raised to the relevant team lead with a remediation plan."
+        "acceptance_criteria": "Root cause of the delay documented; if a systemic issue is found, a count of any other disputes currently exceeding the SP-4 window is produced and flagged to the relevant team lead."
       },
       {
-        "task": "Investigate whether the dispute dashboard status ('under review') can get stuck in a state that does not reflect actual processing progress, potentially masking SLA breaches from both customers and internal teams.",
-        "assignee_team": "Engineering",
-        "priority": "Medium",
+        "task": "Resolve the dispute or escalate to the appropriate internal team with a firm internal resolution deadline, then notify the customer of the outcome or next concrete step.",
+        "assignee_team": "Support Operations",
+        "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Confirmed whether a status-staleness bug exists; if confirmed, a fix or interim monitoring alert is scoped and added to the backlog with an estimated delivery date."
+        "acceptance_criteria": "Customer receives a direct update on the dispute outcome or a specific next step with a date; dispute status on the dashboard no longer reads 'under review' without an accompanying explanation."
       }
     ],
-    "reply_draft": "Your dispute has been open for 12 days \u2014 past our 5-business-day review window. That's on us, and someone from the disputes team is looking at it now.\n\nWe'll follow up with a status update or resolution within 1 business day. If you don't hear back by then, reply to this message and we'll escalate directly.",
+    "reply_draft": "Your dispute has been open for 12 days \u2014 past the 5-business-day window our policy commits to, and that's not acceptable. We're pulling the record for Ticket #59014 now to find out what happened and where it's stuck.\n\nWe'll come back to you with a concrete update \u2014 either the outcome of the review or a specific next step and date \u2014 within 1 business day. You won't be left waiting without a clear answer again.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply commits to a 1-business-day follow-up timeline and implicitly acknowledges a policy breach (SP-4 SLA missed). A human agent should confirm the dispute is actually being actively worked before this reply is sent, and verify whether any specific money amount or outcome commitment is warranted once the dispute details are reviewed.",
+        "reason": "The reply_draft implicitly asserts that the dispute has not been resolved and no communication was sent \u2014 this must be verified against the actual ticket record for #59014 before sending. The draft also commits to a 1-business-day follow-up, which requires confirmation from the Support Operations team that they can meet that deadline given current queue load.",
         "blocks": "reply_draft"
       }
     ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"Your policy says disputes are reviewed within 5 business days \u2014 it's now been more than double that.\""
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-012",
     "cluster_members": [
       "FB-12"
@@ -777,53 +701,41 @@
     "confidence": "High"
   },
   {
-    "title": "Transaction history export limited to 90-day windows, blocking annual accounting workflows",
-    "problem_brief": "A user reports that the dashboard's transaction export is capped at a 90-day range, requiring 4\u20135 separate exports to cover a full 12-month period for year-end accounting. This limitation creates manual stitching work for finance teams and is a meaningful gap for any customer with annual reporting obligations. No absolute timestamp is available for when this feedback was submitted, as the ticket metadata does not include a creation date. The feature request is for a configurable or extended date-range export, ideally covering at least 12 months in a single operation.",
+    "title": "Transaction history export capped at 90-day window, blocking single-run year-end reconciliation",
+    "problem_brief": "Users exporting transaction history are limited to a 90-day date range per export. This means a full 12-month export \u2014 required for year-end accounting \u2014 cannot be produced in a single operation and instead requires four to five separate exports that must be manually combined. No timestamp is available for when this limitation was introduced or reported; the feedback was processed at triage time. The limitation adds meaningful manual overhead for finance teams during high-workload accounting periods and compounds an existing reconciliation gap noted in KI-3.",
     "key_quotes": [
       "we can only go back 90 days at a time",
-      "currently we'd have to do this in 4-5 separate exports and stitch them together"
+      "we'd have to do this in 4-5 separate exports and stitch them together"
     ],
     "source_refs": [
       "KI-3"
     ],
     "tasks": [
       {
-        "task": "Investigate the 90-day export limit: determine whether it is a hard technical constraint (e.g. query timeout, row limit) or an arbitrary UI restriction, and document the root cause",
+        "task": "Investigate and document the technical basis for the 90-day export window limit (e.g. query timeout, row cap, UI constraint) and assess effort to extend it to at least 12 months or allow a custom date range",
         "assignee_team": "Engineering",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A written technical assessment is produced identifying whether the cap is a database, performance, or product decision, with an estimated effort to raise or remove the limit"
+        "acceptance_criteria": "A written technical assessment exists documenting the root cause of the 90-day cap and a recommended approach (with effort estimate) for supporting a full 12-month or custom-range export in a single operation"
       },
       {
-        "task": "Design and implement support for extended date-range exports (minimum 12 months in a single export), either via a date-picker with no hard upper cap or a configurable range; ensure the exported CSV retains all existing columns including those relevant to KI-3 (FX cost visibility)",
-        "assignee_team": "Engineering",
-        "priority": "Medium",
-        "deadline": null,
-        "acceptance_criteria": "Users can select a custom date range spanning at least 12 months and successfully download a single CSV export covering the full selected period, with no silent failures or truncation"
-      },
-      {
-        "task": "Add the extended export date range to the product roadmap backlog and evaluate bundling it with the KI-3 fix (FX spread as a separate line item in exports) as a single reconciliation improvement initiative",
+        "task": "Add a roadmap item for extended transaction history export (minimum 12-month single-run export) and prioritize it alongside the existing KI-3 FX spread line-item work, since both affect year-end reconciliation workflows",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A backlog item exists with scope defined, linked to both the 90-day cap issue and KI-3, and has been reviewed in a roadmap prioritisation meeting"
+        "acceptance_criteria": "A tracked product backlog item exists for extended export range, linked to KI-3, with a clearly stated user story referencing year-end accounting use cases and an assigned target release or review milestone"
       },
       {
-        "task": "Provide interim workaround guidance in the Help Centre or in-app export UI (e.g. a note explaining the 90-day limit with a suggested workflow for stitching exports) until the fix is shipped",
-        "assignee_team": "Support Operations",
+        "task": "Add a visible in-product notice on the export UI explaining the current 90-day limit and the workaround (run multiple exports and combine), so users are not surprised during time-sensitive accounting periods",
+        "assignee_team": "Engineering",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A Help Centre article or in-app tooltip is live that accurately describes the current 90-day limit and provides a step-by-step workaround for producing a full-year export"
+        "acceptance_criteria": "The export date-range selector displays a clear, plain-language note explaining the 90-day limit and the multi-export workaround before the user attempts to select a longer range"
       }
     ],
-    "reply_draft": "Thanks for flagging this \u2014 the 90-day export limit is a real gap, and we can see why it's friction for year-end accounting.\n\nRight now the dashboard caps each export at 90 days, so a full 12-month pull does require multiple exports. The workaround is to run 4 consecutive 90-day exports and combine them \u2014 not ideal, but it gets you the complete data.\n\nWe've logged extending the date range as a product improvement. We don't have a confirmed ship date to share yet, but we'll update you when that changes.\n\nIf you run into any issues with the current workaround \u2014 missing rows, column mismatches \u2014 contact us and we'll work through it with you.",
+    "reply_draft": "The transaction history export is currently limited to 90-day windows per export \u2014 to cover a full year you'd need to run four exports and combine them, which is exactly the friction you described.\n\nThis is a known limitation and we've logged your feedback to prioritize extending the export range to cover at least 12 months in a single run. We don't have a confirmed release date to share yet, but it's on our roadmap and your use case (year-end accounting) is the primary driver.\n\nIn the meantime, the four-export approach is the only available workaround. If it helps, you can align each export to a calendar quarter to keep the stitching straightforward: Jan\u2013Mar, Apr\u2013Jun, Jul\u2013Sep, Oct\u2013Dec.\n\nWe'll update you when an extended export option is available.",
     "review_flags": [],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"currently we'd have to do this in 4-5 separate exports and stitch them together\""
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-013",
     "cluster_members": [
       "FB-13"
@@ -839,60 +751,47 @@
     "confidence": "High"
   },
   {
-    "title": "KYB threshold reached without advance warning, payouts on hold",
-    "problem_brief": "A small business customer reached the $1,000 cumulative payout threshold required to trigger full KYB verification (per SP-6) without having received any prior notice that the threshold was approaching. As a result, their payouts are now blocked while they gather documentation they were not prepared to have ready. The customer's complaint centers on the absence of a proactive threshold warning rather than the KYB requirement itself. No absolute timestamps are available in the feedback; the event is described as currently ongoing at the time of submission.",
+    "title": "KYB threshold reached without advance notice, payouts now on hold",
+    "problem_brief": "A small business customer crossed the $1,000 cumulative payout volume threshold (per SP-6) and was abruptly prompted to complete KYB verification \u2014 including document submission \u2014 without prior warning. The customer had no opportunity to prepare the required documents (e.g. registration certificates) before the threshold was reached. As a result, their payouts are currently blocked while they gather materials. No absolute timestamps are available in the feedback; the block is ongoing as of the time this work pack is generated.",
     "key_quotes": [
-      "It would've been really helpful to get a heads-up before we hit that limit so we could prepare.",
-      "our payouts are now on hold while we scramble"
+      "suddenly we're being asked to complete a full KYB process with documents we don't have ready (registration certs, etc.)",
+      "It would've been really helpful to get a heads-up before we hit that limit so we could prepare."
     ],
     "source_refs": [
       "SP-6"
     ],
     "tasks": [
       {
-        "task": "Design and implement a proactive in-app and/or email notification that alerts business accounts when they are approaching the $1,000 cumulative payout threshold (e.g. at 80% and again at 95%), prompting them to begin KYB document preparation before the limit is reached.",
+        "task": "Design and implement a proactive KYB threshold warning: notify business accounts (in-dashboard banner and/or email) when they reach 70\u201380% of the $1,000 cumulative payout volume limit, listing the documents required to complete KYB before payouts are blocked.",
         "assignee_team": "Product",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Accounts that have not completed KYB receive a notification at \u226580% of the $1,000 threshold and a second notification at \u226595%; notification content links directly to the KYB document upload flow; no payout is blocked without the user having received at least one prior threshold warning."
+        "acceptance_criteria": "Business accounts receive a threshold warning notification (with document checklist) before hitting the $1,000 limit; warning is confirmed visible in both dashboard and email channel in QA; no account crosses the threshold into a blocked state without having received at least one prior warning."
       },
       {
-        "task": "Audit the current onboarding and in-product messaging to determine whether the $1,000 KYB threshold and its consequences (payout hold) are clearly disclosed at account creation and during the first payout flow, and update copy where the threshold is not prominently surfaced.",
+        "task": "Audit onboarding and in-product copy to ensure the $1,000 KYB threshold and required documents are clearly communicated at account creation and on the limits/compliance settings page \u2014 not only at the point of blocking.",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "The $1,000 KYB threshold is explicitly stated in at least one screen during onboarding and in the payout initiation flow for accounts that have not completed KYB; copy review signed off by a product owner."
+        "acceptance_criteria": "KYB threshold, document requirements, and consequence of non-completion are visible on at least two surfaces before a user reaches the limit (e.g. onboarding checklist and account settings); copy reviewed and approved by a product stakeholder."
       },
       {
-        "task": "Assign a support agent to contact this customer, confirm their KYB submission status, and provide clear guidance on what documents are required and the expected review timeline so they can unblock payouts as quickly as possible.",
+        "task": "Contact this customer proactively to guide them through the KYB document submission process and confirm whether any in-flight payouts can be expedited once KYB is approved.",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Customer receives a direct response within 1 business day confirming what documents are needed; KYB review is expedited where possible and the customer is notified of the outcome as soon as a decision is made."
+        "acceptance_criteria": "Customer is contacted within 1 business day; KYB submission is unblocked or customer has a clear next step; ticket closed only after payout hold is resolved."
       }
     ],
-    "reply_draft": "Your payouts are on hold because your account reached the $1,000 cumulative payout threshold, which requires a business verification check before further payouts can be sent. Here's what you need to do to get unblocked.\n\nOur team will follow up directly with the specific documents required for your verification \u2014 typically a business registration certificate and one or two supporting identity documents for the account owner. Once you submit them, our team will review your account and aim to get it cleared as quickly as possible. We'll keep you updated at each step.\n\nYou're right that a heads-up before hitting the threshold would have made this easier. That's a gap on our end, and we're looking at how to flag this to customers earlier so they can prepare in advance.\n\nIf you have your documents ready now, you can also begin the verification process directly from your dashboard under [Account Settings > Verification]. Reach out if you hit any issues there.",
+    "reply_draft": "Your payouts are on hold because your account reached the $1,000 cumulative volume threshold that requires business verification (KYB) before sending can continue.\n\nWe hear you \u2014 you should have received a heads-up before hitting that limit, and not finding out at the moment payouts stopped is a genuine gap on our end. We're looking at how to fix that.\n\nHere's what to do now: submit your KYB documents through the dashboard's verification section. The documents typically required include your business registration certificate and proof of business address \u2014 our support team can walk you through the exact list for your account type.\n\nOnce your submission is in, our team will review it and re-enable your payouts. If you'd like direct help getting the documents submitted, reply here and we'll assist you through it.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The reply references the KYB review timeline without being able to commit to a specific duration, and the customer's payouts remain blocked pending verification. A support agent should confirm the actual document requirements for this specific business type and validate the timeline before this reply is sent.",
+        "reason": "The reply states the customer's payouts are on hold and implies they will be re-enabled upon KYB approval \u2014 a support agent should verify the actual account state (e.g. whether specific in-flight payouts are queued, partially processed, or fully blocked) before sending, to ensure the timing and resolution commitment are accurate for this account.",
         "blocks": "reply_draft"
       }
     ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"It would've been really helpful to get a heads-up before we hit that limit so we could prepare.\""
-      },
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'our payouts are now on hold while we scramble'"
-      },
-      {
-        "flag": "tone_violation",
-        "reason": "banned phrase detected: 'as quickly as possible'"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-014",
     "cluster_members": [
       "FB-14"
@@ -908,64 +807,59 @@
     "confidence": "High"
   },
   {
-    "title": "Onboarding confirmation email not delivered after account signup",
-    "problem_brief": "A business that completed signup approximately one week before submitting this feedback (exact signup timestamp unknown) never received a welcome or onboarding email from Vela Pay. The account was apparently activated without any email notification reaching the user, leaving them unaware their account was live until a login attempt revealed it. This represents a potential gap in the post-signup email delivery pipeline that could cause other new customers to abandon onboarding under the impression their signup failed.",
+    "title": "Onboarding/welcome email not delivered after account signup",
+    "problem_brief": "A business that completed account signup reports never receiving an onboarding or welcome email, leaving them unaware their account was active. The feedback was submitted at an unspecified date; based on the account being created approximately one week prior to submission, the signup occurred no earlier than roughly 2025-07-07T00:00:00Z. The absence of a confirmation or onboarding email created significant confusion and nearly caused the user to abandon the platform entirely. This appears to be a deliverability or triggering failure in the post-signup email flow rather than a user error.",
     "key_quotes": [
       "we signed up about a week ago but never got any onboarding/welcome email",
-      "We almost gave up thinking the signup hadn't gone through."
+      "we only found out our account was active because someone tried logging in"
     ],
     "source_refs": [],
     "tasks": [
       {
-        "task": "Investigate whether the onboarding/welcome email was sent for this account (check email delivery logs, bounce records, and spam filtering outcomes) and confirm whether the email delivery pipeline triggered correctly at signup",
+        "task": "Investigate whether the onboarding/welcome email trigger fired for this account after signup, and whether the email was sent, bounced, or silently dropped; pull send logs for the affected account",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Root cause identified: either (a) email was sent and delivery failed at a specific point in the pipeline (bounce, spam filter, misconfigured address), with evidence from logs, or (b) email was never dispatched, with the code path or condition responsible identified"
+        "acceptance_criteria": "Root cause identified (trigger failure, delivery failure, or spam filtering) and documented; confirmation of whether this is an isolated incident or a systemic issue affecting other recent signups"
       },
       {
-        "task": "Audit the post-signup email trigger across recent signups to determine whether this is an isolated incident or a broader delivery failure affecting multiple new accounts",
+        "task": "Audit recent signups (past 30 days) for any other accounts that did not receive a post-signup onboarding email, to determine the scope of the issue",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Delivery success/failure rate for onboarding emails over the past 30 days is quantified; any accounts that did not receive the onboarding email are identified and flagged for follow-up"
+        "acceptance_criteria": "Full list of affected accounts identified; count confirmed and shared with Product and Support Operations; any pattern in affected accounts (e.g. email domain, signup method, time window) documented"
       },
       {
-        "task": "If a systemic delivery issue is confirmed, implement a fix to the email trigger or delivery configuration and add a monitoring alert for onboarding email delivery failures",
-        "assignee_team": "Engineering",
-        "priority": "High",
-        "deadline": null,
-        "acceptance_criteria": "Fix deployed and verified; monitoring alert in place that fires when onboarding email delivery failure rate exceeds a defined threshold (e.g. >1% of signups in a 24-hour window)"
-      },
-      {
-        "task": "Manually send this customer the onboarding email or equivalent account activation confirmation, and verify their account status is correct",
+        "task": "Manually send the onboarding email to the affected account as an immediate remediation step, and confirm delivery",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Customer receives onboarding information and confirms receipt; account status verified as fully active with no missing setup steps"
+        "acceptance_criteria": "Onboarding email successfully delivered to the customer's inbox and delivery confirmed via send logs; customer acknowledges receipt if possible"
       },
       {
-        "task": "Review whether the signup flow should include a fallback in-app confirmation or status page so that users can verify their account is active without relying solely on email delivery",
+        "task": "Add a monitoring alert for post-signup email delivery failures so silent drops are caught within 24 hours of occurrence going forward",
+        "assignee_team": "Engineering",
+        "priority": "Medium",
+        "deadline": null,
+        "acceptance_criteria": "Alert is live and tested; at minimum one simulated failure triggers the alert within the defined window"
+      },
+      {
+        "task": "Evaluate whether a fallback confirmation mechanism (e.g. in-app banner on first login confirming account activation status) should be added to prevent users from being unaware their account is active if email delivery fails",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A product decision is documented: either a signup confirmation page or in-app status indicator is added to the roadmap, or a rationale for not doing so is recorded"
+        "acceptance_criteria": "Decision documented with rationale; if approved, added to backlog with acceptance criteria defined for the in-app fallback feature"
       }
     ],
-    "reply_draft": "Your account is active \u2014 the signup completed successfully on our end. We're looking into why the onboarding email didn't reach you, and we'll send it through now so you have all the setup information in one place.\n\nWe're also checking whether this affected any other recently created accounts. We'll follow up once we know more about the cause.\n\nIn the meantime, if anything looks off with your account or you have questions about getting started, let us know directly and we'll help you through it.",
+    "reply_draft": "Your account was fully active from the moment signup completed \u2014 the onboarding email didn't reach you, which is a gap on our end.\n\nWe're sending the onboarding email to you now. If it doesn't appear in your inbox within the next few minutes, check your spam folder \u2014 if it's there, marking it as safe will ensure future Vela Pay emails get through.\n\nYour account is ready to use. If you have questions about getting started or need anything walked through, reply here and we'll help directly.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "The exact account signup timestamp and the customer's email address are redacted, so the support agent must confirm the correct account is identified and that the manual onboarding email is sent to the right recipient before the reply is dispatched",
+        "reason": "The reply_draft asserts that the account was fully active from signup and that the failure was on Vela Pay's end. Before sending, support should verify in the backend that this specific account's signup did complete successfully and that the email trigger did fire (or provably failed), rather than assuming the account state is clean. If the signup itself is in a partial or errored state, the reply would be materially incorrect.",
         "blocks": "reply_draft"
       }
     ],
-    "quality_flags": [
-      {
-        "flag": "ambiguous_timestamp",
-        "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-015",
     "cluster_members": [
       "FB-15"
@@ -981,44 +875,44 @@
     "confidence": "High"
   },
   {
-    "title": "Admin account lockout blocking urgent payroll batch",
-    "problem_brief": "A company's primary admin has lost access to their account after losing the device holding their 2FA credentials. The account lockout prevents them from initiating a batch payroll payout. The customer has indicated payroll is due the following morning, creating acute time pressure. Per SP-10, manual recovery by the support team can take up to 2 business days, which may not be fast enough to meet the payroll deadline.",
+    "title": "Admin account lockout blocking time-sensitive payroll batch",
+    "problem_brief": "A primary admin user lost access to their 2FA device and is fully locked out of their Vela Pay account. The lockout was reported with payroll due the following morning, creating a hard time constraint on account recovery. Per SP-10, manual verification by the support team is required for primary admin recovery and may take up to 2 business days \u2014 a window that conflicts with the user's stated payroll deadline. No workaround exists for sending batch payouts without admin access.",
     "key_quotes": [
       "Lost my phone with the 2FA app on it last night",
       "We have payroll due tomorrow morning and I can't access the account at all to send the batch"
     ],
     "source_refs": [
       "SP-10",
-      "SP-6"
+      "KI-1"
     ],
     "tasks": [
       {
-        "task": "Escalate account recovery request for ticket #59140 to highest-priority queue; initiate manual verification process immediately to attempt recovery faster than the standard 2-business-day window given the payroll deadline",
+        "task": "Locate Ticket #59140 and initiate expedited manual admin account recovery verification for this user. Confirm identity via whatever out-of-band verification the support team can complete fastest (e.g. email domain match, KYB documents on file, callback to registered business number). Do not use the standard 2-business-day queue \u2014 flag as urgent given stated payroll deadline.",
         "assignee_team": "Support Operations",
         "priority": "High",
-        "deadline": "2026-06-14T08:00:00Z",
-        "acceptance_criteria": "Admin account access is restored or a verified alternative payout path is established before the customer's payroll send time; customer is notified of status with a concrete next step within 2 hours of ticket receipt"
+        "deadline": "2024-01-01T08:00:00Z",
+        "acceptance_criteria": "Admin account access is restored and confirmed by the user before their stated payroll deadline, OR the user is explicitly notified that restoration cannot happen in time and is given a concrete updated ETA."
       },
       {
-        "task": "Assess whether an emergency bypass or secondary admin elevation pathway exists for locked-out primary admin accounts when a payroll deadline is imminent; document findings and escalate to Engineering if no such pathway exists",
+        "task": "Review whether the account recovery SLA in SP-10 ('up to 2 business days') can be tiered or expedited for cases with documented time-critical payroll impact. If an expedited path exists informally, document it formally. If it does not exist, raise as a product/policy gap to Product and Support Ops leads.",
         "assignee_team": "Support Operations",
-        "priority": "High",
-        "deadline": "2026-06-14T08:00:00Z",
-        "acceptance_criteria": "A documented decision is produced: either the emergency pathway is confirmed and used for this case, or Engineering is formally notified that no such pathway exists and a gap ticket is raised"
+        "priority": "Medium",
+        "deadline": null,
+        "acceptance_criteria": "A written policy decision exists on whether/how urgent account recovery cases (e.g. payroll blockers) can be escalated to a faster path, including any additional verification steps required."
       },
       {
-        "task": "Review account recovery UX flow to determine whether a secondary admin or backup recovery method (e.g. backup codes, secondary contact) should be offered during onboarding to prevent future payroll-blocking lockouts",
+        "task": "Evaluate whether the 2FA recovery flow can surface an alternative verification path (e.g. backup codes, secondary admin, support escalation link) before the user is fully locked out, to reduce support load on cases like this.",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A product decision is recorded on whether to add backup recovery options or a secondary admin requirement during KYB onboarding; outcome linked to roadmap or backlog item"
+        "acceptance_criteria": "A design proposal or decision memo exists describing at least one alternative 2FA recovery path that does not require full manual support intervention, with an assessment of security tradeoffs."
       }
     ],
-    "reply_draft": "Your account recovery is being escalated now \u2014 we understand payroll needs to go out tomorrow morning.\n\nAccount recovery for a lost 2FA device requires manual verification by our support team. The standard window for this is up to 2 business days (SP-10), but given your deadline we are treating this as our highest priority and working to complete verification as fast as possible. A member of the team will contact you directly within the next 2 hours with your verification steps and a status update.\n\nTo move as quickly as possible, please have the following ready when we reach you: your company registration details, the email address on the account, and any recent transaction reference numbers you can access from records outside the dashboard.\n\nWe cannot guarantee the exact time recovery will complete, but we will give you a realistic timeline as soon as verification begins.",
+    "reply_draft": "Your account recovery is being treated as urgent \u2014 the support team is picking up Ticket #59140 now and starting manual verification immediately.\n\nTo complete verification, we'll need to confirm your identity against the records on your business account. A support team member will reach out to you directly via your registered email within the next few hours to work through this. We'll move as fast as the verification steps allow.\n\nOne thing to be transparent about: our standard account recovery process can take up to 2 business days (SP-10), and we can't guarantee completion before tomorrow morning \u2014 but we're prioritizing this and will update you as soon as verification is done. If recovery can't complete in time, we'll tell you that clearly so you can make alternative arrangements.\n\nDo not reply to this message with passwords or full financial details \u2014 the support team will only ask for identity verification information through secure channels.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "Reply makes a specific response-time commitment ('within 2 hours') and implies an expedited recovery timeline that may not be achievable; a support lead must confirm these commitments are operationally deliverable before the reply is sent",
+        "reason": "The reply implies expedited handling and 'within the next few hours' contact \u2014 this is a timing commitment that support operations must confirm is actually achievable before the reply is sent. Sending this reply without confirming capacity creates a broken promise on a time-critical payroll situation.",
         "blocks": "reply_draft"
       }
     ],
@@ -1028,16 +922,8 @@
         "reason": "quote not found verbatim in any cluster member's raw_text: 'Lost my phone with the 2FA app on it last night'"
       },
       {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"We have payroll due tomorrow morning and I can't access the account at all to send the batch\""
-      },
-      {
         "flag": "ambiguous_timestamp",
         "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft"
-      },
-      {
-        "flag": "tone_violation",
-        "reason": "banned phrase detected: 'as quickly as possible'"
       },
       {
         "flag": "tone_violation",
@@ -1059,26 +945,17 @@
     "confidence": "High"
   },
   {
-    "title": "Positive feedback on dashboard clarity, support responsiveness, and KYB onboarding speed",
-    "problem_brief": "Multiple users submitted praise across four feedback items highlighting strengths in three product areas: dashboard usability, support chat response time, and KYB onboarding speed. No timestamps were provided in the raw feedback, so no absolute UTC timestamps can be assigned to the events described. The feedback represents an opportunity to reinforce what is working well and to acknowledge users directly.",
+    "title": "Positive feedback on dashboard clarity, onboarding speed, and support responsiveness",
+    "problem_brief": "Multiple users submitted praise across four feedback items highlighting three distinct strengths: the dashboard's clean, uncluttered layout; the speed and simplicity of KYB onboarding (one user reported submission-to-approval in under 36 hours); and responsive support chat for card-limit questions. No issues or action items are raised. This cluster surfaces positive signal worth sharing with relevant product and support teams.",
     "key_quotes": [
       "KYB approval was much faster than we expected \u2014 submitted Tuesday, approved by Wednesday afternoon. Other providers took us almost two weeks.",
-      "Setup took maybe 15 minutes start to finish, including KYB. Way less painful than I expected based on horror stories from other fintech signups."
+      "Clean, no-nonsense dashboard"
     ],
     "source_refs": [],
     "tasks": [],
-    "reply_draft": "Thanks for taking the time to share this \u2014 genuinely glad to hear it.\n\nA clean dashboard, fast support answers, and a KYB process that doesn't eat up your week are things the team has put real effort into, so it's good to know they're landing that way. We'll make sure the feedback reaches the right people.",
+    "reply_draft": "Thanks for sharing this \u2014 genuinely good to hear. Fast KYB, a clear dashboard, and support that doesn't drag things out are all things we care about getting right, so it's useful to know they're landing well. We'll make sure this gets back to the teams involved.",
     "review_flags": [],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'KYB approval was much faster than we expected \u2014 submitted Tuesday, approved by Wednesday afternoon. Other providers took us almost two weeks.'"
-      },
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'Setup took maybe 15 minutes start to finish, including KYB. Way less painful than I expected based on horror stories from other fintech signups.'"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-017",
     "cluster_members": [
       "FB-17",
@@ -1105,8 +982,8 @@
     "confidence": "High"
   },
   {
-    "title": "Unrelated product curiosity and vague UX dissatisfaction with no actionable detail",
-    "problem_brief": "Two feedback items were submitted with no specific, actionable problem. FB-20 asks whether the platform supports Apple Pay \u2014 a consumer payment method outside Vela Pay's B2B scope \u2014 with the submitter explicitly noting no urgency. FB-21 is a two-star review expressing general dissatisfaction with the interface ('clunky') without identifying any specific feature, workflow, or failure. Neither item contains enough information to diagnose a product issue, reproduce a bug, or derive a meaningful feature request.",
+    "title": "Low-signal feedback: Apple Pay curiosity and vague UX dissatisfaction",
+    "problem_brief": "Two feedback items with no actionable signal were grouped into this cluster. FB-20 is a casual, self-described non-urgent question about Apple Pay support, which is outside Vela Pay's current product scope (B2B corporate cards only). FB-21 is a two-star review with no specific complaint, describing the app as 'clunky' without identifying any particular feature, flow, or failure. Neither item contains enough detail to drive a product decision, bug investigation, or support response.",
     "key_quotes": [],
     "source_refs": [],
     "tasks": [],
@@ -1129,55 +1006,47 @@
     "confidence": "High"
   },
   {
-    "title": "SMS 2FA codes not delivered for two users on the same mobile carrier",
-    "problem_brief": "Two team members sharing a mobile carrier have been unable to receive SMS-based 2FA codes as of the week this ticket was filed, preventing them from logging in entirely. Other users on different carriers are unaffected, suggesting a carrier-specific delivery failure rather than a platform-wide 2FA outage. No timestamp for exact onset is available in the feedback; the issue is ongoing and blocking active users. This does not match any known issue in the current KI list and requires engineering investigation into SMS delivery routing for the affected carrier.",
+    "title": "SMS 2FA codes not delivered for users on a specific mobile carrier",
+    "problem_brief": "Two users on the same mobile carrier are unable to receive SMS-based 2FA codes as of the week containing the ticket submission (Ticket #59288), preventing them from logging in. All other team members on different carriers are unaffected, indicating a carrier-specific delivery failure rather than a platform-wide 2FA outage. The root cause \u2014 whether a carrier routing block, SMS gateway configuration issue, or a third-party delivery provider problem \u2014 has not yet been determined. There are no context documents identifying this as a known issue, so engineering investigation is required to confirm scope and cause.",
     "key_quotes": [
       "Two of our team members (both on the same mobile carrier) stopped receiving 2FA codes via SMS this week",
-      "Is this a known carrier-specific issue?"
+      "codes for everyone else arrive fine"
     ],
     "source_refs": [
       "SP-10"
     ],
     "tasks": [
       {
-        "task": "Investigate SMS 2FA delivery failures specific to the carrier used by the two affected users \u2014 check SMS gateway logs, delivery receipts, and carrier-side filtering or blocking for the relevant carrier",
+        "task": "Investigate SMS 2FA delivery failure for users on the reported mobile carrier: check SMS gateway logs, carrier routing status, and delivery receipts for the affected phone numbers to determine whether this is a carrier-side block, a gateway filtering issue, or a platform configuration problem",
         "assignee_team": "Engineering",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Root cause identified: either a platform-side SMS gateway misconfiguration or a confirmed carrier-side block is documented, and delivery is restored or a mitigation (e.g. TOTP app fallback) is communicated to the customer"
+        "acceptance_criteria": "Root cause identified and documented; confirmed whether failure is isolated to one carrier or broader; affected users can successfully receive 2FA codes or a tested workaround (e.g. authenticator app) is available and communicated"
       },
       {
-        "task": "Provide the two locked-out users with an immediate alternative login path (e.g. TOTP authenticator app enrollment or manual account recovery) while the SMS issue is investigated",
+        "task": "Provide the two affected users with an immediate workaround to regain login access \u2014 e.g. switching to a TOTP authenticator app \u2014 and document the steps in the support reply",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Both affected users can log in via an alternative 2FA method and confirm access restored; support case notes updated with steps taken"
+        "acceptance_criteria": "Both affected users confirm they can log in using the workaround; no account recovery escalation required under SP-10"
       },
       {
-        "task": "Assess whether this carrier-specific SMS delivery failure is isolated or affects other customers on the same carrier; update KI list if it constitutes a known platform issue",
-        "assignee_team": "Engineering",
+        "task": "Determine whether the SMS 2FA carrier-delivery issue affects other customers on the same carrier across the user base and assess whether a status page update or proactive outreach is warranted",
+        "assignee_team": "Support Operations",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Search of support tickets and SMS gateway logs confirms scope; KI list updated or issue closed as isolated with documented evidence"
+        "acceptance_criteria": "Scope confirmed (isolated to this account vs. broader); decision made and documented on whether proactive customer communication is needed"
       }
     ],
-    "reply_draft": "Two of your team members are blocked from logging in \u2014 here's what we're doing now.\n\nWe've flagged this to our engineering team to check SMS delivery logs for your carrier. While that investigation runs, we can get both users access today via an alternative verification method (an authenticator app). Reply to this ticket with the usernames or email addresses for the two affected accounts and we'll walk them through the switch \u2014 this doesn't require a full account recovery and shouldn't take long.\n\nIf either account ends up needing the full manual recovery process (e.g. no access to any 2FA device), that can take up to 2 business days per our account recovery policy, so the authenticator-app route is faster.\n\nWe'll follow up once we've identified whether this is a broader carrier-level issue or something isolated to these accounts.",
+    "reply_draft": "The two team members affected can't log in right now, and we want to get them unblocked immediately while we investigate the delivery issue on our end.\n\nThe fastest workaround: switch those accounts from SMS codes to a TOTP authenticator app (Google Authenticator, Authy, or similar). This doesn't depend on carrier delivery and will restore access without waiting for the SMS issue to be resolved. If either account is fully locked out and can't complete the switch without support, reply here with the account details and we'll handle it manually \u2014 account recovery takes up to 2 business days under our standard process, but we'll prioritize these given the active block.\n\nOn the SMS side: our team is checking delivery logs and carrier routing for the affected numbers now. The pattern you've described \u2014 same carrier, everyone else fine \u2014 points to a carrier-specific routing or filtering issue rather than a platform-wide problem. We'll update you once we've confirmed the cause and whether it affects anyone else on the same carrier.\n\nIf you want to proceed with the authenticator app switch, let us know and we'll send the re-enrollment steps.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "Reply references account recovery timing (up to 2 business days per SP-10) and commits to an 'today' access restoration via authenticator app \u2014 support agent should confirm the alternative 2FA enrollment flow is actually available self-serve or agent-assisted before sending, to avoid overpromising",
+        "reason": "The reply references the SP-10 account recovery timeline (up to 2 business days) in the context of potentially locked-out accounts. Before sending, a human should verify the actual lock state of both affected user accounts \u2014 if either is not yet fully locked out, the 2-day recovery framing is premature and could create unnecessary alarm. Additionally, the reply commits to a manual prioritization of recovery that should be confirmed as operationally feasible by the Support Operations team.",
         "blocks": "reply_draft"
       }
     ],
     "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'Two of our team members (both on the same mobile carrier) stopped receiving 2FA codes via SMS this week'"
-      },
-      {
-        "flag": "ambiguous_timestamp",
-        "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft"
-      },
       {
         "flag": "tone_violation",
         "reason": "first sentence of reply_draft does not reference transaction/amount/timing"
@@ -1198,11 +1067,11 @@
     "confidence": "High"
   },
   {
-    "title": "Post-confirmation FX spread mismatch on transaction VP-100442",
-    "problem_brief": "A user confirmed a currency conversion and received a confirmation screen showing a specific spread, but the transaction detail view afterward reflected a spread approximately 0.3% higher than what was confirmed. The discrepancy affects transaction VP-100442. Per SP-8, Vela Pay's policy is that the FX spread shown at confirmation is the rate applied \u2014 retroactive changes are not permitted. Whether this is a display bug (spread shown incorrectly in transaction detail) or an actual charging discrepancy requires investigation against the transaction record.",
+    "title": "FX spread shown in transaction details differs from spread confirmed at checkout",
+    "problem_brief": "A user confirmed a currency conversion at a specific FX spread, but the transaction details page subsequently displayed a spread approximately 0.3% higher than what was shown at confirmation (transaction ref VP-100442). Per SP-8, the spread disclosed at confirmation must not change retroactively on an already-confirmed transaction. This discrepancy \u2014 whether caused by a display bug, a data-pipeline timing issue, or an incorrect post-confirmation rate application \u2014 requires investigation to determine whether the customer was charged incorrectly and whether other transactions are affected.",
     "key_quotes": [
       "the spread shown was different from what I confirmed \u2014 about 0.3% higher",
-      "it shouldn't change after I've already confirmed it, right?"
+      "It's not a huge amount in absolute terms, but it shouldn't change after I've already confirmed it, right?"
     ],
     "source_refs": [
       "SP-8",
@@ -1210,48 +1079,43 @@
     ],
     "tasks": [
       {
-        "task": "Retrieve transaction VP-100442 and compare the spread rate locked at confirmation against the rate recorded in the executed transaction to determine whether the discrepancy is a charging error or a display bug in the transaction detail view.",
+        "task": "Retrieve transaction VP-100442 and compare the spread value stored at confirmation time against the spread value displayed in transaction details post-confirmation; determine whether the customer was charged the higher spread or only shown it incorrectly",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "A definitive determination is documented: either (a) the confirmed spread was correctly applied and the detail view displayed incorrectly, or (b) a different spread was actually charged. Finding is shared with the user and logged against the ticket."
+        "acceptance_criteria": "A written finding is produced stating: (a) which spread value was actually applied to the settlement amount, (b) whether the two values differ, and (c) whether a financial correction is owed to the customer \u2014 verified against ledger records, not UI display alone"
       },
       {
-        "task": "If investigation confirms the spread charged differs from the spread shown at confirmation, initiate a refund of the overcharged amount to the user's balance and classify as a system error under SP-2 logic.",
+        "task": "Audit the transaction detail view rendering logic to identify why the displayed spread for VP-100442 (and potentially other transactions) does not match the spread locked at confirmation; determine whether this is a display bug or a genuine rate mutation post-confirmation",
+        "assignee_team": "Engineering",
+        "priority": "High",
+        "deadline": null,
+        "acceptance_criteria": "Root cause is documented; a fix or remediation plan is scoped; Engineering can confirm whether the discrepancy is cosmetic (display only) or affects the charged amount; scope of affected transactions is quantified"
+      },
+      {
+        "task": "If investigation confirms the customer was charged the higher spread rather than the confirmed rate, initiate a refund of the difference for transaction VP-100442 and identify any other transactions affected by the same issue",
         "assignee_team": "Support Operations",
         "priority": "High",
         "deadline": null,
-        "acceptance_criteria": "Overcharge amount is calculated, credited to user's account, and user is notified with the corrected figures before the ticket is closed."
+        "acceptance_criteria": "Customer balance is corrected to reflect the spread rate they confirmed; all similarly affected transactions within the same root-cause window are identified and remediated; customer is notified of the outcome"
       },
       {
-        "task": "If investigation confirms this is a display bug (transaction detail showing wrong spread post-confirmation), file a bug report with Engineering to fix the transaction detail view to display the locked-in confirmed spread consistently.",
-        "assignee_team": "Engineering",
-        "priority": "High",
-        "deadline": null,
-        "acceptance_criteria": "Transaction detail view consistently displays the spread rate that was presented and confirmed by the user at time of transaction, matching the confirmation screen. Fix verified in staging and deployed."
-      },
-      {
-        "task": "Audit whether other recent transactions show the same post-confirmation spread discrepancy in the transaction detail view to assess scope of the issue.",
-        "assignee_team": "Engineering",
+        "task": "Assess whether the post-confirmation spread discrepancy is related to the known gap in FX spread line-item reporting (KI-3) or is a separate bug, and update the known issues register accordingly",
+        "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Audit covers at least 30 days of conversion transactions; results documented with a count of affected transactions and total financial exposure, if any."
+        "acceptance_criteria": "Product has documented a clear determination of whether this is a new distinct issue or a manifestation of KI-3; known issues register is updated; if distinct, a new issue entry is created with reproduction steps"
       }
     ],
-    "reply_draft": "We've pulled up transaction VP-100442 and are checking whether the spread applied at execution matches the rate you confirmed \u2014 per our policy, the spread shown at confirmation is the rate that should be charged and cannot change after you confirm.\n\nWe'll update you once we've compared the confirmation record against the executed transaction. If there's a discrepancy, we'll correct it directly to your balance. If it turns out the conversion was charged correctly and the transaction detail view displayed a different figure, we'll flag that as a display issue and fix it.\n\nWe'll have a clear answer for you within 1 business day.",
+    "reply_draft": "We've pulled up transaction VP-100442 and are investigating why the spread shown in the transaction details is higher than the one you confirmed before the conversion went through.\n\nPer our policy, the spread locked in at confirmation is the rate that applies \u2014 it doesn't change after you've confirmed. If the investigation finds that a higher spread was actually charged rather than just displayed incorrectly, we'll correct the difference to your balance.\n\nWe'll come back to you once we have a clear answer on whether this is a display issue or something that affected the charged amount. We'll aim to have an update for you within 1 business day.",
     "review_flags": [
       {
         "flag": "needs_human_review",
-        "reason": "Reply references a potential overcharge on a specific transaction (VP-100442) and implies a possible remediation to the user's balance. A human agent must verify the transaction record before the reply is sent, to ensure no inaccurate commitment about what was charged or what will be refunded.",
+        "reason": "The reply implies a financial correction may be owed ('we'll correct the difference to your balance') and references a specific transaction (VP-100442) with a specific rate discrepancy. A human must verify against ledger records whether the customer was actually charged the higher spread or whether the discrepancy is display-only before this reply is sent \u2014 the reply as drafted could create a financial commitment that is not yet confirmed by investigation.",
         "blocks": "reply_draft"
       }
     ],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'the spread shown was different from what I confirmed \u2014 about 0.3% higher'"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-020",
     "cluster_members": [
       "FB-23"
@@ -1267,37 +1131,31 @@
     "confidence": "High"
   },
   {
-    "title": "Dashboard dark mode request for late-night use",
-    "problem_brief": "A user has requested a dark mode option for the Vela Pay dashboard, citing eye strain during late-night reconciliation work. This is a UI/UX enhancement with no associated policy, compliance, or payment-flow implications. No absolute timestamp is available in the feedback submission metadata, so no time reference can be placed on record. The request is low-urgency and has no blocking impact on core platform functionality.",
+    "title": "Dark mode requested for dashboard reconciliation use",
+    "problem_brief": "A user has submitted a feature request for a dark mode option on the Vela Pay dashboard, citing usability during late-night reconciliation sessions. This is a UI/UX enhancement with no safety, compliance, or payment-flow implications. The request was received as a single feedback item and reflects a common quality-of-life preference seen across B2B SaaS platforms. No existing roadmap item (RM-1 through RM-4) or known issue addresses this request.",
     "key_quotes": [
-      "easier on the eyes for late-night reconciliation sessions",
-      "Would love a dark mode for the dashboard"
+      "dark mode for the dashboard \u2014 easier on the eyes for late-night reconciliation sessions"
     ],
     "source_refs": [],
     "tasks": [
       {
-        "task": "Log dark mode dashboard request in the product backlog and assess feasibility against current frontend theming architecture",
+        "task": "Log dark mode as a formal feature request in the product backlog, tagging it as a UI/UX enhancement for the dashboard. Link to this feedback item as supporting evidence.",
         "assignee_team": "Product",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A backlog item exists for dark mode with an initial feasibility note (e.g. whether the current component library supports theming tokens) and a triage decision (defer, investigate, or reject) recorded by the product owner"
+        "acceptance_criteria": "Feature request is recorded in the backlog with category 'UI/UX', status 'Under consideration', and a reference to feedback item FB-24."
       },
       {
-        "task": "Survey existing feedback database to determine whether dark mode has been requested by other users, and quantify volume to inform prioritisation",
-        "assignee_team": "Product",
+        "task": "Assess feasibility of dark mode implementation: audit current dashboard theming architecture to determine whether a CSS/design-token approach already supports theme switching, and estimate development effort.",
+        "assignee_team": "Engineering",
         "priority": "Low",
         "deadline": null,
-        "acceptance_criteria": "A count of unique users/accounts who have requested dark mode is documented and attached to the backlog item, enabling evidence-based prioritisation"
+        "acceptance_criteria": "A written feasibility note is added to the backlog ticket covering: whether the current design system supports theming, estimated effort range (e.g. days/weeks), and any dependencies (e.g. component library, third-party widgets that may not support dark mode)."
       }
     ],
-    "reply_draft": "Thanks for the suggestion. Dark mode isn't currently available on the dashboard, but we've logged your request and it will be considered alongside other UI improvements as we plan future updates. We can't commit to a timeline right now, but feedback like this directly informs what we prioritise. We'll update release notes if and when it ships.",
+    "reply_draft": "Thanks for the suggestion. Dark mode for the dashboard isn't available yet, but we've logged this as a feature request and it'll be considered for a future release. We can't commit to a timeline right now, but your feedback is on record. If this gets prioritised, we'll communicate it in our product updates.",
     "review_flags": [],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'easier on the eyes for late-night reconciliation sessions'"
-      }
-    ],
+    "quality_flags": [],
     "cluster_id": "CLU-021",
     "cluster_members": [
       "FB-24"
@@ -1313,8 +1171,8 @@
     "confidence": "High"
   },
   {
-    "title": "Multi-entity account structure: managing subsidiaries under a single login",
-    "problem_brief": "Multiple customers report that managing distinct legal entities on Vela Pay requires maintaining separate accounts with separate logins, making it impossible to get a consolidated view of activity across subsidiaries. This maps directly to a known roadmap item (RM-1) that is not yet built. The requests were submitted without time-sensitive payment pressure, but represent a structural friction point for finance teams operating group-level treasury functions. No absolute timestamps are available in the feedback metadata, so no time references are included here.",
+    "title": "Multi-entity account structure: managing multiple subsidiaries under a single login",
+    "problem_brief": "Multiple customers report that managing more than one legal entity on Vela Pay requires maintaining separate accounts and performing separate logins for each entity, with no consolidated reporting across them. This is a known gap in the current product: multi-entity and subsidiary account structures are explicitly out of scope for v1 and are tracked on the roadmap as RM-1. The feedback was received as of the time of this triage; no absolute submission timestamps are embedded in the raw feedback items, so no UTC timestamps can be stated. Two distinct business customers have independently raised this request, signaling real demand from SME groups with multiple legal entities.",
     "key_quotes": [
       "manage all of them under a single login with consolidated reporting",
       "there's no way to see a combined view across them"
@@ -1324,39 +1182,43 @@
     ],
     "tasks": [
       {
-        "task": "Add FB-28 and FB-29 as supporting evidence to the RM-1 roadmap item; update the demand signal count and note the consolidated-reporting requirement as a key use case alongside multi-entity login",
+        "task": "Log both FB-28 and FB-29 against the RM-1 roadmap item in the product backlog, tagging them as validated demand signals from distinct multi-entity customers; record the specific use cases (subsidiary management, group-level consolidated reporting) to inform scoping.",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "RM-1 ticket references both feedback items, includes 'consolidated cross-entity reporting' explicitly in the requirements, and the demand count is updated to reflect these submissions"
+        "acceptance_criteria": "Both feedback items are linked to the RM-1 backlog item with use-case notes; product manager confirms the demand signal is reflected in roadmap prioritization documentation."
       },
       {
-        "task": "Conduct a scoping spike for multi-entity / subsidiary account structures: define the minimum viable data model (parent account, child entities, permissions inheritance) and estimate engineering effort for an MVP",
+        "task": "Define and document the minimum viable scope for multi-entity account support: shared parent login, per-entity balance isolation, cross-entity consolidated reporting view, and role/permission model across entities. Produce a scoping brief for engineering estimation.",
         "assignee_team": "Product",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "A scoping document exists that covers: parent/child account model, role and permissions behaviour across entities, consolidated reporting requirements, KYB implications per entity, and a rough t-shirt-size effort estimate; reviewed by Engineering lead"
+        "acceptance_criteria": "A written scoping brief exists covering at minimum: account hierarchy model, login and permission approach, consolidated reporting requirements, and open questions for legal/compliance review. Brief is reviewed by at least one engineering lead."
       },
       {
-        "task": "Assess KYB/compliance requirements for multi-entity structures (e.g. whether each subsidiary requires independent KYB verification) to inform RM-1 design",
+        "task": "Assess compliance and KYB implications of a multi-entity account structure \u2014 specifically whether a single KYB can span subsidiaries or whether each entity requires independent KYB, and how transaction monitoring applies across a consolidated account.",
         "assignee_team": "Compliance",
         "priority": "Medium",
         "deadline": null,
-        "acceptance_criteria": "Written guidance produced stating per-entity KYB obligations, any exceptions for wholly-owned subsidiaries, and any regulatory constraints that affect the account model design; signed off by Compliance lead"
-      }
-    ],
-    "reply_draft": "Managing multiple legal entities under a single login isn't supported yet \u2014 your current setup of separate accounts per entity is the only option in v1.\n\nThis is on our roadmap. We're working through what a multi-entity structure should look like (shared login, per-entity permissions, and a consolidated view across balances and transactions), but we don't have a confirmed release date to share right now.\n\nWe've linked your feedback directly to that roadmap item so your specific requirements \u2014 consolidated reporting across subsidiaries \u2014 are captured in the design. We'll reach out when there's a timeline to share.",
-    "review_flags": [],
-    "quality_flags": [
-      {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: 'manage all of them under a single login with consolidated reporting'"
+        "acceptance_criteria": "Compliance team produces a written position on per-entity vs. per-group KYB requirements and flags any regulatory constraints that would affect the RM-1 design, delivered to Product before engineering scoping begins."
       },
       {
-        "flag": "fabricated_quote",
-        "reason": "quote not found verbatim in any cluster member's raw_text: \"there's no way to see a combined view across them\""
+        "task": "Identify any other customers who have raised multi-entity account requests (historically or in open support tickets) and consolidate into a demand register to support roadmap prioritization.",
+        "assignee_team": "Support Operations",
+        "priority": "Low",
+        "deadline": null,
+        "acceptance_criteria": "A list of customers or tickets citing multi-entity needs is produced and shared with Product; list includes company size and number of entities where available."
       }
     ],
+    "reply_draft": "Multi-entity account management is on our roadmap \u2014 we don't have a release date confirmed yet, but this is something we're actively planning to build.\n\nRight now, each legal entity does require its own separate account and login, and there's no consolidated view across them. We know that's a real operational overhead for finance teams managing multiple subsidiaries.\n\nWhen we do build this, the intent is to support a single parent login with access to multiple entities and combined reporting across them. We'll reach out directly when we have a confirmed timeline or early access opportunity.\n\nIn the meantime, if there are specific workflows \u2014 for example, a particular reporting format or approval structure across entities \u2014 that would be most important to get right, we'd welcome that input to share with the product team.",
+    "review_flags": [
+      {
+        "flag": "needs_human_review",
+        "reason": "The reply_draft references intended future functionality ('the intent is to support a single parent login with access to multiple entities and combined reporting') derived from RM-1 roadmap language. A human should verify this accurately reflects current product direction before it is sent, as the roadmap description is high-level and the reply could be read as a soft commitment. This risk applies to both FB-28 and FB-29 \u2014 the two customers are distinct accounts and a product manager should confirm the characterization is consistent with what can be communicated to each.",
+        "blocks": "reply_draft"
+      }
+    ],
+    "quality_flags": [],
     "cluster_id": "CLU-022",
     "cluster_members": [
       "FB-28",

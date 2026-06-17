@@ -48,7 +48,7 @@ from pipeline.pii import redact
 load_dotenv()
 
 MODEL = "claude-sonnet-4-6"
-PROMPT_VERSION = "generate-v2"
+PROMPT_VERSION = "generate-v4"
 
 REPO_ROOT = Path(__file__).parent.parent
 PROMPT_PATH = Path(__file__).parent / "prompts" / "generate.txt"
@@ -108,7 +108,11 @@ def parse_valid_clause_ids(context_docs_text: str) -> set:
     """Parse valid SP-x/TG-x/KI-x/RM-x IDs from the context doc itself, not a
     hardcoded list — keeps the doc as the single source of truth (see
     docs/13-workpack-spec.md)."""
-    return set(re.findall(r"\*\*((?:SP|TG|KI|RM)-\d+)\.\*\*", context_docs_text))
+    # The context doc uses two bold formats:
+    #   SP/KI: **SP-1.** Description...  (bold closes immediately after ID + period)
+    #   TG/RM: **TG-2. Full title.**  (bold spans ID + period + full title text)
+    # Only match the ID before the period — don't require ** to follow it.
+    return set(re.findall(r"\*\*((?:SP|TG|KI|RM)-\d+)\.", context_docs_text))
 
 
 def load_clusters(path: Path) -> list:
@@ -214,11 +218,20 @@ def apply_deterministic_fields(
     # R-03: verbatim check against the union of all members' raw_text
     # (known limitation: no per-quote attribution to a specific member — see
     # docs/13-workpack-spec.md)
-    all_raw_text = "\n".join(
-        redact(feedback_by_id[m]["raw_text"])[0] for m in cluster["cluster_members"]
+    # Whitespace is normalized (all runs of whitespace, including the source
+    # markdown's mid-sentence line wraps, collapse to a single space) before
+    # comparing — otherwise a genuinely verbatim quote that happens to span a
+    # line-wrap in the source file is wrongly flagged as fabricated. Found via
+    # full-output audit 2026-06-16: this false positive was firing on most
+    # multi-line quotes across the dataset, not just an edge case.
+    def _normalize_ws(s: str) -> str:
+        return re.sub(r"\s+", " ", s)
+
+    all_raw_text = _normalize_ws(
+        " ".join(redact(feedback_by_id[m]["raw_text"])[0] for m in cluster["cluster_members"])
     )
     for q in quotes:
-        if q not in all_raw_text:
+        if _normalize_ws(q) not in all_raw_text:
             quality_flags.append({
                 "flag": "fabricated_quote",
                 "reason": f"quote not found verbatim in any cluster member's raw_text: {q!r}",
@@ -231,6 +244,16 @@ def apply_deterministic_fields(
             "flag": "invalid_cluster_reference",
             "reason": f"unknown feedback_ids: {invalid_members}",
         })
+
+    # R-06: every needs_human_review flag must have a non-empty blocks field
+    # (added during self-critique 2026-06-16 — this was specified in the
+    # original deterministic-checks list but never actually implemented)
+    for f in review_flags:
+        if f.get("flag") == "needs_human_review" and not f.get("blocks"):
+            quality_flags.append({
+                "flag": "unclear_execution_order",
+                "reason": "needs_human_review flag is missing a populated blocks field",
+            })
 
     # R-19: confidence=Low -> needs_human_review must be present
     if confidence == "Low":
