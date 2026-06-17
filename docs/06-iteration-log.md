@@ -208,3 +208,53 @@ golden set labels, schema field definitions, and rubric items.
 | OQ-2 | Should FB-06 (name mismatch) and FB-22 (2FA SMS) cluster together (both Engineering, ACC-1042) or split? | Pipeline will produce a result; the result is the answer |
 | OQ-3 | Should impact and urgency have a combined "Critical" shorthand for High+High cases? | FB-05 and FB-16 are both High+High; rubric currently treats them identically but they may warrant different handling |
 | OQ-4 | Praise items labeled with a dimension (e.g. FB-19: praise + Compliance) — does dimension have meaning for non-actionable intents? | Affects whether rubric should require dimension for praise/noise or allow null |
+
+---
+
+Date: 2026-06-17
+Chat: Asterline-CC (Claude Code)
+Run: Stage 6 — work-pack generation, generate-v1 through generate-v4
+
+## Stage 6 build and iteration summary
+
+Built pipeline/generate.py (Sonnet, generate-v1) generating one work pack per cluster from clusters-v1.json + classified-25-v4.json. Full spec in docs/13-workpack-spec.md.
+
+### generate-v1 → generate-v2: review_flag reason precision for multi-member clusters
+
+Observation (single work pack spot-check, CLU-001): the model's auto-generated `needs_human_review` reason said "verify against ticket records before sending" — correct in intent, but didn't name the specific risk. CLU-001 merges FB-01/FB-26/FB-27 (three different accounts), so a money-state assertion ("your payments did not go out") may not hold identically for every account.
+
+Change: added explicit prompt guidance — when a cluster has multiple members and the flag reason involves a money/payment-state assertion, name the actual risk (claim generalised across accounts may not hold for every individual member), not a generic "verify ticket records."
+
+Outcome: CLU-001's flag reason now reads: "The reply asserts 'your payments did not go out' as a universal statement... this claim is being generalised across three separate tickets (FB-01, FB-26, FB-27) representing different accounts... each ticket should be verified against transaction records before the reply is sent."
+
+### generate-v2 → generate-v3: R-03 whitespace false positives (code fix, not prompt change)
+
+Discovered via full-output scan of all 22 clusters (not a spot-check): 16/22 clusters had `quality_flag: fabricated_quote`. Investigation found all were false positives from the verbatim-check code.
+
+Root cause: the source markdown file uses mid-sentence line wraps (`\n` within paragraphs). The model correctly reads and quotes the text as a flowing sentence (space-joined), but the containment check compared against the unwrapped source — a genuine verbatim quote spanning a line-break would never match. This was not visible from spot-checking CLU-001 alone (CLU-001's quotes happened to be within a single line).
+
+Change: normalise all whitespace (collapse `\s+` → single space) on both the source raw_text and the candidate quote before comparison.
+
+Outcome: 16/22 false positives cleared. 2 genuine fabricated_quote flags remain (CLU-007, CLU-016 — model paraphrased instead of quoting verbatim). No prompt change needed; the check itself was wrong, not the model.
+
+Also in this pass: implemented R-06 deterministic check (review_flags `blocks` field presence), which had been listed as an Auto check in the rubric but never actually added to the code. No failures detected on this run — the model had been populating the field correctly — but the safety net was missing.
+
+### generate-v3 → generate-v4: clause-ID regex false positives for TG/RM (code fix)
+
+Discovered via full-output scan: CLU-020 had `quality_flag: fabricated_source_ref` for TG-2 and TG-5, both genuine clauses in the context doc.
+
+Root cause: context doc uses two different bold-markdown formats:
+- SP/KI: `**SP-1.** Description...` (bold closes after ID + period)
+- TG/RM: `**TG-2. Full title.**` (bold spans full title; `**` does not follow the period)
+
+The clause-ID extraction regex required `**` after the period (`\*\*(ID)\.\*\*`), which matched SP/KI but never matched TG/RM. All 10 TG/RM clause IDs were invisible to the validity check, causing any model citation of them to be flagged as fabricated.
+
+Change: dropped the `\*\*` requirement after the period — regex now captures ID before the period only (`\*\*(ID)\.`). Verified all 24 clause IDs (SP-1..10, TG-1..6, KI-1..4, RM-1..4) are now parsed correctly.
+
+Outcome: fabricated_source_ref flags cleared for all valid clause citations. Final quality flag tally: 8 real flags across 5 clusters (ambiguous_timestamp × 3, tone_violation × 3, fabricated_quote × 2).
+
+## Stage 6 final state (generate-v4)
+
+22/22 clusters generated. 0 hard_fail. Auto rubric checks (R-01–R-04, R-06, R-08–R-09, R-13–R-17, R-19) all running. Remaining quality flags are real signals for human review, not code bugs.
+
+Human-mode rubric items (R-05, R-07, R-10, R-11, R-12, R-18, R-20) pending offline eval by Limin — see pipeline/output/workpacks-v1.md.

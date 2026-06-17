@@ -46,9 +46,16 @@ asterline/
     prompts/
       classify.txt                 ← versioned separately from code (classify-v5 currently)
       cluster.txt                  ← versioned separately from code (cluster-v3 currently)
+      generate.txt                 ← versioned separately from code (generate-v4 currently)
     output/
       classified-25-v4.json        ← latest full classification run (all 29 items)
       clusters-v1.json             ← latest cluster.py output
+      workpacks-v1.json            ← Stage 6 output: 22 work packs (machine-readable)
+      workpacks-v1.md              ← Stage 6 output: same content, human-readable
+      workpack-generation-log.json ← per-cluster generation status log (success/error/timestamp)
+
+  docs/
+    13-workpack-spec.md            ← Stage 6 design spec (model choice, deterministic vs model split, idempotent rerun design)
 ```
 
 ---
@@ -89,10 +96,9 @@ ingest
 1. `python pipeline/classify_all.py` — classifies every item, writes `pipeline/output/classified-25-v4.json`.
 2. `python pipeline/cluster.py` — clusters all items, computes signal_strength, writes `pipeline/output/clusters-v1.json` and `docs/12-cluster-eval.md` (comparison against the golden set's cluster hypothesis).
 3. `cluster.py` raises `ClusteringScaleError` above 50 items — see "Known gaps" below before raising that threshold.
+4. `python pipeline/generate.py` — generates one work pack per cluster (Sonnet, generate-v4), writes `pipeline/output/workpacks-v1.json`, `workpacks-v1.md`, `workpack-generation-log.json`. Idempotent: rerunning skips clusters whose membership hasn't changed since the last successful run.
 
-Auto rubric checks (R-01–R-04, R-06, R-08–R-09, R-13–R-17, R-19) run programmatically on every output. Human checks (R-05, R-07, R-10–R-12, R-18, R-20) are scored offline by a human reviewer. Record scores and failure notes in `docs/06-iteration-log.md`.
-
-RAG context for the Vela Pay demo arm: stuff all four documents from `data/01-vela-pay-context-docs.md` into the prompt. Cite source clause IDs (SP-x, TG-x, KI-x, RM-x) in `source_refs[]`. Not yet used — no pipeline stage performs RAG-grounded generation until work-pack generation (Stage 6) is built.
+Auto rubric checks (R-01–R-04, R-06, R-08–R-09, R-13–R-17, R-19) run programmatically inside generate.py on every output. Human checks (R-05, R-07, R-10–R-12, R-18, R-20) are scored offline by a human reviewer reading `pipeline/output/workpacks-v1.md`. Record scores and failure notes in `docs/06-iteration-log.md`.
 
 ---
 

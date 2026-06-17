@@ -1,64 +1,82 @@
-# Handover — Vela Pay-2 -> Stage 6
+# Handover — Stage 7 (human eval + documentation + deployment decision)
 
-## What this chat completed
+## What the previous sessions completed (Stages 1–6)
 
-**Stage 1-4: Classification pipeline (Layer 1)**, built and iterated to ceiling.
+Full pipeline code is done. All stages produce output and can be run in sequence:
 
-| File | Contents |
-|---|---|
-| pipeline/prompts/classify.txt | Final classify prompt (classify-v5) |
-| docs/eval-results-v0 through v4.json | Full eval history |
-| docs/eval-results-v3-reverted.json | Failed v3 attempt, kept as case study evidence |
-| docs/06-iteration-log.md | Classification iteration entries (v0->v1, v1->v2, v2->v3 fail, v3->v4) |
+```bash
+python pipeline/eval.py            # classification accuracy vs golden-20 (Haiku, classify-v5)
+python pipeline/classify_all.py    # classify all 29 items
+python pipeline/cluster.py         # cluster + signal_strength (Haiku, cluster-v3)
+python pipeline/generate.py        # work-pack generation (Sonnet, generate-v4) — idempotent
+```
 
-Final classification scores: intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65%.
+Key output files:
+- `pipeline/output/classified-25-v4.json` — 29 items classified
+- `pipeline/output/clusters-v1.json` — 22 clusters
+- `pipeline/output/workpacks-v1.json` / `workpacks-v1.md` — 22 work packs
+- `pipeline/output/workpack-generation-log.json` — per-cluster generation status
 
-Known ceilings (do not re-attempt in prompt — see data/03-golden-set-labeled.md "Known labeling uncertainties" #5 for full reasoning):
-- FB-01: impact/urgency over-estimated — workaround info lives in KI-1 (a context doc), not visible at classification stage. Architectural, not a prompt problem. Will not change after RAG is introduced in Stage 6 generation, because this is a Layer 1 label, not a Layer 2 output.
-- FB-23: dimension unstable between Finance & Reporting / Engineering — inherently ambiguous item.
-- FB-10: impact over-estimated by one notch; accept as-is.
+Classification scores (frozen): intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65%.
 
-**Stage 5: Clustering**, built, debated, and validated bidirectionally.
+Work-pack generation: 22/22 clusters, 0 hard_fail. 8 real quality flags across 5 clusters after fixing 2 false-positive bugs in auto-checks (documented in docs/06-iteration-log.md Stage 6 entries).
 
-| File | Contents |
-|---|---|
-| pipeline/cluster.py | Clustering + deterministic signal_strength + golden-set comparison report generator |
-| pipeline/prompts/cluster.txt | Final cluster prompt (cluster-v3) |
-| pipeline/smoke_test_cluster.py | Isolated mechanism test, never touches real data |
-| docs/11-cluster-spec.md | Design rationale, merge-threshold logic, scale upgrade trigger |
-| docs/12-cluster-eval.md | Comparison report (regenerated each cluster.py run) |
-| data/03-golden-set-labeled.md | Now includes FB-26-29 (clustering positive-controls) and updated cluster hypothesis |
+Full iteration history in `docs/06-iteration-log.md`. Full spec for generation stage in `docs/13-workpack-spec.md`. All known gaps in `CLAUDE.md` "Known gaps" table (single source of truth).
 
-Key decisions (full reasoning in docs/06-iteration-log.md and docs/11-cluster-spec.md, not repeated here):
-- Merge threshold varies by intent_type: actionable_bug/feature_request/complaint use a strict "same underlying problem, same fix" standard (validated by CLU-006-022 splitting correctly); praise/noise bulk-merge into one cluster per intent_type regardless of topic (no differentiated action, so no cost to merging coarsely).
-- signal_strength is computed deterministically in Python (eval/04-taxonomy-and-schema.md Axis 4), never by the model.
-- The original 25-item dataset had no genuine "should merge" case — every multi-member hypothesis tested false-merge avoidance only. Added FB-26/FB-27 (KI-1 duplicate) and FB-28/FB-29 (RM-1 duplicate) as deliberate positive controls. Both merged correctly on real pipeline output, with signal_strength=High via the "≥2 items, different accounts" path firing for the first time.
-- Single-call clustering (no embeddings, no pairwise) is validated only up to 29 items. Guard rail `MAX_SINGLE_CALL_ITEMS=50` in cluster.py raises `ClusteringScaleError` above that. Documented upgrade trigger: a 100+ item stress test showing <90% recall on known duplicate pairs. Decided NOT to build a two-stage (candidate-blocking) architecture now — see docs/11-cluster-spec.md "Scale limit and upgrade trigger" for the full cost/benefit reasoning. Do not build this without re-reading that section first.
-- FB-02/FB-11 (dashboard currency/amount display issues) deliberately NOT merged despite a shared surface theme — they need different fixes. Recorded as a defensible judgment call in golden set note #6, not an error to fix later.
+---
 
-## Documentation backlog opened this session (2026-06-16) — check before assuming docs are current
+## What Stage 7 is
 
-- `docs/07-case-study-draft.md` Sections 4-5 — being filled this session, may or may not be done depending on when this doc is read.
-- `README.md` — still a 2-line placeholder. Locked deliverable (project-context.md §0) requires it to carry the case-study narrative. Must be written immediately after the case study fill (same batch, not deferred again).
+Three parallel tracks — only human eval blocks the others in practice:
 
-## What Stage 6 should do
+### Track A: Human eval (Limin does the judgment, CC records it)
 
-Build pipeline/generate.py — work pack generation (Layer 2, with RAG).
+Read `pipeline/output/workpacks-v1.md`. For each work pack, make binary pass/fail/N/A calls on the 7 human-mode rubric items from `eval/05-rubric-v1.md`:
 
-**Model choice, decided this session**: use Sonnet (not Haiku) for reply_draft generation specifically. Classification and clustering can stay on Haiku (already validated, no need to re-spend). Reasoning: reply_draft is the densest-constraint, highest-stakes, customer-facing output in the pipeline (must satisfy TG-1 through TG-6 simultaneously, plus rubric items R-08 through R-12, R-19, R-20), and this project's own evidence (Haiku's classification ceiling stalling at 65% overall despite 4 prompt iterations) suggests Haiku has a real calibration limit on nuanced, multi-constraint tasks. Cost difference at this project's volume is negligible (cents), so quality should drive the choice here, not price.
+| Item | What to check | N/A when |
+|---|---|---|
+| R-05 | acceptance_criteria specific and verifiable, not "issue resolved" | tasks=[] |
+| R-07 | reply touching money/timing/policy has needs_human_review flag | reply_draft=null |
+| R-10 | no blame-shifting language toward the user | reply_draft=null |
+| R-11 | no overpromising outcomes outside Vela Pay's control | reply_draft=null |
+| R-12 | when source_refs=[], reply doesn't invent policy clauses | source_refs non-empty |
+| R-18 | title accurate and specific, not generic | always applies |
+| R-20 | reply doesn't contradict its cited SP-x clauses | source_refs=[] |
 
-**Input**: cluster output from pipeline/output/clusters-v1.json + the underlying classified items from pipeline/output/classified-25-v4.json.
+Limin tells CC the results in chat. CC records them in `docs/06-iteration-log.md` and decides whether a prompt iteration (generate-v5) is warranted. Also: Limin reads for any general quality impressions not captured by the rubric — these matter too.
 
-**Task**: for each cluster, generate a full work pack per the schema in eval/04-taxonomy-and-schema.md Part 2 — title, problem_brief, key_quotes[], source_refs[], tasks[], reply_draft, review_flags[], quality_flags[].
+The 8 existing quality flags to pay attention to during reading:
+- CLU-005, CLU-006, CLU-016: `ambiguous_timestamp` — relative time expression detected
+- CLU-006, CLU-019, CLU-016: `tone_violation` — first sentence / banned phrase check
+- CLU-007, CLU-016: `fabricated_quote` — model paraphrased instead of quoting verbatim (2 genuine cases, not false positives)
 
-**RAG**: stuff all 4 documents from data/01-vela-pay-context-docs.md into the generation prompt. Cite clause IDs (SP-x, TG-x, KI-x, RM-x) in source_refs[] — only when a real clause matches; never fabricate (rubric R-12).
+### Track B: Documentation (CC does this independently)
 
-**Rubric compliance to design for** (eval/05-rubric-v1.md):
-- R-01 (absolute timestamps), R-02 (key_quotes <=2), R-03 (verbatim quotes), R-04 (task field completeness) — structural, should be straightforward.
-- R-08 (no banned filler phrases), R-09 (money/timing first), R-10 (no blame-shifting), R-11 (no overpromising) — tone, this is where model choice matters most.
-- R-07/R-19 (needs_human_review triggers), R-06 (blocks field populated) — HITL flag logic, deterministic where possible (e.g. R-19's confidence=Low trigger should be a code check, not a model judgment, consistent with how signal_strength was kept deterministic in Stage 5).
-- R-20 (reply doesn't contradict cited policy) — likely needs human eval, hard to auto-check.
+- `docs/07-case-study-draft.md` §5 — add Stage 6 results table and the generate-v4 bug stories (two good iteration examples: whitespace false positive, TG/RM regex bug)
+- `docs/07-case-study-draft.md` §6 — update Known Limitations to note generate.py idempotency gap (prompt changes don't auto-trigger regeneration)
+- `docs/10-next-chat-handover.md` — update this file at each stage boundary (done for Stage 7)
+- Wait for human eval results before writing case study final narrative prose
 
-**Cross-review checkpoint**: after generating a few sample work packs, this is a good point to check with the Vela Pay design chat (the other Claude.ai project, which co-designed TG-1-6 and the rubric) — specifically on whether reply_draft tone actually reads as compliant, since that chat has more context on the original intent behind the tone guideline. Not a blocking gate, but worth doing before treating Stage 6 as closed, the same way Stage 5's intent_type merge-threshold decision was a judgment call worth a second opinion.
+### Track C: Deployment (needs Limin's decision first)
 
-**Output**: work pack JSON + Markdown export (per project-context.md §1 Decision #6: Markdown for humans, JSON for machines).
+Locked deliverable (project-context.md §0): a live demo. Confirmed: there will be a frontend UI showing the pipeline output + the project will be open-sourced.
+
+**Not started. Blocked on two decisions from Limin:**
+1. Frontend shape — what does the UI need to show? (work packs list + individual pack view? live pipeline run in browser? static export only?)
+2. Hosting — Vercel / GitHub Pages / something else?
+
+Once decided, implementation is Stage 8. Do not start Stage 8 until human eval is done and the work pack content is stable (a prompt iteration could change the output, and the frontend should show the final version).
+
+Who handles Stage 8: UI/design decisions → Claude.ai chat (the one with more Vela Pay product context); frontend code + open-source packaging → Claude Code.
+
+---
+
+## Decisions to NOT revisit
+
+These are locked or settled — do not reopen without re-reading the reasoning:
+- No vector DB in v1 (project-context.md Decision #10)
+- Classification stage ceiling (FB-01/10/23) — architectural, not a prompt problem
+- Clustering scale limit MAX_SINGLE_CALL_ITEMS=50, upgrade trigger documented (docs/11-cluster-spec.md)
+- FB-02/FB-11 NOT merged — defensible judgment call (data/03-golden-set-labeled.md note #6)
+- Sonnet (not Haiku) for work-pack generation — based on this project's own evidence (docs/13-workpack-spec.md)
+- dimension is always a distribution array, never a single enum (eval/04-taxonomy-and-schema.md)

@@ -18,7 +18,7 @@ The demo uses a synthetic B2B payments product (Vela Pay) with authored context 
 |---|---|---|
 | 1-4. Classification (intent / dimension / impact / urgency) | Done, iterated 5 prompt versions | intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65% |
 | 5. Clustering + signal-strength | Done, validated both directions (avoids false merges, performs true merges) | See `docs/12-cluster-eval.md` |
-| 6. Work-pack generation (RAG-grounded) | Not started | — |
+| 6. Work-pack generation (RAG-grounded) | Done, iterated 4 prompt versions (generate-v1→v4) | 22/22 clusters generated; 8 quality flags across 5 clusters; human eval (R-05/07/10/11/12/18/20) pending |
 | Deployed demo | Not started | — |
 
 ## Repo structure
@@ -40,4 +40,5 @@ pip install -r requirements.txt
 python pipeline/eval.py            # classification accuracy vs. golden set
 python pipeline/classify_all.py    # classify all 29 items
 python pipeline/cluster.py         # cluster + signal_strength + comparison report
+python pipeline/generate.py        # work-pack generation (Sonnet, RAG-grounded)
 ```
