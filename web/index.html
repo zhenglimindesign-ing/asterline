@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #F4F3EF; color: #1A1916; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #2438C8; color: #fff; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-thumb { background: #D7D3C9; border-radius: 6px; border: 3px solid #F4F3EF; }
+  @keyframes ast-pop { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+  @keyframes ast-draw { to { stroke-dashoffset: 0; } }
+  @keyframes ast-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes ast-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ast-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @keyframes ast-ring { 0% { box-shadow: 0 0 0 0 rgba(36,56,200,.4); } 100% { box-shadow: 0 0 0 14px rgba(36,56,200,0); } }
+  @keyframes ast-drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:#F4F3EF;">
+
+  <nav style="position:fixed; top:0; left:0; right:0; height:64px; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:0 32px; background:rgba(244,243,239,0.82); backdrop-filter:saturate(1.4) blur(12px); border-bottom:1px solid #E5E2DB;">
+    <button onClick="{{ goLanding }}" style="display:flex; align-items:center; gap:11px; background:none; border:none; padding:0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="display:block;">
+        <path d="M3 18.5 L10 11 L21 5" stroke="#1A1916" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="21" cy="5" r="3.1" fill="#2438C8"></circle>
+      </svg>
+      <span style="font-weight:700; font-size:18px; letter-spacing:-0.02em;">Asterline</span>
+    </button>
+    <div style="display:flex; align-items:center; gap:6px; font-size:14.5px;">
+      <button onClick="{{ goLanding }}" style="{{ navLandingStyle }}">Overview</button>
+      <button onClick="{{ goHow }}" style="{{ navHowStyle }}">How it works</button>
+      <button onClick="{{ doNewRun }}" style="{{ navProductStyle }}">New run</button>
+      <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:6px; padding:8px 13px; color:#5A584F; border-radius:4px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="#5A584F"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38l-.01-1.35c-2.23.48-2.7-1.07-2.7-1.07-.36-.93-.89-1.18-.89-1.18-.73-.5.05-.49.05-.49.81.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.83-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.52.56.83 1.28.83 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <main style="padding-top:64px;">
+
+    <!-- ============================ LANDING ============================ -->
+    <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <!-- HERO -->
+      <section style="position:relative; overflow:hidden; border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:96px 32px 104px; display:grid; grid-template-columns:1.04fr 0.96fr; gap:40px; align-items:center;">
+          <div style="position:relative; z-index:2;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:#2438C8; margin-bottom:24px;">Portfolio project&nbsp;&nbsp;·&nbsp;&nbsp;AI PM / TPM</div>
+            <h1 style="font-size:62px; line-height:1.0; letter-spacing:-0.032em; font-weight:750; margin:0 0 26px;">Feedback in.<br>Traceable work<br>packs out.</h1>
+            <p style="font-size:18.5px; line-height:1.5; color:#46443D; max-width:480px; margin:0 0 16px;">Asterline reads raw, unstructured feedback and turns it into structured work packs — one per underlying issue, each with the quotes it came from, the tasks it implies, and a drafted reply waiting on a human's sign-off.</p>
+            <div style="display:flex; gap:20px; margin-bottom:36px; flex-wrap:wrap;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">01</span>Eval design</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">02</span>Iteration</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">03</span>Traceability</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#2438C8; color:#fff; border:none; padding:14px 22px; border-radius:4px; font-size:15.5px; font-weight:600;">Enter the product <span style="font-size:17px;">→</span></button>
+              <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:8px; padding:14px 18px; border:1px solid #D7D3C9; border-radius:4px; font-size:15.5px; font-weight:600; color:#1A1916;">View the code</a>
+            </div>
+          </div>
+          <div style="position:relative;">
+            <svg viewBox="0 0 560 460" width="100%" style="display:block; overflow:visible;">
+              <g fill="#B7B5A9">
+                <circle cx="40" cy="120" r="2"></circle>
+                <circle cx="92" cy="60" r="1.6"></circle>
+                <circle cx="150" cy="40" r="2.1"></circle>
+                <circle cx="70" cy="210" r="1.7"></circle>
+                <circle cx="30" cy="300" r="2"></circle>
+                <circle cx="120" cy="350" r="1.6"></circle>
+                <circle cx="230" cy="420" r="2"></circle>
+                <circle cx="330" cy="400" r="1.6"></circle>
+                <circle cx="470" cy="380" r="2"></circle>
+                <circle cx="540" cy="300" r="1.7"></circle>
+                <circle cx="510" cy="120" r="2"></circle>
+                <circle cx="440" cy="60" r="1.6"></circle>
+                <circle cx="300" cy="30" r="1.7"></circle>
+                <circle cx="380" cy="150" r="1.6"></circle>
+                <circle cx="200" cy="180" r="1.6"></circle>
+              </g>
+              <g stroke="#2438C8" stroke-width="1" opacity="0.32">
+                <line x1="118" y1="300" x2="150" y2="250"></line>
+                <line x1="95" y1="200" x2="150" y2="250"></line>
+                <line x1="250" y1="330" x2="285" y2="280"></line>
+                <line x1="320" y1="345" x2="285" y2="280"></line>
+                <line x1="395" y1="250" x2="420" y2="195"></line>
+                <line x1="470" y1="250" x2="420" y2="195"></line>
+                <line x1="505" y1="200" x2="510" y2="115"></line>
+              </g>
+              <polyline points="150,250 285,280 420,195 510,115" fill="none" stroke="#2438C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+              <g fill="#2438C8" opacity="0.48">
+                <circle cx="118" cy="300" r="3"></circle>
+                <circle cx="95" cy="200" r="3"></circle>
+                <circle cx="250" cy="330" r="3"></circle>
+                <circle cx="320" cy="345" r="3"></circle>
+                <circle cx="395" cy="250" r="3"></circle>
+                <circle cx="470" cy="250" r="3"></circle>
+                <circle cx="505" cy="200" r="3"></circle>
+              </g>
+              <g>
+                <circle cx="150" cy="250" r="6.5" fill="#fff" stroke="#2438C8" stroke-width="2.4"></circle>
+                <circle cx="285" cy="280" r="6.5" fill="#fff" stroke="#2438C8" stroke-width="2.4"></circle>
+                <circle cx="420" cy="195" r="6.5" fill="#fff" stroke="#2438C8" stroke-width="2.4"></circle>
+                <circle cx="510" cy="115" r="8" fill="#2438C8"></circle>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROBLEM & VALUE -->
+      <section style="border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:88px 32px;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">From noise to one artifact</div>
+          <h2 style="font-size:34px; line-height:1.12; letter-spacing:-0.02em; font-weight:700; margin:0 0 8px; max-width:680px;">Three tickets, different words, the same underlying issue.</h2>
+          <div style="display:grid; grid-template-columns:1fr 64px 1fr; gap:0; align-items:stretch; margin-top:44px;">
+            <!-- raw side -->
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.12em; text-transform:uppercase; color:#908E83;">Raw feedback in</div>
+              <div style="background:#FBFAF6; border:1px solid #E5E2DB; border-radius:5px; padding:16px 18px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8; margin-bottom:7px;">FB-01 · support_ticket</div>
+                <div style="font-size:14.5px; line-height:1.5; color:#46443D;">"no error, no confirmation, page just sat there for 10+ minutes."</div>
+              </div>
+              <div style="background:#FBFAF6; border:1px solid #E5E2DB; border-radius:5px; padding:16px 18px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8; margin-bottom:7px;">FB-26 · support_ticket</div>
+                <div style="font-size:14.5px; line-height:1.5; color:#46443D;">"We had no way of knowing whether the payments had gone out."</div>
+              </div>
+              <div style="background:#FBFAF6; border:1px solid #E5E2DB; border-radius:5px; padding:16px 18px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8; margin-bottom:7px;">FB-27 · support_ticket</div>
+                <div style="font-size:14.5px; line-height:1.5; color:#46443D;">"Uploaded a 540-row file, nothing happened. Is there a size limit nobody told us about?"</div>
+              </div>
+            </div>
+            <!-- connector -->
+            <div style="display:flex; align-items:center; justify-content:center;">
+              <svg width="64" height="120" viewBox="0 0 64 120" fill="none">
+                <circle cx="8" cy="22" r="3" fill="#2438C8"></circle>
+                <circle cx="8" cy="60" r="3" fill="#2438C8"></circle>
+                <circle cx="8" cy="98" r="3" fill="#2438C8"></circle>
+                <path d="M11 22 C 40 22, 40 60, 56 60" stroke="#2438C8" stroke-width="1.4" fill="none"></path>
+                <path d="M11 60 H 56" stroke="#2438C8" stroke-width="1.4" fill="none"></path>
+                <path d="M11 98 C 40 98, 40 60, 56 60" stroke="#2438C8" stroke-width="1.4" fill="none"></path>
+                <circle cx="56" cy="60" r="5" fill="#2438C8"></circle>
+              </svg>
+            </div>
+            <!-- work pack side -->
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.12em; text-transform:uppercase; color:#908E83;">One work pack out</div>
+              <div style="background:#fff; border:1px solid #D7D3C9; border-radius:5px; padding:20px; box-shadow:0 1px 3px rgba(26,25,22,0.05);">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8; background:#ECEDFC; padding:3px 7px; border-radius:3px;">CLU-001</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5A584F;">● actionable bug</span>
+                </div>
+                <div style="font-size:16.5px; font-weight:650; line-height:1.32; letter-spacing:-0.01em; margin-bottom:14px;">{{ demoTitle }}</div>
+                <div style="display:flex; gap:8px; align-items:flex-start; padding:11px 0; border-top:1px solid #EFEDE6;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#fff; background:#1A1916; padding:2px 6px; border-radius:3px; margin-top:1px; white-space:nowrap;">{{ demoTaskPrio }}</span>
+                  <span style="font-size:13.5px; line-height:1.45; color:#46443D;"><b style="color:#1A1916;">{{ demoTaskTeam }}</b> — {{ demoTaskText }}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:11px 12px; margin-top:6px; background:#FAEAE3; border:1px solid #E8C9BC; border-radius:4px;">
+                  <span style="font-size:13px;">🔒</span>
+                  <span style="font-size:12.5px; line-height:1.4; color:#8A3119;">{{ demoReviewText }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:15px; color:#76746A; margin:30px 0 0; max-width:720px; line-height:1.5;">Built for whoever ends up triaging feedback — support lead, PM, or a founder doing both — not a specific role or team size.</p>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS TEASER -->
+      <section style="background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:72px 32px;">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:40px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:12px;">Eight steps, none skipped</div>
+              <h2 style="font-size:30px; letter-spacing:-0.02em; font-weight:700; margin:0; max-width:660px; line-height:1.16;">Eight checked steps turn a raw, messy inbox into work packs a human can act on.</h2>
+            </div>
+            <button onClick="{{ goHow }}" style="display:inline-flex; align-items:center; gap:8px; background:none; border:1px solid #D7D3C9; padding:11px 17px; border-radius:4px; font-size:14.5px; font-weight:600; color:#1A1916; white-space:nowrap;">See the full walkthrough →</button>
+          </div>
+          <div style="position:relative; padding:8px 0;">
+            <div style="position:absolute; left:0; right:0; top:21px; height:2px; background:#E0DCD2;"></div>
+            <div style="position:relative; display:flex; justify-content:space-between; gap:8px;">
+              <sc-for list="{{ pipelineMini }}" as="st" hint-placeholder-count="8">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:11px; flex:1; min-width:0;">
+                  <div style="width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid #2438C8;"></div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#908E83;">{{ st.n }}</div>
+                  <div style="font-size:12px; font-weight:600; color:#46443D; text-align:center; line-height:1.25;">{{ st.short }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHY TRUST IT -->
+      <section style="border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:88px 32px;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Why trust the output</div>
+          <h2 style="font-size:33px; letter-spacing:-0.02em; font-weight:700; margin:0 0 16px; max-width:760px; line-height:1.16;">The hard part isn't sorting feedback. It's drafting a reply about someone's money without confidently saying something false.</h2>
+          <p style="font-size:17px; line-height:1.55; color:#46443D; max-width:660px; margin:0 0 44px;">So the answer isn't “trust the model.” It's three guarantees the pipeline enforces — each one inspectable in the product itself.</p>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
+              <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Eval-first, not vibes</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">20-item golden set · 65%* overall</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">“Correct” was written down — a rubric and a hand-labeled golden set — before anything ran at scale. Output is scored against that standard, and the score is always shown with the set it was measured on.</p>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
+              <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Every claim is cited</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">100% traceable to a source</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Each quote is verbatim from a real feedback item; each policy statement cites a clause ID you can open. If the context to back a claim isn't loaded, the draft says so rather than inventing a policy.</p>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
+              <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">A human holds the trigger</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">0 replies auto-sent</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Tasks are recommendations, not filed tickets. Any reply touching money, timing, or policy is blocked by a review flag until a person verifies it. Nothing sends itself.</p>
+            </div>
+          </div>
+          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0;">* figures from the current eval log and still being finalized — shown here with their evaluation set, never as a bare percentage.</p>
+        </div>
+      </section>
+
+      <!-- SAFETY & DATA -->
+      <section style="background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:88px 32px;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Safety &amp; data handling</div>
+          <h2 style="font-size:33px; letter-spacing:-0.02em; font-weight:700; margin:0 0 16px; max-width:620px; line-height:1.14;">Honest about what it protects — and what it doesn't yet.</h2>
+          <p style="font-size:17px; line-height:1.55; color:#46443D; max-width:660px; margin:0 0 44px;">Feedback is messy and often carries personal data. Here is what the pipeline does about that, stated plainly, including the limits it hasn't closed.</p>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
+              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">PII redaction runs first</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Emails, phone numbers, and account identifiers are stripped before any model sees the text. The honest limit: human names aren't caught by regex in v1 — a documented gap, not a hidden one. You can see it directly: open any quote's source.</p>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
+              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">No silent automation</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">The pipeline never files a ticket or sends a message on its own. It proposes; a human disposes. Every consequential step has a person in the loop by design.</p>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
+              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Traceable by construction</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Nothing is asserted without a source ref. When no supporting context is loaded, the run says so on the results — it does not paper over the gap with a plausible-sounding policy.</p>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
+              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Synthetic by design</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Vela Pay is the built-in demo dataset — a synthetic B2B payments company with realistic feedback, policies, and known issues, no real customers. The pipeline runs identically when you upload your own data; the context docs are what change.</p>
+            </div>
+          </div>
+          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0; line-height:1.5;">v1 limitations — regex PII redaction, direct RAG retrieval, manual orchestration — are documented in the repo, not hidden.</p>
+        </div>
+      </section>
+
+      <!-- FOOTER CTA -->
+      <section style="background:#1A1916; color:#F4F3EF;">
+        <div style="max-width:1140px; margin:0 auto; padding:84px 32px; text-align:center;">
+          <h2 style="font-size:40px; letter-spacing:-0.025em; font-weight:730; margin:0 0 30px; line-height:1.05;">See it run on real feedback.</h2>
+          <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+            <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#fff; color:#1A1916; border:none; padding:15px 24px; border-radius:4px; font-size:16px; font-weight:650;">Enter the product <span>→</span></button>
+            <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:9px; padding:15px 22px; border:1px solid #45433C; border-radius:4px; font-size:16px; font-weight:600; color:#F4F3EF;">View the code on GitHub</a>
+          </div>
+          <div style="font-size:13px; line-height:1.5; color:#8A887E; margin:36px auto 0; max-width:540px;">The built-in demo uses <span style="color:#C9C7BD;">Vela Pay</span> — a synthetic B2B payments company with realistic policies, known issues, and customer feedback. No real customers, no real data. Upload your own CSV or paste raw feedback to run the same pipeline on your own input.</div>
+        </div>
+      </section>
+    </div>
+    </sc-if>
+
+    <!-- ============================ HOW IT WORKS ============================ -->
+    <sc-if value="{{ isHow }}">
+    <div>
+      <section style="border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:72px 32px 16px;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#2438C8; margin-bottom:16px;">How it works</div>
+          <h1 style="font-size:46px; letter-spacing:-0.03em; font-weight:740; margin:0 0 18px; line-height:1.04; max-width:760px;">From a raw inbox to a stack of reviewable work packs.</h1>
+          <p style="font-size:18px; line-height:1.5; color:#46443D; max-width:660px; margin:0 0 8px;">The same depth you'd expect from a real product's explainer: the full pipeline, every field in a work pack, how the evaluation was designed, and what changed across iterations.</p>
+        </div>
+      </section>
+
+      <!-- PIPELINE WALKTHROUGH -->
+      <section style="border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:72px 32px;">
+          <h2 style="font-size:13px; font-family:'JetBrains Mono',monospace; letter-spacing:0.18em; text-transform:uppercase; color:#908E83; margin:0 0 36px; font-weight:500;">01 — The pipeline, one beat each</h2>
+          <div style="display:flex; flex-direction:column;">
+            <sc-for list="{{ pipelineFull }}" as="st" hint-placeholder-count="8">
+              <div style="display:grid; grid-template-columns:64px 1fr; gap:24px; padding:22px 0; border-top:1px solid #EFEDE6; align-items:start;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                  <div style="width:34px; height:34px; border-radius:50%; background:#ECEDFC; border:1.5px solid #2438C8; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#2438C8;">{{ st.nNum }}</div>
+                </div>
+                <div>
+                  <div style="font-size:20px; font-weight:680; letter-spacing:-0.01em; margin-bottom:6px;">{{ st.name }}</div>
+                  <div style="font-size:15.5px; line-height:1.5; color:#5A584F; max-width:720px;">{{ st.one }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <!-- WORK PACK ANATOMY -->
+      <section style="background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:72px 32px;">
+          <h2 style="font-size:13px; font-family:'JetBrains Mono',monospace; letter-spacing:0.18em; text-transform:uppercase; color:#908E83; margin:0 0 14px; font-weight:500;">02 — What's in a work pack</h2>
+          <p style="font-size:17px; line-height:1.5; color:#46443D; max-width:680px; margin:0 0 40px;">Every field explained in plain terms. The structure is deliberate — some fields are computed, some block sending, some are only recommendations.</p>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+            <sc-for list="{{ anatomy }}" as="f" hint-placeholder-count="8">
+              <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:20px 22px;">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:700; color:#2438C8;">{{ f.field }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:{{ f.tagColor }}; background:{{ f.tagBg }}; padding:2px 7px; border-radius:3px;">{{ f.tag }}</span>
+                </div>
+                <div style="font-size:14.5px; line-height:1.5; color:#46443D;">{{ f.desc }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <!-- EVAL METHODOLOGY -->
+      <section style="border-bottom:1px solid #E5E2DB;">
+        <div style="max-width:1140px; margin:0 auto; padding:72px 32px;">
+          <h2 style="font-size:13px; font-family:'JetBrains Mono',monospace; letter-spacing:0.18em; text-transform:uppercase; color:#908E83; margin:0 0 14px; font-weight:500;">03 — How the evaluation was designed</h2>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;">
+            <div>
+              <p style="font-size:18px; line-height:1.55; color:#2c2b26; margin:0 0 18px;">Before any work pack was generated at scale, twenty real-looking feedback items were hand-labeled against a written rubric — what a correct classification looks like, what a passing work pack has to include.</p>
+              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The rubric mixes deterministic checks the code runs automatically with judgment calls a human still has to make.</p>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; overflow:hidden;">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#5A584F;">What counts as a pass</span>
+                <a href="{{ rubricUrl }}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#2438C8; letter-spacing:0.06em; text-decoration:underline; text-underline-offset:2px;">5 of 20 — see all →</a>
+              </div>
+              <sc-for list="{{ rubric }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:46px 1fr 88px; gap:12px; align-items:center; padding:13px 18px; border-bottom:1px solid #F1EFE8;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#2438C8; font-weight:600;">{{ r.id }}</span>
+                  <span style="font-size:13.5px; line-height:1.4; color:#46443D;">{{ r.text }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; text-align:center; color:{{ r.kindColor }}; background:{{ r.kindBg }}; padding:3px 6px; border-radius:3px;">{{ r.kind }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ITERATION EVIDENCE -->
+      <section style="background:#1A1916; color:#F4F3EF;">
+        <div style="max-width:1140px; margin:0 auto; padding:72px 32px;">
+          <h2 style="font-size:13px; font-family:'JetBrains Mono',monospace; letter-spacing:0.18em; text-transform:uppercase; color:#8A887E; margin:0 0 14px; font-weight:500;">04 — Iteration evidence</h2>
+          <p style="font-size:19px; line-height:1.5; max-width:720px; margin:0 0 46px; color:#E4E2DA;">The first version of the classifier got about <b style="color:#fff;">40%</b> of the golden set right. Four rounds of changing the prompt brought that to about <b style="color:#fff;">65%</b> — including one round that made things <i>worse</i> and was reverted, kept in the log rather than hidden.</p>
+          <div style="display:flex; align-items:flex-end; gap:0; height:240px; border-bottom:1px solid #45433C; padding-bottom:0;">
+            <sc-for list="{{ iterBars }}" as="b" hint-placeholder-count="5">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:0; position:relative;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:{{ b.labelColor }}; margin-bottom:10px;">{{ b.pct }}%</div>
+                <div style="width:62%; max-width:90px; background:{{ b.barColor }}; border-radius:3px 3px 0 0; height:{{ b.h }};"></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; gap:0;">
+            <sc-for list="{{ iterBars }}" as="b" hint-placeholder-count="5">
+              <div style="flex:1; text-align:center; padding:14px 8px 0;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:{{ b.labelColor }}; margin-bottom:6px;">{{ b.v }}</div>
+                <div style="font-size:11.5px; line-height:1.4; color:#A8A69C;">{{ b.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <!-- workpack generation iteration -->
+          <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:28px; margin-top:42px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#8A887E; margin-bottom:8px;">Work pack generation — generate-v1 through v9 · 4 auto-check bugs fixed</div>
+            <p style="font-size:15px; color:#E4E2DA; max-width:660px; margin:0 0 24px; line-height:1.5;">Nine prompt versions across three sessions, validated by four rounds of human eval sampling (12 clusters total). Four code bugs in the automated quality checks were found and fixed during iteration — two from full-output scans, two surfaced during human review. None were visible from spot-checking alone.</p>
+            <div style="display:flex; flex-direction:column; gap:0;">
+              <sc-for list="{{ workpackIter }}" as="wi" hint-placeholder-count="3">
+                <div style="display:grid; grid-template-columns:96px 1fr 1fr; gap:20px; padding:18px 0; border-top:1px solid rgba(255,255,255,0.07); align-items:start;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#5b6bd6;">{{ wi.v }}</span>
+                  <div>
+                    <div style="font-size:14px; font-weight:650; color:#F4F3EF; margin-bottom:5px;">{{ wi.title }}</div>
+                    <div style="font-size:12.5px; line-height:1.5; color:#8A887E;">{{ wi.what }}</div>
+                  </div>
+                  <div>
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#2438C8; margin-bottom:5px;">→ fixed</div>
+                    <div style="font-size:12.5px; line-height:1.5; color:#8A887E;">{{ wi.fixed }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top:28px; display:flex; gap:14px; flex-wrap:wrap;">
+            <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#fff; color:#1A1916; border:none; padding:14px 22px; border-radius:4px; font-size:15.5px; font-weight:650;">Run the pipeline yourself →</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    </sc-if>
+
+    <!-- ============================ PRODUCT ============================ -->
+    <sc-if value="{{ isProduct }}">
+    <div style="max-width:1140px; margin:0 auto; padding:48px 32px 90px;">
+
+      <!-- PICK SOURCE -->
+      <sc-if value="{{ pickView }}">
+      <div>
+        <div style="display:grid; grid-template-columns:1.55fr 1fr; gap:40px; align-items:start;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">New run</div>
+            <h1 style="font-size:32px; letter-spacing:-0.02em; font-weight:720; margin:0 0 10px; line-height:1.1;">Pick a source of feedback.</h1>
+            <p style="font-size:16px; line-height:1.5; color:#5A584F; max-width:560px; margin:0 0 28px;">Paste or upload your own feedback to test how it handles arbitrary input — that's the real test. The built-in packs are a fast preview, not a proof of anything.</p>
+
+            <div style="display:flex; gap:10px; margin-bottom:22px;">
+              <button onClick="{{ pickPaste }}" style="{{ tabPasteStyle }}">Paste text</button>
+              <button onClick="{{ pickCsv }}" style="{{ tabCsvStyle }}">Upload CSV</button>
+              <button onClick="{{ pickBuiltin }}" style="{{ tabBuiltinStyle }}">Built-in pack</button>
+            </div>
+
+            <!-- paste panel -->
+            <sc-if value="{{ showPaste }}">
+            <div>
+              <textarea onChange="{{ onPaste }}" oninput="{{ onPaste }}" style="width:100%; height:230px; resize:vertical; padding:16px; border:1px solid #D7D3C9; border-radius:6px; background:#fff; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.55; color:#2c2b26;">{{ pasteText }}</textarea>
+              <div style="font-size:12.5px; color:#908E83; margin-top:8px;">One item per block. Prefilled with Vela Pay sample tickets.</div>
+              <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#F6EFDD; border:1px solid #E6D6AE; border-radius:5px; margin-top:8px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#936412; white-space:nowrap; margin-top:2px; flex:none;">Prototype note</span>
+                <span style="font-size:12.5px; color:#6b4d10; line-height:1.45;">This demo uses pre-generated results — your pasted text isn't sent to a model. A real deployment would run the full pipeline on your input.</span>
+              </div>
+            </div>
+            </sc-if>
+
+            <!-- csv panel -->
+            <sc-if value="{{ showCsv }}">
+            <div>
+              <div style="border:1.5px dashed #C9C5BB; border-radius:8px; padding:42px; text-align:center; background:#FBFAF6;">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" style="margin:0 auto 12px;"><path d="M12 16V4m0 0L7 9m5-5 5 5" stroke="#908E83" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="#908E83" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                <div style="font-size:15px; font-weight:600; margin-bottom:5px;">Drop a CSV of feedback rows</div>
+                <div style="font-size:13px; color:#908E83; margin-bottom:16px;">Columns like text, channel, account — mapped on import.</div>
+                <button onClick="{{ useCsvSample }}" style="background:#fff; border:1px solid #D7D3C9; padding:9px 16px; border-radius:4px; font-size:13.5px; font-weight:600; color:#2438C8;">Use a sample CSV instead</button>
+              </div>
+
+              <!-- context document — csv flow only -->
+              <div style="margin-top:16px; padding:16px 18px; background:#FBFAF6; border:1px solid #E5E2DB; border-radius:7px;">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:10px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83;">Context document</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:#76746A; background:#F1EFE8; border:1px solid #E0DCD2; padding:2px 7px; border-radius:3px;">optional</span>
+                </div>
+                <p style="font-size:13px; line-height:1.5; color:#76746A; margin:0 0 12px;">Upload a .md or .pdf — the model uses it to ground policy references and reply drafts. Without one, source_refs will be empty.</p>
+
+                <sc-if value="{{ noContextDoc }}" hint-placeholder-val="{{ true }}">
+                <label style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1.5px dashed #C9C5BB; border-radius:5px; font-size:13px; font-weight:600; color:#5A584F; cursor:pointer; background:#fff;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7 9m5-5 5 5" stroke="#908E83" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="#908E83" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  Upload .md or .pdf
+                  <input type="file" accept=".md,.pdf" onChange="{{ onContextDoc }}" style="display:none;">
+                </label>
+                </sc-if>
+
+                <sc-if value="{{ hasContextDoc }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:#fff; border:1.5px solid #2438C8; border-radius:5px; margin-bottom:8px;">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="10" height="14" rx="1.5" stroke="#2438C8" stroke-width="1.4"></rect><path d="M4 5h6M4 8h6M4 11h3" stroke="#2438C8" stroke-width="1.2" stroke-linecap="round"></path></svg>
+                    <span style="font-size:13px; font-weight:600; color:#1A1916; flex:1;">{{ contextDocName }}</span>
+                    <button onClick="{{ clearContextDoc }}" style="background:none; border:none; font-size:18px; color:#908E83; line-height:1; padding:0 2px; cursor:pointer;">×</button>
+                  </div>
+                  <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#ECEDFC; border:1px solid #DADFFA; border-radius:5px;">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex:none; margin-top:1px;"><circle cx="8" cy="8" r="7" stroke="#2438C8" stroke-width="1.4"></circle><path d="M8 7v5" stroke="#2438C8" stroke-width="1.4" stroke-linecap="round"></path><circle cx="8" cy="5" r="0.9" fill="#2438C8"></circle></svg>
+                    <span style="font-size:12.5px; line-height:1.45; color:#2438C8;">source_refs will reflect your document's structure — results may vary from the demo dataset</span>
+                  </div>
+                </div>
+                </sc-if>
+              </div>
+            </div>
+            </sc-if>
+
+            <!-- builtin panel -->
+            <sc-if value="{{ showBuiltin }}">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <button onClick="{{ pickDemo }}" style="{{ packDemoStyle }}">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                  <div style="text-align:left;">
+                    <div style="font-size:15.5px; font-weight:680; margin-bottom:4px;">Vela Pay demo pack</div>
+                    <div style="font-size:13px; line-height:1.45; color:#5A584F;">29 synthetic feedback items with full product context loaded — policy docs, tone guide, known issues. Produces the richest, fully-traceable work packs.</div>
+                  </div>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; background:#ECEDFC; padding:3px 8px; border-radius:3px; white-space:nowrap;">rich context</span>
+                </div>
+              </button>
+              <button onClick="{{ pickNoCtx }}" style="{{ packNoCtxStyle }}">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                  <div style="text-align:left;">
+                    <div style="font-size:15.5px; font-weight:680; margin-bottom:4px;">Public-dataset pack</div>
+                    <div style="font-size:13px; line-height:1.45; color:#5A584F;">Generic app-store-style feedback that runs with no product context loaded. Classifies and clusters, but can't trace to policy clauses — shown honestly.</div>
+                  </div>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#936412; background:#F6EFDD; padding:3px 8px; border-radius:3px; white-space:nowrap;">no context</span>
+                </div>
+              </button>
+            </div>
+            </sc-if>
+
+            <button onClick="{{ startRun }}" style="margin-top:26px; display:inline-flex; align-items:center; gap:10px; background:#2438C8; color:#fff; border:none; padding:14px 26px; border-radius:4px; font-size:15.5px; font-weight:650;">
+              Run pipeline <span style="font-size:16px;">→</span>
+            </button>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#908E83; margin-left:14px;">{{ pickSourceLabel }}</span>
+          </div>
+
+          <!-- THIS SESSION -->
+          <div style="background:#FBFAF6; border:1px solid #E5E2DB; border-radius:8px; padding:22px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:#5A584F;">This session</div>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#A2A095; white-space:nowrap;">{{ runCount }}</span>
+            </div>
+            <p style="font-size:12.5px; line-height:1.45; color:#908E83; margin:0 0 16px;">Runs from this browser tab only. Gone on refresh — there's no account and no saved history.</p>
+            <sc-if value="{{ hasRuns }}">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <sc-for list="{{ sessionRuns }}" as="r" hint-placeholder-count="2">
+                <button onClick="{{ r.open }}" style="text-align:left; background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:13px 14px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px;">
+                    <span style="font-size:13.5px; font-weight:640; color:#1A1916;">{{ r.label }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#A2A095;">{{ r.time }}</span>
+                  </div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5A584F;">{{ r.summary }}</div>
+                </button>
+              </sc-for>
+            </div>
+            </sc-if>
+            <sc-if value="{{ noRuns }}" hint-placeholder-val="{{ true }}">
+            <div style="border:1px dashed #D7D3C9; border-radius:6px; padding:24px 16px; text-align:center;">
+              <div style="font-size:13px; color:#A2A095; line-height:1.5;">No runs yet this session.<br>Run the pipeline to see results here.</div>
+            </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- RUNNING -->
+      <sc-if value="{{ runningView }}">
+      <div style="padding:20px 0 40px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#2438C8; margin-bottom:10px;">Running · {{ runLabel }}</div>
+        <h1 style="font-size:28px; letter-spacing:-0.02em; font-weight:700; margin:0 0 8px;">{{ runStageName }}</h1>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#5A584F; height:20px; margin-bottom:50px;">{{ runStageCount }}</div>
+
+        <!-- node line -->
+        <div style="position:relative; margin:0 0 56px;">
+          <div style="position:absolute; left:0; right:0; top:13px; height:2px; background:#E0DCD2;"></div>
+          <div style="position:absolute; left:0; top:13px; height:2px; background:#2438C8; width:{{ runProgress }}; transition:width .4s ease;"></div>
+          <div style="position:relative; display:flex; justify-content:space-between;">
+            <sc-for list="{{ runStages }}" as="st" hint-placeholder-count="8">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:12px; flex:1;">
+                <div style="{{ st.dotStyle }}"></div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:{{ st.labelColor }}; text-align:center; line-height:1.3; max-width:96px;">{{ st.short }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- live log -->
+        <div style="background:#1A1916; border-radius:8px; padding:22px 24px; max-width:680px;">
+          <sc-for list="{{ runStages }}" as="st" hint-placeholder-count="8">
+            <div style="display:flex; align-items:center; gap:12px; padding:7px 0; opacity:{{ st.logOpacity }};">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:{{ st.logMark }}; width:16px;">{{ st.logIcon }}</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#C9C7BD; width:200px;">{{ st.name }}</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8A887E;">{{ st.logText }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- RESULTS LIST -->
+      <sc-if value="{{ resultsView }}">
+      <div>
+        <!-- detail closed: list -->
+        <sc-if value="{{ listMode }}">
+        <div>
+          <button onClick="{{ goToPick }}" style="display:inline-flex; align-items:center; gap:8px; background:none; border:none; padding:0; font-size:13px; font-weight:600; color:#5A584F; margin-bottom:22px; cursor:pointer;"><span style="font-size:15px;">←</span> New run</button>
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:8px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color:#908E83; margin-bottom:10px;">Results · {{ runLabel }}</div>
+              <h1 style="font-size:30px; letter-spacing:-0.02em; font-weight:720; margin:0;">{{ resultCount }} work packs</h1>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#5A584F; background:#fff; border:1px solid #E5E2DB; border-radius:5px; padding:8px 12px;">{{ flagSummary }}</div>
+              <button onClick="{{ doNewRun }}" style="background:#fff; border:1px solid #D7D3C9; padding:9px 15px; border-radius:5px; font-size:13.5px; font-weight:600; color:#1A1916;">New run</button>
+            </div>
+          </div>
+
+          <sc-if value="{{ noContext }}">
+          <div style="display:flex; align-items:center; gap:10px; background:#F6EFDD; border:1px solid #E6D6AE; border-radius:6px; padding:12px 16px; margin:18px 0 4px;">
+            <span style="width:7px; height:7px; border-radius:50%; background:#936412; flex:none;"></span>
+            <span style="font-size:13.5px; line-height:1.45; color:#6b4d10;">No product context loaded for this run — classification and clustering ran without Vela Pay's policy docs or known-issues list.</span>
+          </div>
+          </sc-if>
+
+          <!-- filter bar -->
+          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding:14px 0; border-bottom:1px solid #EFEDE6; margin:16px 0 0;">
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#908E83; margin-right:2px;">Intent</span>
+            <button onClick="{{ filterIntentBug }}" style="{{ chipBug }}">● bug</button>
+            <button onClick="{{ filterIntentFeat }}" style="{{ chipFeat }}">▲ feature</button>
+            <button onClick="{{ filterIntentCmp }}" style="{{ chipCmp }}">■ complaint</button>
+            <button onClick="{{ filterIntentPraise }}" style="{{ chipPraise }}">+ praise</button>
+            <button onClick="{{ filterIntentNoise }}" style="{{ chipNoise }}">— noise</button>
+            <span style="width:1px; height:18px; background:#E5E2DB; margin:0 4px; flex:none;"></span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#908E83; margin-right:2px;">Signal</span>
+            <button onClick="{{ filterSigHigh }}" style="{{ chipSigHigh }}">High</button>
+            <button onClick="{{ filterSigMed }}" style="{{ chipSigMed }}">Medium</button>
+            <button onClick="{{ filterSigLow }}" style="{{ chipSigLow }}">Low</button>
+            <span style="width:1px; height:18px; background:#E5E2DB; margin:0 4px; flex:none;"></span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#908E83; margin-right:2px;">Flags</span>
+            <button onClick="{{ filterFlagRev }}" style="{{ chipFlagRev }}">review flag</button>
+            <button onClick="{{ filterFlagQual }}" style="{{ chipFlagQual }}">quality flag</button>
+            <button onClick="{{ filterFlagNone }}" style="{{ chipFlagNone }}">no flags</button>
+            <sc-if value="{{ filterActive }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ clearFilters }}" style="padding:5px 11px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; background:none; border:none; color:#2438C8; margin-left:4px;">Clear ×</button>
+            </sc-if>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#908E83; margin:8px 0 16px; min-height:16px;">
+            <sc-if value="{{ filterActive }}" hint-placeholder-val="{{ false }}">{{ filteredCount }} of {{ totalCount }} shown</sc-if>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:0;">
+            <sc-for list="{{ resultRows }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.open }}" style="text-align:left; background:#fff; border:1px solid #E5E2DB; border-radius:7px; padding:18px 20px; display:grid; grid-template-columns:96px 1fr auto; gap:20px; align-items:center;">
+                <div style="display:flex; flex-direction:column; gap:7px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#2438C8; font-weight:600;">{{ c.id }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#76746A;">{{ c.intentGlyph }} {{ c.intentLabel }}</span>
+                </div>
+                <div>
+                  <div style="font-size:15.5px; font-weight:620; line-height:1.32; letter-spacing:-0.005em; color:#1A1916; margin-bottom:7px;">{{ c.title }}</div>
+                  <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#76746A; white-space:nowrap;">{{ c.dimension }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#76746A; white-space:nowrap;">conf {{ c.confidence }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#76746A; white-space:nowrap;">{{ c.memberLabel }}</span>
+                    <sc-if value="{{ c.hasReview }}">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:#B23B1E; background:#FAEAE3; padding:2px 7px; border-radius:3px;">review flag</span>
+                    </sc-if>
+                    <sc-if value="{{ c.hasQuality }}">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:#936412; background:#F6EFDD; padding:2px 7px; border-radius:3px;">quality flag</span>
+                    </sc-if>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:84px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#908E83;">signal</span>
+                  <div style="display:flex; align-items:center; gap:5px;">
+                    <sc-for list="{{ c.dots }}" as="d" hint-placeholder-count="3">
+                      <span style="{{ d }}"></span>
+                    </sc-for>
+                    <span style="font-size:12.5px; font-weight:650; color:#1A1916; margin-left:4px;">{{ c.signal }}</span>
+                  </div>
+                </div>
+              </button>
+            </sc-for>
+            <sc-if value="{{ noFilteredResults }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:40px 20px; text-align:center; background:#FBFAF6; border:1px solid #E5E2DB; border-radius:7px; color:#908E83; font-size:14px; line-height:1.5;">No clusters match the selected filters. <button onClick="{{ clearFilters }}" style="background:none; border:none; color:#2438C8; font-size:14px; cursor:pointer; font-weight:600; padding:0;">Clear filters →</button></div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- DETAIL -->
+        <sc-if value="{{ detailMode }}">
+        <div>
+          <button onClick="{{ closeDetail }}" style="display:inline-flex; align-items:center; gap:8px; background:none; border:none; padding:0; font-size:13.5px; font-weight:600; color:#5A584F; margin-bottom:24px;"><span style="font-size:16px;">←</span> All work packs</button>
+
+          <div style="display:grid; grid-template-columns:1.62fr 1fr; gap:36px; align-items:start;">
+            <!-- main column -->
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#2438C8; font-weight:600; background:#ECEDFC; padding:4px 9px; border-radius:4px;">{{ sel.id }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#5A584F;">{{ sel.intentGlyph }} {{ sel.intentLabel }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#5A584F;">· {{ sel.dimension }}</span>
+              </div>
+              <h1 style="font-size:27px; letter-spacing:-0.02em; font-weight:710; line-height:1.18; margin:0 0 26px;">{{ sel.title }}</h1>
+
+              <!-- problem brief -->
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83; margin-bottom:10px;">Problem brief</div>
+              <p style="font-size:15.5px; line-height:1.6; color:#2c2b26; margin:0 0 30px;">{{ sel.brief }}</p>
+
+              <!-- key quotes -->
+              <sc-if value="{{ sel.hasQuotes }}">
+              <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83; margin-bottom:12px;">Key quotes</div>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:30px;">
+                  <sc-for list="{{ sel.quotes }}" as="q" hint-placeholder-count="2">
+                    <div style="border-left:2px solid #2438C8; padding:4px 0 4px 16px;">
+                      <div style="font-size:15px; line-height:1.5; color:#2c2b26; font-style:italic;">"{{ q.text }}"</div>
+                      <button onClick="{{ q.open }}" style="display:inline-flex; align-items:center; gap:6px; background:none; border:none; padding:0; margin-top:6px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#2438C8; cursor:pointer;">↳ {{ q.ref }} · read full feedback</button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              </sc-if>
+
+              <!-- tasks -->
+              <sc-if value="{{ sel.hasTasks }}">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83;">Tasks</span>
+                  <span style="font-size:11.5px; color:#A2A095;">recommendations, not auto-filed tickets</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px; margin-bottom:30px;">
+                  <sc-for list="{{ sel.tasks }}" as="t" hint-placeholder-count="3">
+                    <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:14px 16px;">
+                      <div style="display:flex; align-items:center; gap:9px; margin-bottom:7px;">
+                        <span style="{{ t.pStyle }}">{{ t.p }}</span>
+                        <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8;">{{ t.team }}</span>
+                      </div>
+                      <div style="font-size:14px; line-height:1.5; color:#2c2b26;">{{ t.text }}</div>
+                      <sc-if value="{{ t.hasDeadline }}">
+                        <div style="display:inline-flex; align-items:center; gap:5px; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:#B23B1E; background:#FAEAE3; border:1px solid #E8C9BC; padding:2px 8px; border-radius:3px;">⚑ {{ t.deadline }}</div>
+                      </sc-if>
+                      <sc-if value="{{ t.hasAcc }}">
+                        <div style="font-size:12.5px; line-height:1.45; color:#908E83; margin-top:8px; padding-top:8px; border-top:1px dashed #E5E2DB;"><b style="color:#76746A; font-weight:600;">Done when:</b> {{ t.acc }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              </sc-if>
+
+              <!-- reply draft -->
+              <sc-if value="{{ sel.showReply }}">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83;">Reply draft</span>
+                  <span style="font-size:11.5px; color:#A2A095;">body only — the CRM adds salutation and sign-off</span>
+                </div>
+                <div style="position:relative; background:#fff; border:1px solid {{ sel.replyBorder }}; border-radius:7px; overflow:hidden;">
+                  <sc-if value="{{ sel.locked }}">
+                  <div style="display:flex; align-items:center; gap:9px; padding:11px 16px; background:#FAEAE3; border-bottom:1px solid #E8C9BC;">
+                    <span style="font-size:13px;">🔒</span>
+                    <span style="font-size:12.5px; line-height:1.4; color:#8A3119; font-weight:560;">Locked — a blocking review flag must be cleared before this can be sent.</span>
+                  </div>
+                  </sc-if>
+                  <div style="padding:18px 20px; white-space:pre-line; font-size:14.5px; line-height:1.6; color:#2c2b26; opacity:{{ sel.replyOpacity }};">{{ sel.reply }}</div>
+                  <div style="display:flex; align-items:center; gap:10px; padding:13px 20px; border-top:1px solid #EFEDE6; background:#FBFAF6;">
+                    <button style="{{ sel.sendStyle }}">{{ sel.sendLabel }}</button>
+                    <button onClick="{{ copyReply }}" style="background:#fff; border:1px solid #D7D3C9; padding:9px 15px; border-radius:4px; font-size:13px; font-weight:600; color:#1A1916;">Copy text</button>
+                  </div>
+                </div>
+              </div>
+              </sc-if>
+              <sc-if value="{{ sel.noReply }}">
+              <div style="background:#FBFAF6; border:1px solid #E5E2DB; border-radius:7px; padding:16px 18px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83; margin-bottom:6px;">Reply draft</div>
+                <div style="font-size:14px; color:#76746A; line-height:1.5;">None — this cluster is classified <b style="color:#1A1916;">noise</b>, so no reply is drafted and no tasks are filed.</div>
+              </div>
+              </sc-if>
+            </div>
+
+            <!-- side column -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <!-- signal / evidence -->
+              <div style="background:#fff; border:1px solid #E5E2DB; border-radius:8px; padding:18px 20px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Signal strength</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                  <sc-for list="{{ sel.dots }}" as="d" hint-placeholder-count="3">
+                    <span style="{{ d }}"></span>
+                  </sc-for>
+                  <span style="font-size:18px; font-weight:700; margin-left:6px; letter-spacing:-0.01em;">{{ sel.signal }}</span>
+                </div>
+                <div style="font-size:12.5px; line-height:1.5; color:#76746A; margin-bottom:16px;">Computed from member count, account diversity, and severity — not a model opinion.</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#908E83; margin-bottom:9px;">Cluster members · the evidence</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                  <sc-for list="{{ sel.members }}" as="m" hint-placeholder-count="3">
+                    <button onClick="{{ m.open }}" style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8; background:#ECEDFC; border:1px solid #DADFFA; padding:4px 8px; border-radius:4px; cursor:pointer;">{{ m.id }}</button>
+                  </sc-for>
+                </div>
+                <div style="font-size:12px; color:#A2A095; margin-top:10px;">{{ sel.memberLabel }}</div>
+              </div>
+
+              <!-- traceability -->
+              <div style="background:#fff; border:1px solid #E5E2DB; border-radius:8px; padding:18px 20px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83; margin-bottom:12px;">Source refs</div>
+                <sc-if value="{{ sel.hasRefs }}">
+                <div style="display:flex; flex-direction:column; gap:9px;">
+                  <sc-for list="{{ sel.refs }}" as="r" hint-placeholder-count="2">
+                    <button onClick="{{ r.open }}" style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:#fff; border:1px solid #ECEAE3; border-radius:6px; padding:9px 11px; cursor:pointer;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#1A1916; background:#F1EFE8; border:1px solid #E0DCD2; padding:3px 8px; border-radius:4px; white-space:nowrap;">{{ r.id }}</span>
+                      <span style="font-size:12.5px; color:#76746A; line-height:1.35; flex:1;">{{ r.kind }}</span>
+                      <span style="font-size:13px; color:#2438C8;">↗</span>
+                    </button>
+                  </sc-for>
+                </div>
+                </sc-if>
+                <sc-if value="{{ sel.noRefs }}">
+                <div style="font-size:12.5px; color:#A2A095; line-height:1.45;">No source refs — {{ sel.noRefsReason }}</div>
+                </sc-if>
+              </div>
+
+              <!-- review flags -->
+              <sc-if value="{{ sel.hasReviewFlags }}">
+              <div style="background:#fff; border:1px solid #E8C9BC; border-radius:8px; padding:18px 20px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#B23B1E;">Review flags</span>
+                  <span style="font-size:10.5px; color:#C99B8C;">block sending</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                  <sc-for list="{{ sel.reviewFlags }}" as="f" hint-placeholder-count="1">
+                    <div style="background:#FCF4F0; border:1px solid #F0D9CF; border-radius:6px; padding:13px 14px;">
+                      <div style="font-size:13px; line-height:1.5; color:#5A2415; margin-bottom:10px;">{{ f.text }}</div>
+                      <button onClick="{{ f.clear }}" style="{{ f.btnStyle }}">{{ f.btnLabel }}</button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              </sc-if>
+
+              <!-- quality flags -->
+              <sc-if value="{{ sel.hasQualityFlags }}">
+              <div style="background:#fff; border:1px solid #E6D6AE; border-radius:8px; padding:18px 20px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#936412;">Quality flags</span>
+                  <span style="font-size:10.5px; color:#C0A968;">don't block · for awareness</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                  <sc-for list="{{ sel.qualityFlags }}" as="f" hint-placeholder-count="1">
+                    <div style="background:#FBF6E9; border:1px solid #EBDDB6; border-radius:6px; padding:12px 14px;">
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#936412; margin-bottom:5px;">{{ f.type }}</div>
+                      <div style="font-size:12.5px; line-height:1.45; color:#6b4d10;">{{ f.text }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              </sc-if>
+
+              <!-- export -->
+              <div style="background:#1A1916; border-radius:8px; padding:18px 20px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8A887E; margin-bottom:12px;">Export</div>
+                <div style="display:flex; gap:10px;">
+                  <button onClick="{{ exportMd }}" style="flex:1; background:#fff; color:#1A1916; border:none; padding:11px; border-radius:4px; font-size:13px; font-weight:650;">Markdown</button>
+                  <button onClick="{{ exportJson }}" style="flex:1; background:#2438C8; color:#fff; border:none; padding:11px; border-radius:4px; font-size:13px; font-weight:650;">JSON</button>
+                </div>
+                <div style="font-size:11.5px; color:#76746A; line-height:1.45; margin-top:10px;">Markdown for people, JSON shaped for Jira or Linear.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+    </div>
+    </sc-if>
+
+  </main>
+
+  <footer style="border-top:1px solid #E5E2DB; padding:20px 32px; background:#F4F3EF;">
+    <div style="max-width:1140px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:block; flex:none;"><path d="M3 18.5 L10 11 L21 5" stroke="#1A1916" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="21" cy="5" r="3.1" fill="#2438C8"></circle></svg>
+        <span style="font-weight:700; font-size:14px; letter-spacing:-0.01em;">Asterline</span>
+        <span style="color:#A2A095; font-size:13px;">feedback → traceable work packs</span>
+      </div>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button onClick="{{ goLanding }}" style="background:none; border:none; font-size:13px; font-weight:500; color:#5A584F; padding:6px 10px; border-radius:4px; cursor:pointer;">Overview</button>
+        <button onClick="{{ goHow }}" style="background:none; border:none; font-size:13px; font-weight:500; color:#5A584F; padding:6px 10px; border-radius:4px; cursor:pointer;">How it works</button>
+        <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="font-size:13px; font-weight:500; color:#5A584F; padding:6px 10px; border-radius:4px;">GitHub</a>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#A2A095;">v1 pipeline · synthetic data · no real customers</div>
+    </div>
+  </footer>
+
+  <sc-if value="{{ viewerOpen }}">
+  <div onClick="{{ closeViewer }}" style="position:fixed; inset:0; z-index:80; background:rgba(26,25,22,0.42); display:flex; align-items:center; justify-content:center; padding:24px;">
+    <div onClick="{{ stopProp }}" style="background:#fff; border:1px solid #E5E2DB; border-radius:10px; max-width:560px; width:100%; max-height:80vh; overflow:auto; box-shadow:0 24px 60px rgba(26,25,22,0.28);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid #EFEDE6; position:sticky; top:0; background:#fff;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+          <span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#2438C8; background:#ECEDFC; padding:4px 9px; border-radius:4px; white-space:nowrap;">{{ viewer.id }}</span>
+          <sc-if value="{{ viewerIsClause }}"><span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#76746A;">{{ viewer.kindLabel }}</span></sc-if>
+          <sc-if value="{{ viewerIsFeedback }}"><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#76746A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ viewer.channel }} · {{ viewer.account }}</span></sc-if>
+        </div>
+        <button onClick="{{ closeViewer }}" style="background:none; border:none; font-size:22px; color:#908E83; cursor:pointer; line-height:1; padding:0 4px;">×</button>
+      </div>
+      <div style="padding:20px 22px;">
+        <sc-if value="{{ viewerIsClause }}">
+        <div style="font-size:15px; line-height:1.6; color:#2c2b26;">{{ viewer.text }}</div>
+        <div style="font-size:12px; color:#A2A095; margin-top:16px; padding-top:12px; border-top:1px dashed #E5E2DB; line-height:1.5;">From the Vela Pay context documents — the exact clause this work pack cites. Every claim in a pack traces back to a source like this one.</div>
+        </sc-if>
+        <sc-if value="{{ viewerIsFeedback }}">
+        <div style="white-space:pre-line; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:#2c2b26; background:#FBFAF6; border:1px solid #EFEDE6; border-radius:6px; padding:16px;">{{ viewer.text }}</div>
+        <div style="font-size:12px; color:#A2A095; margin-top:14px; line-height:1.5;">Emails and phone numbers are auto-redacted by regex before processing. Human names are <b style="color:#76746A; font-weight:600;">not</b> caught by regex — a documented v1 limitation, shown here rather than hidden.</div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:900},&quot;runSpeed&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Cinematic&quot;,&quot;Quick&quot;],&quot;default&quot;:&quot;Cinematic&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;defaultPack&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Demo pack&quot;,&quot;No-context pack&quot;],&quot;default&quot;:&quot;Demo pack&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    route: "landing",
+    pstage: "pick",
+    sourceTab: "builtin",     // paste | csv | builtin
+    source: "demo",           // paste | csv | demo | nocontext
+    pasteText: "",
+    runStageIdx: -1,
+    stageCounts: [],
+    runLabel: "",
+    runNoCtx: false,
+    runs: [],
+    activeRun: null,
+    selected: null,
+    cleared: {},
+    data: null,
+    viewer: null,
+    filterIntent: "",
+    filterSignal: "",
+    filterFlag: "",
+    contextDocName: "",
+  };
+
+  componentDidMount() {
+    import("./asterline-data.js").then((m) => {
+      const pre = m.RAW_DEMO.map((r) => `[${r.id} · ${r.channel}] ${r.text}`).join("\n\n");
+      const sp = this.props.defaultPack === "No-context pack" ? "nocontext" : "demo";
+      this.setState({ data: m, pasteText: pre, source: sp });
+    });
+    this.timers = [];
+  }
+  componentWillUnmount() { this.clearTimers(); }
+  clearTimers() { (this.timers || []).forEach(clearTimeout); this.timers = []; }
+
+  // ---- nav ----
+  go(route) { this.clearTimers(); this.setState({ route }); }
+  newRun() { this.clearTimers(); this.setState({ route: "product", pstage: "pick", selected: null, runStageIdx: -1 }); }
+
+  // ---- source pick ----
+  setTab(t) { this.setState({ sourceTab: t, source: t === "builtin" ? (this.state.source === "nocontext" ? "nocontext" : "demo") : t }); }
+
+  // ---- run ----
+  uniqueItems(clusters) { const s = new Set(); clusters.forEach((c) => c.members.forEach((m) => s.add(m))); return s.size; }
+  sumQuality(clusters) { return clusters.reduce((n, c) => n + (c.qualityFlags ? c.qualityFlags.length : 0), 0); }
+
+  countText(i, clusters, items, qf, noCtx) {
+    const cl = clusters.length;
+    switch (i) {
+      case 0: return items + " items · PII stripped";
+      case 1: return items + " items classified · 5 intent types";
+      case 2: return "dimensions + severity tagged";
+      case 3: return cl + " clusters formed";
+      case 4: return "signal strength computed (member count + diversity + severity)";
+      case 5: return cl + " work packs generated" + (noCtx ? " · no context loaded" : " · RAG-grounded");
+      case 6: return qf + " quality flags · 0 hard fails";
+      case 7: return "ready · Markdown + JSON";
+      default: return "";
+    }
+  }
+
+  startRun() {
+    const d = this.state.data; if (!d) return;
+    const noCtx = this.state.source === "nocontext";
+    const clusters = noCtx ? d.NO_CONTEXT_CLUSTERS : d.CLUSTERS;
+    const labelMap = { paste: "Pasted feedback", csv: "Uploaded CSV", demo: "Vela Pay demo pack", nocontext: "Public-dataset pack" };
+    const label = labelMap[this.state.source] || "Run";
+    const items = this.uniqueItems(clusters);
+    const qf = this.sumQuality(clusters);
+    const counts = clusters.map ? [] : [];
+    const stageCounts = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => this.countText(i, clusters, items, qf, noCtx));
+    this.clearTimers();
+    this.setState({ pstage: "running", runStageIdx: 0, stageCounts, runLabel: label, runNoCtx: noCtx, selected: null });
+    const step = this.props.runSpeed === "Quick" ? 360 : 720;
+    for (let i = 1; i <= 8; i++) {
+      this.timers.push(setTimeout(() => {
+        if (i < 8) { this.setState({ runStageIdx: i }); }
+        else { this.finishRun(clusters, label, noCtx, items, qf); }
+      }, i * step));
+    }
+  }
+
+  finishRun(clusters, label, noCtx, items, qf) {
+    const run = {
+      id: "RUN-" + (this.state.runs.length + 1),
+      label, noCtx, clusters,
+      ts: Date.now(),
+      itemCount: items, clusterCount: clusters.length, flagCount: qf,
+    };
+    this.setState({ runs: [run, ...this.state.runs], activeRun: run, pstage: "results", runStageIdx: 8, selected: null, cleared: {} });
+  }
+
+  openRun(run) { this.setState({ route: "product", pstage: "results", activeRun: run, runLabel: run.label, runNoCtx: run.noCtx, selected: null, cleared: {} }); }
+
+  // ---- detail ----
+  select(id) { this.setState({ selected: id }); if (typeof window !== "undefined") window.scrollTo(0, 0); }
+  closeDetail() { this.setState({ selected: null }); }
+  toggleFlag(key) { const c = Object.assign({}, this.state.cleared); c[key] = !c[key]; this.setState({ cleared: c }); }
+  redactPII(t) { if (!t) return ""; return t.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[redacted email]").replace(/\+\d[\d\s().-]{6,}\d/g, "[redacted phone]"); }
+  openClause(id) { const d = this.state.data; if (!d || !d.CLAUSES[id]) return; const c = d.CLAUSES[id]; this.setState({ viewer: { kind: "clause", id, kindLabel: c.kind, text: c.text } }); }
+  openFeedback(ref) { const d = this.state.data; if (!d || !d.FEEDBACK[ref]) return; const f = d.FEEDBACK[ref]; this.setState({ viewer: { kind: "feedback", id: ref, channel: f.channel, account: f.account, text: this.redactPII(f.raw) } }); }
+  closeViewer() { this.setState({ viewer: null }); }
+  setFilter(key, val) { const c = this.state[key]; this.setState({ [key]: c === val ? "" : val }); }
+  clearFilters() { this.setState({ filterIntent: "", filterSignal: "", filterFlag: "" }); }
+  onContextDoc(e) { const f = e.target.files && e.target.files[0]; if (f) this.setState({ contextDocName: f.name }); }
+  clearContextDoc() { this.setState({ contextDocName: "" }); }
+
+  glyph(intent) { return ({ actionable_bug: "●", feature_request: "▲", complaint: "■", praise: "+", noise: "—" })[intent] || "●"; }
+  dotStyles(signal) {
+    const filled = signal === "High" ? 3 : signal === "Medium" ? 2 : 1;
+    const base = "display:inline-block; width:7px; height:7px; border-radius:50%;";
+    return [0, 1, 2].map((i) => base + (i < filled ? "background:#2438C8;" : "background:#D7D3C9;"));
+  }
+  refKind(id) {
+    const p = id.split("-")[0];
+    return ({ KI: "Known issue — traceable to the known-issues list", SP: "Support policy clause", RM: "Roadmap item", TG: "Tone guide clause" })[p] || "Context clause";
+  }
+  timeStr(ts) { const dt = new Date(ts); return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+
+  // ---- export ----
+  download(name, text, type) {
+    try {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    } catch (e) {}
+  }
+  buildMd(c) {
+    let s = `## ${c.id} — ${c.title}\n`;
+    s += `- intent_type: ${c.intent}\n- dimension: ${c.dimension}\n- signal_strength: ${c.signal}\n- confidence: ${c.confidence}\n- cluster_members: ${c.members.join(", ")}\n\n`;
+    s += `**Problem brief:** ${c.brief}\n\n`;
+    if (c.quotes && c.quotes.length) { s += `**Key quotes:**\n` + c.quotes.map((q) => `> ${q.text}  (${q.ref})`).join("\n") + "\n\n"; }
+    if (c.refs && c.refs.length) s += `**Source refs:** ${c.refs.join(", ")}\n\n`;
+    if (c.tasks && c.tasks.length) { s += `**Tasks:**\n` + c.tasks.map((t) => `- [${t.p} / ${t.team}] ${t.text}` + (t.acc ? `\n  Acceptance: ${t.acc}` : "")).join("\n") + "\n\n"; }
+    if (c.reply) s += `**Reply draft (body only):**\n> ${c.reply.replace(/\n\n/g, "\n>\n> ")}\n\n`;
+    if (c.reviewFlags && c.reviewFlags.length) { s += `**Review flags:**\n` + c.reviewFlags.map((f) => `- needs_human_review (blocks: reply_draft): ${f.text}`).join("\n") + "\n\n"; }
+    if (c.qualityFlags && c.qualityFlags.length) { s += `**Quality flags:**\n` + c.qualityFlags.map((f) => `- ${f.type}: ${f.text}`).join("\n") + "\n"; }
+    return s;
+  }
+  exportMd() { const c = this.selCluster(); if (c) this.download(c.id + ".md", this.buildMd(c), "text/markdown"); }
+  exportJson() { const c = this.selCluster(); if (!c) return; const obj = { cluster_id: c.id, title: c.title, intent_type: c.intent, dimension: c.dimension, signal_strength: c.signal, confidence: c.confidence, cluster_members: c.members, problem_brief: c.brief, key_quotes: c.quotes, source_refs: c.refs, tasks: c.tasks.map((t) => ({ priority: t.p, assignee: t.team, description: t.text, acceptance_criteria: t.acc })), reply_draft: c.reply, review_flags: (c.reviewFlags || []).map((f) => ({ type: "needs_human_review", blocks: "reply_draft", reason: f.text })), quality_flags: c.qualityFlags || [] }; this.download(c.id + ".json", JSON.stringify(obj, null, 2), "application/json"); }
+  copyReply() { const c = this.selCluster(); if (c && c.reply && navigator.clipboard) navigator.clipboard.writeText(c.reply).catch(() => {}); }
+
+  selCluster() { const r = this.state.activeRun; if (!r || !this.state.selected) return null; return r.clusters.find((c) => c.id === this.state.selected) || null; }
+
+  navStyle(active) {
+    const base = "padding:8px 13px; border:none; background:none; border-radius:4px; font-weight:600; font-size:14.5px;";
+    return base + (active ? "color:#1A1916; background:#E9E7E0;" : "color:#5A584F;");
+  }
+  tabStyle(active) {
+    const base = "padding:9px 16px; border-radius:5px; font-size:14px; font-weight:600;";
+    return base + (active ? "background:#1A1916; color:#fff; border:1px solid #1A1916;" : "background:#fff; color:#5A584F; border:1px solid #D7D3C9;");
+  }
+  packStyle(active) {
+    const base = "width:100%; border-radius:8px; padding:16px 18px; cursor:pointer;";
+    return base + (active ? "background:#fff; border:2px solid #2438C8;" : "background:#fff; border:1px solid #E5E2DB;");
+  }
+  prioStyle(p) {
+    const c = { High: "#fff;background:#1A1916;", Medium: "#5A584F;background:#EDEBE4;", Low: "#76746A;background:#F1EFE8;" }[p] || "#5A584F;background:#EDEBE4;";
+    return "font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.05em; padding:2px 7px; border-radius:3px; white-space:nowrap; color:" + c;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const route = s.route;
+    const d = s.data;
+    const repoUrl = d ? d.REPO_URL : "https://github.com/zhenglimindesign-ing/asterline";
+
+    // pipeline displays
+    const PIPE = d ? d.PIPELINE : [];
+    const shortName = (st) => st.name.replace("PII redaction", "Redact").replace("Intent classification", "Classify").replace("Dimension + severity", "Tag").replace("Clustering", "Cluster").replace("Signal-strength scoring", "Score").replace("Work pack generation", "Generate").replace("Runtime checks", "Check").replace("Export", "Export");
+    const pipelineMini = PIPE.map((st) => ({ n: st.n, short: shortName(st) }));
+    const pipelineFull = PIPE.map((st) => ({ nNum: st.n, name: st.name, one: st.one }));
+
+    // landing demo — pulled live from CLU-001
+    const clu001 = d ? d.CLUSTERS.find((c) => c.id === "CLU-001") : null;
+    const _dt = clu001 && clu001.tasks && clu001.tasks[0];
+    const demoTaskTeam = _dt ? _dt.team : "Engineering";
+    const demoTaskPrio = _dt ? _dt.p : "High";
+    const demoTaskText = _dt ? _dt.text : "";
+    const demoTitle = clu001 ? clu001.title : "";
+    const _rawFlag = clu001 && clu001.reviewFlags && clu001.reviewFlags[0] ? clu001.reviewFlags[0].text : "";
+    const _flagSentence = _rawFlag.split(". ")[0];
+    const demoReviewText = _flagSentence ? _flagSentence + "." : "Reply held — human must verify before sending.";
+
+    // anatomy cards
+    const anatomy = [
+      { field: "signal_strength", tag: "computed", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "How much evidence backs a cluster — High / Medium / Low. Computed from member count, account diversity, and severity, not a model's opinion." },
+      { field: "intent_type", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "One of five: actionable bug, feature request, complaint, praise, or noise. Noise gets a minimal pack and no reply." },
+      { field: "dimension", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Which team owns the issue — Engineering, Product, Support Operations, Compliance, Finance & Reporting, UX." },
+      { field: "tasks[]", tag: "recommendation", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Suggested next actions with a team and priority. Recommendations for a human to triage — not tickets filed automatically." },
+      { field: "reply_draft", tag: "body only", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "A drafted customer reply, body only. The CRM adds the salutation and sign-off from ticket metadata at send time." },
+      { field: "review_flags[]", tag: "blocks send", tagColor: "#B23B1E", tagBg: "#FAEAE3", desc: "Something a human must verify — a money amount, a timing commitment, a policy implication. Blocks the reply from being sent until cleared." },
+      { field: "quality_flags[]", tag: "non-blocking", tagColor: "#936412", tagBg: "#F6EFDD", desc: "A potential issue surfaced for awareness with remediation guidance — e.g. a relative time expression. Does not block the output." },
+      { field: "source_refs[]", tag: "traceable", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "Clause IDs (KI-, SP-, RM-) that trace each claim back to a specific clause in the context documents. Nothing asserted without one." },
+    ];
+
+    // rubric sample
+    const rubric = [
+      { id: "R-01", text: "Intent type matches the golden label", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
+      { id: "R-04", text: "Every quote appears verbatim in a member's raw text", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
+      { id: "R-09", text: "Every source ref resolves to a real context clause", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
+      { id: "R-11", text: "Tasks are appropriate and correctly scoped to the issue", kind: "human", kindColor: "#936412", kindBg: "#F6EFDD" },
+      { id: "R-18", text: "Reply tone matches the policy and the situation", kind: "human", kindColor: "#936412", kindBg: "#F6EFDD" },
+    ];
+
+    // iteration bars
+    let iterBars = [];
+    if (d) {
+      iterBars = d.EVAL.iteration.map((it) => ({
+        v: it.v, pct: it.overall, note: it.note,
+        h: Math.round((it.overall / 70) * 200) + "px",
+        barColor: it.reverted ? "#7a4a3a" : (it.v === "v4" ? "#fff" : "#5b6bd6"),
+        labelColor: it.reverted ? "#C98A6A" : (it.v === "v4" ? "#fff" : "#C9C7BD"),
+      }));
+    }
+
+    // ---- product: pick ----
+    const sourceTab = s.sourceTab;
+    const pickSourceLabelMap = { paste: "→ pasted feedback", csv: "→ uploaded CSV", demo: "→ Vela Pay demo pack (rich context)", nocontext: "→ public-dataset pack (no context)" };
+
+    // ---- product: running ----
+    const idx = s.runStageIdx;
+    const runStages = PIPE.map((st, i) => {
+      const done = i < idx, active = i === idx;
+      let dot;
+      if (done) dot = "width:14px;height:14px;border-radius:50%;background:#2438C8;border:2px solid #2438C8;";
+      else if (active) dot = "width:16px;height:16px;border-radius:50%;background:#2438C8;border:2px solid #2438C8;animation:ast-ring 1.1s ease-out infinite;";
+      else dot = "width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #D7D3C9;";
+      return {
+        short: shortName(st), name: st.name,
+        dotStyle: dot,
+        labelColor: (done || active) ? "#2438C8" : "#A2A095",
+        logOpacity: i <= idx ? "1" : "0.32",
+        logIcon: done ? "✓" : (active ? "▸" : "·"),
+        logMark: done ? "#2438C8" : (active ? "#fff" : "#5b5a52"),
+        logText: (i <= idx && s.stageCounts[i]) ? s.stageCounts[i] : "",
+      };
+    });
+    const runProgress = idx <= 0 ? "0%" : Math.min(100, (idx / 7) * 100) + "%";
+    const curStage = PIPE[Math.min(Math.max(idx, 0), 7)] || { name: "" };
+    const runStageName = curStage.name;
+    const runStageCount = (idx >= 0 && s.stageCounts[idx]) ? s.stageCounts[idx] : "";
+
+    // ---- product: results ----
+    const run = s.activeRun;
+    const { filterIntent, filterSignal, filterFlag } = s;
+    const allClusters = run ? run.clusters : [];
+    const filteredClusters = allClusters.filter((c) => {
+      if (filterIntent && c.intent !== filterIntent) return false;
+      if (filterSignal && c.signal !== filterSignal) return false;
+      const hr = (c.reviewFlags || []).length > 0;
+      const hq = (c.qualityFlags || []).length > 0;
+      if (filterFlag === "review" && !hr) return false;
+      if (filterFlag === "quality" && !hq) return false;
+      if (filterFlag === "none" && (hr || hq)) return false;
+      return true;
+    });
+    const filterActive = !!(filterIntent || filterSignal || filterFlag);
+    const fChip = (on) => "padding:5px 11px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid " + (on ? "#1A1916; background:#1A1916; color:#fff;" : "#D7D3C9; background:#fff; color:#5A584F;");
+    const resultRows = filteredClusters.map((c) => ({
+      id: c.id, title: c.title, dimension: c.dimension, confidence: c.confidence, signal: c.signal,
+      intentGlyph: this.glyph(c.intent), intentLabel: (d && d.INTENTS[c.intent] ? d.INTENTS[c.intent].label : c.intent),
+      memberLabel: c.members.length + (c.members.length === 1 ? " item" : " items"),
+      hasReview: (c.reviewFlags || []).length > 0,
+      hasQuality: (c.qualityFlags || []).length > 0,
+      dots: this.dotStyles(c.signal),
+      open: () => this.select(c.id),
+    }));
+
+    // ---- product: detail ----
+    let sel = null;
+    const selC = this.selCluster();
+    if (selC) {
+      const flags = (selC.reviewFlags || []).map((f, i) => {
+        const key = selC.id + "#" + i;
+        const isCleared = !!s.cleared[key];
+        return {
+          text: f.text,
+          clear: () => this.toggleFlag(key),
+          btnLabel: isCleared ? "✓ Verified — click to undo" : "Confirm & clear",
+          btnStyle: isCleared
+            ? "font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;border:1px solid #C9D9C4;background:#EAF3E6;color:#3c6b34;cursor:pointer;"
+            : "font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;border:1px solid #D8A28E;background:#fff;color:#B23B1E;cursor:pointer;",
+        };
+      });
+      const anyBlocking = (selC.reviewFlags || []).length > 0;
+      const allCleared = (selC.reviewFlags || []).every((f, i) => s.cleared[selC.id + "#" + i]);
+      const locked = anyBlocking && !allCleared;
+      const tasks = (selC.tasks || []).map((t) => ({ p: t.p, team: t.team, text: t.text, acc: t.acc, hasAcc: !!t.acc, deadline: t.deadline || "", hasDeadline: !!(t.deadline && t.deadline !== "None"), pStyle: this.prioStyle(t.p) }));
+      sel = {
+        id: selC.id, title: selC.title, brief: selC.brief, dimension: selC.dimension, signal: selC.signal,
+        intentGlyph: this.glyph(selC.intent), intentLabel: (d && d.INTENTS[selC.intent] ? d.INTENTS[selC.intent].label : selC.intent),
+        quotes: (selC.quotes || []).map((q) => ({ text: q.text, ref: q.ref, open: () => this.openFeedback(q.ref) })), hasQuotes: (selC.quotes || []).length > 0,
+        tasks, hasTasks: tasks.length > 0,
+        members: selC.members.map((m) => ({ id: m, open: () => this.openFeedback(m) })), memberLabel: selC.members.length + " items across " + selC.members.length + " feedback IDs",
+        dots: this.dotStyles(selC.signal),
+        refs: (selC.refs || []).map((r) => ({ id: r, kind: (d && d.CLAUSES[r] ? d.CLAUSES[r].kind : this.refKind(r)), open: () => this.openClause(r) })),
+        hasRefs: (selC.refs || []).length > 0, noRefs: (selC.refs || []).length === 0,
+        noRefsReason: run && run.noCtx ? "no product context was loaded for this run." : "this cluster makes no claim that needs a policy clause.",
+        reply: selC.reply || "", showReply: !!selC.reply && !selC.noReply, noReply: !!selC.noReply,
+        locked, replyOpacity: locked ? "0.5" : "1",
+        replyBorder: locked ? "#E8C9BC" : "#E5E2DB",
+        sendLabel: locked ? "🔒 Send (locked)" : "Send reply",
+        sendStyle: locked
+          ? "background:#EDEBE4;color:#A2A095;border:none;padding:9px 16px;border-radius:4px;font-size:13px;font-weight:650;cursor:not-allowed;"
+          : "background:#2438C8;color:#fff;border:none;padding:9px 16px;border-radius:4px;font-size:13px;font-weight:650;cursor:pointer;",
+        reviewFlags: flags, hasReviewFlags: flags.length > 0,
+        qualityFlags: selC.qualityFlags || [], hasQualityFlags: (selC.qualityFlags || []).length > 0,
+      };
+    }
+
+    const sessionRuns = s.runs.map((r) => ({
+      label: r.label, time: this.timeStr(r.ts),
+      summary: r.clusterCount + " packs · " + r.itemCount + " items" + (r.noCtx ? " · no context" : ""),
+      open: () => this.openRun(r),
+    }));
+
+    return {
+      repoUrl,
+      isLanding: route === "landing", isHow: route === "how", isProduct: route === "product",
+      goLanding: () => this.go("landing"), goHow: () => this.go("how"), goProduct: () => this.go("product"),
+      doNewRun: () => this.newRun(),
+      navLandingStyle: this.navStyle(route === "landing"),
+      navHowStyle: this.navStyle(route === "how"),
+      navProductStyle: this.navStyle(route === "product"),
+      pipelineMini, pipelineFull, anatomy, rubric, iterBars,
+      demoTitle, demoTaskTeam, demoTaskPrio, demoTaskText, demoReviewText,
+
+      // product pick
+      pickView: s.pstage === "pick", runningView: s.pstage === "running", resultsView: s.pstage === "results",
+      showPaste: sourceTab === "paste", showCsv: sourceTab === "csv", showBuiltin: sourceTab === "builtin",
+      tabPasteStyle: this.tabStyle(sourceTab === "paste"),
+      tabCsvStyle: this.tabStyle(sourceTab === "csv"),
+      tabBuiltinStyle: this.tabStyle(sourceTab === "builtin"),
+      packDemoStyle: this.packStyle(s.source === "demo"),
+      packNoCtxStyle: this.packStyle(s.source === "nocontext"),
+      pasteText: s.pasteText,
+      pickSourceLabel: pickSourceLabelMap[s.source] || "",
+      pickPaste: () => this.setTab("paste"), pickCsv: () => this.setTab("csv"), pickBuiltin: () => this.setTab("builtin"),
+      pickDemo: () => this.setState({ source: "demo" }), pickNoCtx: () => this.setState({ source: "nocontext" }),
+      onPaste: (e) => this.setState({ pasteText: e.target.value }),
+      useCsvSample: () => this.setState({ source: "csv" }),
+      startRun: () => this.startRun(),
+      hasRuns: s.runs.length > 0, noRuns: s.runs.length === 0,
+      runCount: s.runs.length + (s.runs.length === 1 ? " run" : " runs"),
+      sessionRuns,
+
+      // running
+      runStages, runProgress, runStageName, runStageCount, runLabel: s.runLabel,
+
+      // results
+      listMode: !s.selected, detailMode: !!s.selected,
+      noContext: !!(run && run.noCtx),
+      resultCount: filterActive ? filteredClusters.length + " of " + allClusters.length : (run ? run.clusters.length : 0),
+      resultRows,
+      flagSummary: run ? ((run.flagCount || 0) + " quality flags · 0 hard fails") : "",
+      closeDetail: () => this.closeDetail(),
+      sel: sel || {},
+      copyReply: () => this.copyReply(),
+      exportMd: () => this.exportMd(), exportJson: () => this.exportJson(),
+      viewerOpen: !!s.viewer, viewer: s.viewer || {}, closeViewer: () => this.closeViewer(),
+      viewerIsClause: !!(s.viewer && s.viewer.kind === "clause"),
+      viewerIsFeedback: !!(s.viewer && s.viewer.kind === "feedback"),
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      // filter system
+      filterActive,
+      noFilteredResults: filterActive && filteredClusters.length === 0,
+      filteredCount: filteredClusters.length,
+      totalCount: allClusters.length,
+      filterIntentBug: () => this.setFilter("filterIntent", "actionable_bug"),
+      filterIntentFeat: () => this.setFilter("filterIntent", "feature_request"),
+      filterIntentCmp: () => this.setFilter("filterIntent", "complaint"),
+      filterIntentPraise: () => this.setFilter("filterIntent", "praise"),
+      filterIntentNoise: () => this.setFilter("filterIntent", "noise"),
+      filterSigHigh: () => this.setFilter("filterSignal", "High"),
+      filterSigMed: () => this.setFilter("filterSignal", "Medium"),
+      filterSigLow: () => this.setFilter("filterSignal", "Low"),
+      filterFlagRev: () => this.setFilter("filterFlag", "review"),
+      filterFlagQual: () => this.setFilter("filterFlag", "quality"),
+      filterFlagNone: () => this.setFilter("filterFlag", "none"),
+      clearFilters: () => this.clearFilters(),
+      noContextDoc: !s.contextDocName,
+      hasContextDoc: !!s.contextDocName,
+      contextDocName: s.contextDocName,
+      onContextDoc: (e) => this.onContextDoc(e),
+      clearContextDoc: () => this.clearContextDoc(),
+      chipBug: fChip(filterIntent === "actionable_bug"),
+      chipFeat: fChip(filterIntent === "feature_request"),
+      chipCmp: fChip(filterIntent === "complaint"),
+      chipPraise: fChip(filterIntent === "praise"),
+      chipNoise: fChip(filterIntent === "noise"),
+      chipSigHigh: fChip(filterSignal === "High"),
+      chipSigMed: fChip(filterSignal === "Medium"),
+      chipSigLow: fChip(filterSignal === "Low"),
+      chipFlagRev: fChip(filterFlag === "review"),
+      chipFlagQual: fChip(filterFlag === "quality"),
+      chipFlagNone: fChip(filterFlag === "none"),
+      // new content
+      workpackIter: [
+        { v: "v1→v5", title: "12 systemic patterns — Round 1 human eval", what: "8 clusters reviewed. R-11 failed 3/5 (overpromise follow-up on feature requests). Fabricated internal ticket numbers in tasks. No complaint empathy opening. Direct implementation tasks from single feedback items. Language mismatch on Spanish ticket.", fixed: "10 explicit rules added in one pass: no personal follow-up promises, no fabricated IDs, empathy-first for complaints, evaluate/scope instead of direct implement. Spot-check on same 8 clusters confirmed fixes." },
+        { v: "v5→v6", title: "Task architecture + 28 noise quality flags", what: "Engineering receiving direct implementation tasks without an investigate-first step. High-priority tasks with deadline=None (contradiction). Model generating its own quality_flags — 28 noise flags in v5, most self-generated timestamps.", fixed: "Tasks now follow Investigate → Authorize → Implement structure. Model explicitly told quality_flags[] is auto-populated only. 28 flags → 11 in v6." },
+        { v: "v6→v7", title: "43 fabricated_quote false positives (code bug)", what: "R-03 regex written as r'\\\\s+' (double backslash) — whitespace normalization was a no-op. Any quote spanning a line-break in the source always failed the verbatim check. 43 false positive flags across ~18 clusters.", fixed: "Fixed to r'\\s+'. fabricated_quote count dropped from 43 to 0 in one correction. Also: normalization extended to quote style and capitalization to catch two additional patterns." },
+        { v: "v7→v8", title: "Fault attribution — 3 patterns (P-A/B/C)", what: "P-A: Clause IDs appearing in customer-facing reply body (e.g. '(SP-3)'). P-B: Model inventing assignee teams not in schema (Compliance, Finance). P-C: Opening matrix apologized for customer-caused situations, didn't apologize for Vela Pay failures.", fixed: "P-A: Auto-check added; plain-language rule in prompt. P-B: Valid team list restricted to Engineering / Product / Support Operations / Design. P-C: Opening matrix now accounts for fault attribution — apology only when Vela Pay caused the failure." },
+        { v: "v8→v9", title: "Final self-audit — 4 issues, one pass", what: "V9-1: feature_request clusters producing 2 consecutive Product tasks instead of 1. V9-2: Task text starting with team name (redundant). V9-3: Duplicate '## quality_flags' section header confusing model. V9-4: SMS carrier failures treated as 'external circumstance' → no apology, but users experience it as a service failure.", fixed: "All 4 fixed. Final counts: quality_flags 7 (ambiguous_timestamp ×5, tone_violation ×1, non_english_feedback ×1), review_flags 15, fabricated_quote 0, internal_ref_in_reply 0." },
+      ],
+      goToPick: () => this.setState({ pstage: "pick", selected: null }),
+      rubricUrl: repoUrl + "/blob/main/eval/05-rubric-v1.md",
+    };
+  }
+}
+</script>
+</body>
+</html>

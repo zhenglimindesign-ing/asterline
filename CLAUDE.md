@@ -56,6 +56,15 @@ asterline/
 
   docs/
     13-workpack-spec.md            ← Stage 6 design spec (model choice, deterministic vs model split, idempotent rerun design)
+    14-frontend-brief.md           ← self-contained brief for frontend implementation
+
+  web/                             ← deployed frontend (GitHub Pages via Actions)
+    index.html                     ← product site — DC component (uses support.js runtime)
+    asterline-data.js              ← all 22 work packs, eval data, clauses, feedback (generate-v9)
+    support.js                     ← DC runtime (React-based component system)
+
+  .github/workflows/
+    pages.yml                      ← deploys web/ to GitHub Pages on push to main
 ```
 
 ---
