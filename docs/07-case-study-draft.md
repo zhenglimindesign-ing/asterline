@@ -1,10 +1,7 @@
-# Asterline — Case Study Draft
-# Status: Sections 1-6 drafted through Stage 5 (classification + clustering).
-# Section 4-5 filled 2026-06-16 from pipeline output (docs/06-iteration-log.md,
-# eval-results-v0..v4.json, docs/12-cluster-eval.md). Will need another pass
-# after Stage 6 (work-pack generation) to add that stage's iteration/results.
-# Section 7 (Appendix) still pending — needs deploy links, not yet available.
-# Language: English (all deliverables per §14)
+# Asterline — Case Study
+# Status: Sections 1–6 complete through Stage 7 (human eval, generate-v9).
+# Section 7 (Appendix) pending — needs deploy links.
+# Language: English
 
 ---
 
@@ -180,6 +177,40 @@ Clustering has no equivalent "ground truth accuracy" metric — the golden set's
 
 Full comparison table (all 29 items vs. golden-set hypothesis): `docs/12-cluster-eval.md`.
 
+### 5.3 Work-pack generation (Stage 6) — 22 clusters, RAG-grounded
+
+All 22 clusters produced a work pack. 0 hard_fail items. Prompt iterated from generate-v1 through generate-v9 across three sessions.
+
+**Auto-check coverage.** 14 of the 20 rubric items run programmatically on every output inside generate.py — timestamp format (R-01), quote count (R-02), verbatim fidelity (R-03), task completeness (R-04), review_flag blocks field (R-06), banned phrases (R-08), money/timing first-sentence (R-09), cluster_members validity (R-16), confidence field (R-17), noise enforcement (R-13/14/15), source_ref validity (R-19), internal clause IDs in reply_draft (R-PA). The remaining 6 items require human judgment (R-05, R-07, R-10, R-11, R-12, R-18, R-20) and are scored offline during Stage 7.
+
+**The deterministic/model split.** The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags. It does not ask the model for: cluster_id, cluster_members, signal_strength, intent_type, dimension, confidence — all computed deterministically in Python from the clustering and classification outputs. This keeps the model focused on synthesis and grounding, not bookkeeping.
+
+**Stage 6 iteration summary (generate-v1 through generate-v9):**
+
+| Version | Change | Reason |
+|---|---|---|
+| v1 | Initial build | Baseline |
+| v2 | Multi-member review_flag reasoning | Flag reasons were generic ("verify records") not specific (named the actual risk per account) |
+| v3 | Dynamic clause ID regex | `\*\*(ID)\.\*\*` missed TG/RM format; TG-2 was flagged as fabricated despite being a real clause |
+| v4 | Whitespace normalization in verbatim check | 16/22 clusters had false-positive fabricated_quote flags because markdown line-wraps didn't match model's space-joined output |
+| v5 | 10 prompt rules from human eval Round 1 | Systemic: R-11 overpromise, fabricated ticket numbers, single-feedback-to-roadmap tasks, no complaint empathy, praise over-attribution, language detection, KYB security (SP-11 added to context docs) |
+| v6 | Reply opening/closing frameworks, task architecture, priority/deadline rules, source_refs TG-x ban, quality_flag remediation field | Systemic: complaint empathy pattern incomplete, Engineering receiving direct implementation tasks, deadline=None on High priority, ambiguous_timestamp false positives from model over-generating its own quality_flags |
+| v7 | Auto-check verbatim normalization (quote style + case + punctuation), model quality_flags ownership clarified, conciseness guidance | 3 fabricated_quote false positives from punctuation/capitalization differences; 28 quality_flags in v6 (most were model-generated noise); outputs verbose |
+| v8 | Three systemic patterns from human eval Round 3: P-A (clause IDs appearing in reply_draft), P-B (invalid assignee_team values), P-C (inverted apology logic); auto-check R-09 scope narrowed to payment clauses only | P-A: internal identifiers leaked to customer-facing text; P-B: model invented Compliance/Finance as assignee teams not in schema; P-C: model apologized for customer-caused situations (lost 2FA device) while not apologizing for system failures — opening matrix tightened to distinguish Vela Pay failures from customer-initiated situations |
+| v9 | Four issues from post-v8 self-audit: V9-1 (feature_request single-task rule), V9-2 (no team prefix in task text), V9-3 (duplicate quality_flags section merged), V9-4 (opening matrix tightened for customer-caused situations to exclude carrier/external failures) | V9-1: feature_request was still splitting into Document + Evaluate tasks; V9-2: task text started with "Engineering: …" duplicating the assignee_team field; V9-3: prompt had two `## quality_flags` headers confusing model; V9-4: P-C fix in v8 incorrectly applied "no apology" to carrier/SMS failures — narrowed to customer-controlled actions (lost device, wrong details) only |
+
+**Four auto-check bugs found and fixed during generation-stage iteration:**
+
+Bug 1 (v1→v4): Verbatim check false positives from whitespace. All markdown source text has mid-sentence line wraps. The model quotes text with spaces. A genuinely verbatim quote like "payments had gone out" failed the check because the source had "payments had\ngone out". 16 of 22 clusters falsely flagged. Fix: normalize `\s+` to single space before comparison.
+
+Bug 2 (v2→v3): Clause ID regex missed two prefix types. The context doc uses two bold formats: SP/KI use `**SP-1.** desc` (bold closes after period); TG/RM use `**TG-2. Full title.**` (bold spans the whole title). Original regex `\*\*(ID)\.\*\*` only matched the first format. Fix: change to `\*\*(ID)\.` (no closing `**` required). All 24 clause IDs now parsed.
+
+Bug 3 (v6→v7): Verbatim check still too strict after Bug 1 fix. Three new false positives: model converted `"repeat monthly"` (double-quotes in source) to `'repeat monthly'` (single-quotes in JSON string) to avoid nesting conflicts; model capitalized first letter of mid-sentence excerpts used as standalone quotes. Neither is fabrication — content is identical. Fix: _normalize_for_verbatim() now also normalizes quote style, strips trailing punctuation, and lowercases the first character.
+
+Bug 4 (pre-v8, discovered during human eval Round 3): R-09 tone_violation check was scoped to all SP-x clauses including SP-10 (account recovery) and SP-11 (KYB). This caused false-positive tone_violation flags on clusters where a customer lost their 2FA device (SP-10) — "money or timing" first-sentence requirement does not apply to account recovery situations. Fix: narrowed PAYMENT_SP_REFS to {SP-1 through SP-9} only; SP-10/SP-11 excluded.
+
+**Stage 7 human eval results (generate-v5 through v9):** 12 clusters sampled across 4 rounds. No blocking issues in the final (v9) output. Final flag counts: quality_flags 7 (ambiguous_timestamp: 5, tone_violation: 1, non_english_feedback: 1), review_flags 15, fabricated_quote 0, internal_ref_in_reply 0.
+
 ---
 
 ## 6. Known Limitations & Next Steps
@@ -195,6 +226,8 @@ Full comparison table (all 29 items vs. golden-set hypothesis): `docs/12-cluster
 **Signal-strength's original ambiguity is resolved for the one case that raised it, not in general.** CLU-001 (FB-01) originally justified High signal-strength using KI-1's documented recurrence rather than in-dataset item count — an open question about whether external context-doc evidence should count. Resolved in practice by adding real duplicate items (FB-26/FB-27) rather than by deciding the general question; the general question remains open for any future single-member cluster with only external evidence.
 
 **No live integrations (v1).** Export is Markdown + JSON with Jira/Linear-shaped fields. No live API push to any issue tracker. v2 path: optional webhook or direct integration, with user-provided credentials.
+
+**Overall v2 direction.** The five limitations above share a common pattern: each was deliberately held at the simplest viable implementation in v1 to keep scope bounded and the eval signal clean. None of them is architecturally expensive to address — NER for PII, schema validation at ingest, vector retrieval for context scaling, embedding-based clustering for scale, and a webhook layer for integrations are all well-understood. The decision in each case was about what to build *now* vs. what to validate first. That tradeoff is documented in the upgrade triggers above and in `docs/11-cluster-spec.md` — so the path to v2 is explicit, not aspirational.
 
 ---
 

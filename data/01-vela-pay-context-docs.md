@@ -71,9 +71,11 @@ Move money across borders in stablecoins, settle near-instantly, and avoid the m
 
 **SP-5.** Vela Pay does not reverse card transactions that were authorized by the cardholder, even if the cardholder later regrets the purchase (no "buyer's remorse" reversals).
 
-**SP-6.** Business accounts must complete KYB before sending or receiving payouts above $1,000 in cumulative volume. Below this threshold, a limited-access account is available with reduced limits.
+**SP-6.** Business accounts must complete KYB before sending or receiving payouts exceeding $1,000 in cumulative volume. Below this threshold, a limited-access account is available with reduced limits.
 
 **SP-7.** Individual payout recipients must complete KYC once cumulative receipts exceed $10,000 in a rolling 12-month period. Until then, payouts proceed without additional recipient verification.
+
+**SP-11.** KYB document collection and identity verification must be conducted through Vela Pay's secure document portal or the in-app upload flow. Do not direct customers to submit KYB materials, identity documents, or compliance records via email or other unencrypted channels.
 
 **SP-8.** The FX spread applied at conversion is shown to the user before confirming the transaction. Vela Pay does not retroactively change the spread on a transaction already confirmed.
 

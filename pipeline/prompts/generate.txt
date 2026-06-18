@@ -17,19 +17,19 @@ Return ONLY a JSON object with these fields. Do NOT include cluster_id, cluster_
 ```json
 {
   "title": "concise label for the cluster's core problem or theme; not vague ('customer complaint'), not a verbatim raw_text sentence",
-  "problem_brief": "2-4 sentences describing the issue; ALL time references must be absolute UTC+0 timestamps (e.g. '2026-06-13T08:30:00Z'), never relative ('recently', '6 days ago')",
-  "key_quotes": ["at most 2 verbatim substrings copied exactly from the raw_text above — no paraphrasing, no summarizing, no fixing typos"],
-  "source_refs": ["clause IDs from the context documents above that genuinely apply, e.g. 'SP-3', 'KI-1' — empty array if nothing matches; NEVER invent a clause ID that isn't in the context documents"],
+  "problem_brief": "As concise as the complexity allows — most issues need 2 sentences, complex ones up to 3. Do not restate the title. Do not repeat what is already in key_quotes. ALL time references must be absolute UTC+0 timestamps (e.g. '2026-06-13T08:30:00Z'), never relative ('recently', '6 days ago'). When referencing how many customers reported the issue, use the exact count from cluster_members (e.g. 'two customers' not 'multiple customers').",
+  "key_quotes": ["at most 2 verbatim substrings copied exactly from the raw_text above — no paraphrasing, no summarizing, no fixing typos; if the source contains double-quotes inside the passage, render them as single-quotes in the JSON string"],
+  "source_refs": ["SP-x, KI-x, or RM-x clause IDs that genuinely apply — empty array if nothing matches; NEVER invent a clause ID; NEVER include TG-x (tone guidelines are internal, not customer-facing policy)"],
   "tasks": [
     {
       "task": "specific, actionable description",
-      "assignee_team": "e.g. 'Engineering', 'Support Operations', 'Product'",
+      "assignee_team": "Engineering | Support Operations | Product | Design",
       "priority": "High | Medium | Low",
-      "deadline": "ISO 8601 UTC string or null — only set when explicit time pressure exists in the feedback",
+      "deadline": "ISO 8601 UTC string, 'OVERDUE — immediate review required', 'URGENT — set by reviewer', or null",
       "acceptance_criteria": "specific and verifiable, not generic ('issue resolved')"
     }
   ],
-  "reply_draft": "customer-facing reply string, or null — see rules below",
+  "reply_draft": "customer-facing reply string, or null — see rules below; keep it as short as the situation allows: simple acknowledgments under 80 words, complex policy citations under 150 words; never pad with filler",
   "review_flags": [
     {"flag": "needs_human_review", "reason": "why human sign-off is needed before this can proceed", "blocks": "which field this gates, e.g. 'reply_draft'"}
   ],
@@ -37,26 +37,93 @@ Return ONLY a JSON object with these fields. Do NOT include cluster_id, cluster_
 }
 ```
 
+## Reply draft: opening and closing rules
+
+**reply_draft is body text only.** No salutation ("Hi [Name],") and no sign-off ("Best regards,") — the sending system adds those from ticket metadata.
+
+### Opening (first 1–2 sentences)
+
+The opening pattern depends on intent_type and severity:
+
+| Situation | Opening |
+|---|---|
+| feature_request | Thank the customer for sharing + acknowledge the value of the request. "Thanks for this — [what makes the request useful]." |
+| praise | Thank the customer for taking the time to share. "Thank you for sharing this — [warm acknowledgment]." |
+| actionable_bug or complaint where **Vela Pay** caused a material failure (payment failed, SLA breached, service disrupted by a system error) | Specific, contextual apology + acknowledge what happened. NOT generic ("sorry for the inconvenience") — specific to THIS situation ("We're sorry your payout failed — a batch upload hanging with no error message is not acceptable behavior."). |
+| actionable_bug or complaint where the **customer's own action** directly caused the situation (e.g. lost 2FA device, entered wrong recipient details, misplaced or replaced their device) and Vela Pay is now helping them resolve it | Acknowledge the situation with empathy — do NOT apologize for something the customer caused. "We understand this puts you in a difficult position with payroll due — here's what needs to happen to restore your access." |
+| actionable_bug where the issue is a UI/display problem or non-payment friction | Acknowledge what happened, no apology needed. "Your [specific thing] is showing [specific problem] — here's what's happening." |
+| complaint where the issue is process friction, missing clarity, or poor experience (no direct payment failure) | Acknowledge the experience. "Your payouts being put on hold without warning isn't the experience you should have had." |
+
+### Closing (last 1–2 sentences)
+
+Every reply must end with a clear next-step statement. One of:
+- What Vela Pay will do, and when: "We'll [specific action] and follow up with [specific update] by [timeframe from SP-x, or 'as soon as we have clarity']."
+- What the customer should do next: "To [proceed/resolve], [specific action the customer should take]."
+- Both, in that order: Vela Pay action first, then customer action.
+- For feature requests: "You'll see it in our changelog when it ships — [changelog URL placeholder]."
+
+Never close with generic filler: "Let us know if you have any other questions," "Thanks again for reaching out," or similar.
+
 ## Rules for tasks[] and reply_draft by intent_type
 
 - **noise**: tasks = [], reply_draft = null, key_quotes = []. Only title and problem_brief matter.
-- **praise**: tasks = []. reply_draft is a short, genuine thank-you (not generic corporate filler).
-- **actionable_bug / feature_request / complaint**: tasks should reflect real follow-up work. reply_draft is a full customer-facing reply.
 
-## Tone rules for reply_draft (TG-1 through TG-6, from the context documents)
+- **praise**: tasks = []. reply_draft is a short, genuine thank-you (2–3 sentences). If this cluster has multiple members who praised different things, do NOT enumerate specific praised items or attribute all of them to every recipient — use a warm, general acknowledgment instead.
 
-1. Direct, not corporate. No filler ("we're sorry for any inconvenience," "thank you for your patience"). State what happened and what happens next.
-2. Precise about money and time. Never say "soon" or "shortly" if a specific timeframe is known from the Support Policy document. If no timeframe is known, say so explicitly rather than guessing.
-3. No blame-shifting language toward the user, even when a policy clause technically applies because of a user error.
-4. Plain language over financial jargon ("off-ramp," "settlement," "spread") unless the user used the term first.
-5. When the reply addresses a delayed or failed payment, the FIRST sentence must address the money/timing question directly — not background, not apology.
-6. Confident but not overpromising — never promise an outcome outside Vela Pay's direct control (e.g. a partner bank's exact resolution date).
+- **feature_request**: one Product task combining documentation and scoping — do not split into separate "Document" and "Evaluate" tasks. Write it as: "Document the reported need for [X], capturing [specific details from feedback], and evaluate whether it fits within [RM-x scope / existing roadmap / current API surface]." Tasks are investigation and scoping only — never "Implement X" or "Update RM-Y to include X." reply_draft acknowledges the request's value. If a matching RM-x exists, note the team is aware; do not promise a timeline or personal follow-up.
+
+- **complaint**: tasks focus on root-cause investigation and process or policy clarification. reply_draft follows the opening rule above (acknowledge/apologize by severity). TG-5 still applies: if there is a money or timing question, the opening sentence addresses it directly — acknowledgment and the factual answer can coexist ("Your payout is delayed — this isn't right, and here's what happened.").
+
+- **actionable_bug**: tasks follow the sequence below. reply_draft opens per the severity rule above.
+
+## Task architecture for actionable_bug
+
+Tasks must follow this sequence. Do not skip steps or collapse them:
+
+1. **Engineering — Investigate & Confirm**: Reproduce the issue, identify the root cause, document scope and affected accounts. Acceptance criteria: written root-cause summary reviewed by Product.
+2. **Product — Review & Authorize**: Assess the Engineering finding, determine priority, and authorize the fix scope and approach. Acceptance criteria: written priority decision and fix authorization on record.
+3. **Engineering — Implement** *(include only if the fix is a bounded, zero-design-decision change — e.g., updating error message text)*: Implement the authorized fix. Acceptance criteria: specific, testable behavior.
+
+In most cases steps 1 and 2 are sufficient for the work pack. Step 3 is rarely included because the work pack is a triage artifact, not an engineering spec — Product must authorize before Engineering implements. Even for known issues (KI-x), Product must reconfirm priority before the fix is scheduled.
+
+## Task discipline
+
+- Use as many tasks as the situation warrants, no more.
+- **Merge** when: same assignee_team AND the sub-steps belong to the same investigation or concept.
+- **Split** when: different assignee_team, OR the second task cannot start until the first produces a concrete output.
+- **Priority = High** when: the issue is an active operational blocker (payment failed, batch job incomplete, account locked, data at risk) — regardless of whether the customer explicitly stated urgency. Medium for known issues not currently blocking operations. Low for UX friction and non-blocking feature gaps.
+- **Proactive support actions** (e.g. recommending recovery steps for affected users): frame as "confirm whether [action] is needed and offer [process] if so" rather than asserting the action should be initiated immediately. The reviewer decides whether to proceed.
+- **Task description must not start with the assignee_team name.** Write "Investigate whether..." not "Engineering: investigate whether...". The team is already in the assignee_team field.
+- **Deadline**: derive from the Support Policy SLA when one applies (e.g., SP-2: reversal within 1 business day → deadline = feedback timestamp + 1 BD). If the SLA has already been exceeded, use `"OVERDUE — immediate review required"`. If priority is High but no SLA exists, use `"URGENT — set by reviewer"`. Otherwise null.
+
+## Things never to include
+
+**Fabricated identifiers.** No internal ticket numbers, case IDs, or reference numbers unless they appear verbatim in the raw_text. Internal references must never appear in reply_draft regardless of source.
+
+**Clause IDs in reply_draft.** Never include SP-x, KI-x, TG-x, or RM-x identifiers in the reply_draft. Express policy content in plain language: "our 5-business-day dispute review window" not "(SP-4)"; "our secure document portal" not "(SP-11)". Clause IDs are for source_refs only.
+
+**Personal follow-up promises.** Never "we will contact you when this ships" or "we'll keep you posted." For feature updates, direct to the public changelog.
+
+**Premature roadmap commitments.** "We'll communicate it in product updates" implies imminent release — do not use for anything not yet shipped. If RM-x is relevant, say "you'll see it in the changelog when it ships."
+
+**KYB materials via email.** For KYB or identity verification, direct to the secure document portal and cite SP-11. Never suggest email.
+
+**TG-x in source_refs.** Tone guidelines are internal. source_refs contains only SP-x, KI-x, RM-x.
+
+## quality_flags
+
+Leave `quality_flags` as `[]`. Automated checks populate this field after generation — you do not need to add flags for timestamp issues, tone problems, or quote validity.
+
+**One exception:** if any feedback item in this cluster contains text primarily in a language other than English, add exactly this flag (include a `remediation` field):
+`{"flag": "non_english_feedback", "reason": "Cluster contains feedback in [language]. Verify whether reply_draft should be in the same language before sending.", "remediation": "Review feedback language and either translate the reply_draft or flag for a bilingual support agent."}`
+
+## Multi-member clusters
+
+If this cluster has more than one member: reply_draft is a template. It cannot be sent as-is to multiple customers — each recipient's version must be verified against their specific account state before sending. The review_flag should name this risk explicitly.
 
 ## review_flags judgment
 
-Set a `needs_human_review` flag (blocking `reply_draft`) when the reply touches a specific money amount, payment timing commitment, or a potential policy breach. This is your judgment call — a separate, deterministic check is also applied afterward for low-confidence clusters, so you don't need to handle that case yourself.
-
-When the cluster has more than one member (check the feedback items above), and your flag reason involves a money/payment-state assertion (e.g. "payment did not go out"), be specific that the assertion is being generalized across multiple accounts/tickets and may not hold identically for every one of them — don't write a generic "verify against ticket records" reason; name the actual risk (a claim true for the cluster's representative case might not be true for every individual member).
+Set `needs_human_review` (blocking reply_draft) when the reply touches a specific money amount, payment timing commitment, or potential policy breach. When the cluster has more than one member and the reply makes a payment-state assertion, name the specific risk per account rather than writing a generic "verify records" reason.
 
 ## Output format
 

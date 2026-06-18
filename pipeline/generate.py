@@ -48,7 +48,7 @@ from pipeline.pii import redact
 load_dotenv()
 
 MODEL = "claude-sonnet-4-6"
-PROMPT_VERSION = "generate-v4"
+PROMPT_VERSION = "generate-v9"
 
 REPO_ROOT = Path(__file__).parent.parent
 PROMPT_PATH = Path(__file__).parent / "prompts" / "generate.txt"
@@ -82,6 +82,8 @@ RELATIVE_TIME_RE = re.compile(
 MONEY_OR_TIME_RE = re.compile(
     r"\$\d|\d+\s*(day|days|business day)|\d{4}-\d{2}-\d{2}|VP-\d+"
 )
+
+INTERNAL_REF_RE = re.compile(r"\b(SP|KI|TG|RM)-\d+\b")
 
 _client: Optional[anthropic.Anthropic] = None
 
@@ -196,7 +198,16 @@ def apply_deterministic_fields(
     workpack["dimension"] = dimension_dist
     workpack["confidence"] = confidence
 
-    quality_flags = list(workpack.get("quality_flags") or [])
+    # Only carry forward model-generated quality_flags that are in the allowed set.
+    # ambiguous_timestamp and fabricated_quote are owned by the auto-check below —
+    # any model-generated versions are removed to prevent duplicates and suppress
+    # false "missing timestamp in metadata" flags introduced in v6 when the model
+    # became timestamp-aware from the deadline derivation rules.
+    AUTO_CHECK_OWNED_FLAGS = {"ambiguous_timestamp", "fabricated_quote", "tone_violation", "fabricated_source_ref"}
+    quality_flags = [
+        f for f in (workpack.get("quality_flags") or [])
+        if f.get("flag") not in AUTO_CHECK_OWNED_FLAGS
+    ]
     review_flags = list(workpack.get("review_flags") or [])
 
     # R-13/14/15: noise enforcement, regardless of model output
@@ -215,26 +226,36 @@ def apply_deterministic_fields(
         quotes = quotes[:2]
         workpack["key_quotes"] = quotes
 
-    # R-03: verbatim check against the union of all members' raw_text
-    # (known limitation: no per-quote attribution to a specific member — see
-    # docs/13-workpack-spec.md)
-    # Whitespace is normalized (all runs of whitespace, including the source
-    # markdown's mid-sentence line wraps, collapse to a single space) before
-    # comparing — otherwise a genuinely verbatim quote that happens to span a
-    # line-wrap in the source file is wrongly flagged as fabricated. Found via
-    # full-output audit 2026-06-16: this false positive was firing on most
-    # multi-line quotes across the dataset, not just an edge case.
-    def _normalize_ws(s: str) -> str:
-        return re.sub(r"\s+", " ", s)
+    # R-03: verbatim check against the union of all members' raw_text.
+    # Normalization before comparison handles four known false-positive sources:
+    #   1. Whitespace: markdown mid-sentence line wraps (\n) vs model's space-joined text.
+    #      Fixed 2026-06-16 — was firing on most quotes across the dataset.
+    #   2. First-character case: model capitalizes the first letter of a mid-sentence
+    #      excerpt when using it as a standalone quote.
+    #   3. Quote style: model converts internal double-quotes to single-quotes inside
+    #      a JSON string to avoid nesting conflicts ("repeat" → 'repeat').
+    #   4. Trailing punctuation: model sometimes drops the trailing period.
+    # All four are surface formatting differences, not fabrication. The check's purpose
+    # is to catch cases where the model invented content not present in source at all.
+    def _norm_source(s: str) -> str:
+        # Normalize source for verbatim check: whitespace + quote style + full lowercase.
+        s = re.sub(r'\s+', ' ', s).strip()
+        s = s.replace(chr(0x201C), chr(0x27)).replace(chr(0x201D), chr(0x27)).replace('"', chr(0x27))
+        return s.lower()
 
-    all_raw_text = _normalize_ws(
-        " ".join(redact(feedback_by_id[m]["raw_text"])[0] for m in cluster["cluster_members"])
+    def _norm_quote(s: str) -> str:
+        # Same as _norm_source plus strip trailing punctuation.
+        return _norm_source(s).rstrip('.,;!?')
+
+    all_raw_text = _norm_source(
+        ' '.join(redact(feedback_by_id[m]['raw_text'])[0] for m in cluster['cluster_members'])
     )
     for q in quotes:
-        if _normalize_ws(q) not in all_raw_text:
+        if _norm_quote(q) not in all_raw_text:
             quality_flags.append({
                 "flag": "fabricated_quote",
                 "reason": f"quote not found verbatim in any cluster member's raw_text: {q!r}",
+                "remediation": "Remove this key_quote or replace it with a verbatim substring from the source feedback.",
             })
 
     # R-16: cluster_members reference validity
@@ -243,16 +264,16 @@ def apply_deterministic_fields(
         quality_flags.append({
             "flag": "invalid_cluster_reference",
             "reason": f"unknown feedback_ids: {invalid_members}",
+            "remediation": "Check pipeline/output/classified-25-v4.json — these IDs are missing from the classified set.",
         })
 
     # R-06: every needs_human_review flag must have a non-empty blocks field
-    # (added during self-critique 2026-06-16 — this was specified in the
-    # original deterministic-checks list but never actually implemented)
     for f in review_flags:
         if f.get("flag") == "needs_human_review" and not f.get("blocks"):
             quality_flags.append({
                 "flag": "unclear_execution_order",
                 "reason": "needs_human_review flag is missing a populated blocks field",
+                "remediation": "Add a 'blocks' field to the review_flag indicating which output field requires human sign-off.",
             })
 
     # R-19: confidence=Low -> needs_human_review must be present
@@ -267,18 +288,24 @@ def apply_deterministic_fields(
         quality_flags.append({
             "flag": "low_confidence",
             "reason": "confidence=Low for this cluster",
+            "remediation": "Review the classification output for this cluster's members before acting on the work pack.",
         })
 
-    # R-01: relative-time scan
-    text_fields = " ".join(filter(None, [
+    # R-01: relative-time scan — only flags when the GENERATED OUTPUT contains a
+    # relative time expression (e.g. "yesterday", "6 days ago"). Does NOT flag
+    # because the source feedback lacked a timestamp — that is a data gap, not a
+    # generation error. The model is told to use absolute timestamps; this check
+    # catches cases where it slipped back to relative language despite the rule.
+    generated_text = " ".join(filter(None, [
         workpack.get("problem_brief") or "",
         " ".join(quotes),
         workpack.get("reply_draft") or "",
     ]))
-    if RELATIVE_TIME_RE.search(text_fields):
+    if RELATIVE_TIME_RE.search(generated_text):
         quality_flags.append({
             "flag": "ambiguous_timestamp",
             "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft",
+            "remediation": "Replace the relative expression with the absolute UTC+0 timestamp from the feedback metadata, or remove the time reference if the timestamp is unknown.",
         })
 
     # R-08: banned filler phrases
@@ -288,18 +315,32 @@ def apply_deterministic_fields(
             quality_flags.append({
                 "flag": "tone_violation",
                 "reason": f"banned phrase detected: {phrase!r}",
+                "remediation": "Remove or rewrite this sentence — state what happened and what happens next instead.",
             })
 
     # R-09: money/timing-first sentence check
+    # Only fires for payment/SLA clauses (SP-1 through SP-9). Security and compliance
+    # clauses (SP-10, SP-11) don't require a transaction/amount/timing opener.
+    PAYMENT_SP_REFS = {"SP-1", "SP-2", "SP-3", "SP-4", "SP-5", "SP-6", "SP-7", "SP-8", "SP-9"}
     source_refs = workpack.get("source_refs") or []
-    has_sp_ref = any(ref.startswith("SP-") for ref in source_refs)
+    has_payment_sp_ref = any(ref in PAYMENT_SP_REFS for ref in source_refs)
     reply_draft = workpack.get("reply_draft")
-    if intent_type in ("actionable_bug", "complaint") and has_sp_ref and reply_draft:
+    if intent_type in ("actionable_bug", "complaint") and has_payment_sp_ref and reply_draft:
         first_sentence = re.split(r"(?<=[.!?])\s", reply_draft.strip())[0]
         if not MONEY_OR_TIME_RE.search(first_sentence):
             quality_flags.append({
                 "flag": "tone_violation",
                 "reason": "first sentence of reply_draft does not reference transaction/amount/timing",
+                "remediation": "Revise the first sentence to address the money or timing question directly (per TG-5).",
+            })
+
+    # R-PA: clause IDs must not appear in reply_draft (internal refs are for source_refs only)
+    if reply_draft and INTERNAL_REF_RE.search(reply_draft):
+        for match in INTERNAL_REF_RE.finditer(reply_draft):
+            quality_flags.append({
+                "flag": "internal_ref_in_reply",
+                "reason": f"clause ID {match.group()!r} found in reply_draft — internal identifiers must not appear in customer-facing text",
+                "remediation": "Remove the clause ID from reply_draft and express the policy in plain language (e.g. 'our 5-business-day review window' not '(SP-4)').",
             })
 
     # source_refs existence check — clause IDs parsed at runtime from the
@@ -309,6 +350,7 @@ def apply_deterministic_fields(
             quality_flags.append({
                 "flag": "fabricated_source_ref",
                 "reason": f"cited clause {ref!r} not found in data/01-vela-pay-context-docs.md",
+                "remediation": "Remove this source_ref. Only cite clause IDs that appear in data/01-vela-pay-context-docs.md.",
             })
 
     workpack["review_flags"] = review_flags

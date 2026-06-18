@@ -1,6 +1,6 @@
-# Handover — Stage 7 (human eval + documentation + deployment decision)
+# Handover — Stage 8 (frontend + open-source packaging)
 
-## What the previous sessions completed (Stages 1–6)
+## What the previous sessions completed (Stages 1–7)
 
 Full pipeline code is done. All stages produce output and can be run in sequence:
 
@@ -8,66 +8,54 @@ Full pipeline code is done. All stages produce output and can be run in sequence
 python pipeline/eval.py            # classification accuracy vs golden-20 (Haiku, classify-v5)
 python pipeline/classify_all.py    # classify all 29 items
 python pipeline/cluster.py         # cluster + signal_strength (Haiku, cluster-v3)
-python pipeline/generate.py        # work-pack generation (Sonnet, generate-v4) — idempotent
+python pipeline/generate.py        # work-pack generation (Sonnet, generate-v9) — idempotent
 ```
 
 Key output files:
 - `pipeline/output/classified-25-v4.json` — 29 items classified
 - `pipeline/output/clusters-v1.json` — 22 clusters
-- `pipeline/output/workpacks-v1.json` / `workpacks-v1.md` — 22 work packs
+- `pipeline/output/workpacks-v1.json` / `workpacks-v1.md` — 22 work packs (generate-v8, stable)
 - `pipeline/output/workpack-generation-log.json` — per-cluster generation status
 
 Classification scores (frozen): intent 90% / dimension 90% / impact 75% / urgency 85% / overall 65%.
 
-Work-pack generation: 22/22 clusters, 0 hard_fail. 8 real quality flags across 5 clusters after fixing 2 false-positive bugs in auto-checks (documented in docs/06-iteration-log.md Stage 6 entries).
+Work-pack generation: 22/22 clusters, 0 hard_fail. generate-v9 (2026-06-18): 7 quality flags across clusters (ambiguous_timestamp: 5, tone_violation: 1, non_english_feedback: 1), 15 review flags (needs_human_review), 0 fabricated_quote, 0 internal_ref_in_reply, 0 invalid assignee_team.
 
-Full iteration history in `docs/06-iteration-log.md`. Full spec for generation stage in `docs/13-workpack-spec.md`. All known gaps in `CLAUDE.md` "Known gaps" table (single source of truth).
+Stage 7 human eval complete: 12 clusters sampled across 4 rounds (generate-v5 → v9). No blocking issues remain. Full prompt iteration history in `docs/06-iteration-log.md`.
 
 ---
 
-## What Stage 7 is
+## What Stage 8 is
 
-Three parallel tracks — only human eval blocks the others in practice:
+Two tracks:
 
-### Track A: Human eval (Limin does the judgment, CC records it)
+### Track A: Frontend (Limin leads design; Claude Code implements)
 
-Read `pipeline/output/workpacks-v1.md`. For each work pack, make binary pass/fail/N/A calls on the 7 human-mode rubric items from `eval/05-rubric-v1.md`:
+A live demo site is the locked deliverable (project-context.md §0). Confirmed: frontend UI + open-source release.
 
-| Item | What to check | N/A when |
-|---|---|---|
-| R-05 | acceptance_criteria specific and verifiable, not "issue resolved" | tasks=[] |
-| R-07 | reply touching money/timing/policy has needs_human_review flag | reply_draft=null |
-| R-10 | no blame-shifting language toward the user | reply_draft=null |
-| R-11 | no overpromising outcomes outside Vela Pay's control | reply_draft=null |
-| R-12 | when source_refs=[], reply doesn't invent policy clauses | source_refs non-empty |
-| R-18 | title accurate and specific, not generic | always applies |
-| R-20 | reply doesn't contradict its cited SP-x clauses | source_refs=[] |
+**Design brief for frontend:** `docs/14-frontend-brief.md` — self-contained brief for the frontend Claude session. Covers product description, pipeline stages, real work pack example, key design decisions, page structure for landing page + product overview, file references, and vocabulary.
 
-Limin tells CC the results in chat. CC records them in `docs/06-iteration-log.md` and decides whether a prompt iteration (generate-v5) is warranted. Also: Limin reads for any general quality impressions not captured by the rubric — these matter too.
+**Actual output to display:** `pipeline/output/workpacks-v1.md` and `workpacks-v1.json` — these are stable and ready.
 
-The 8 existing quality flags to pay attention to during reading:
-- CLU-005, CLU-006, CLU-016: `ambiguous_timestamp` — relative time expression detected
-- CLU-006, CLU-019, CLU-016: `tone_violation` — first sentence / banned phrase check
-- CLU-007, CLU-016: `fabricated_quote` — model paraphrased instead of quoting verbatim (2 genuine cases, not false positives)
+Pages in scope: landing page + product overview. Limin is handling design in a separate Claude session.
 
-### Track B: Documentation (CC does this independently)
+### Track B: Documentation final pass
 
-- `docs/07-case-study-draft.md` §5 — add Stage 6 results table and the generate-v4 bug stories (two good iteration examples: whitespace false positive, TG/RM regex bug)
-- `docs/07-case-study-draft.md` §6 — update Known Limitations to note generate.py idempotency gap (prompt changes don't auto-trigger regeneration)
-- `docs/10-next-chat-handover.md` — update this file at each stage boundary (done for Stage 7)
-- Wait for human eval results before writing case study final narrative prose
+Still pending:
+- `docs/07-case-study-draft.md` §5.3 — ✅ updated to generate-v9, final flag counts, and eval completion
+- `docs/07-case-study-draft.md` §6 — Known Limitations pass
+- `CLAUDE.md` Known gaps table — update README/case study gap to "complete" once case study final pass is done
 
-### Track C: Deployment (needs Limin's decision first)
+---
 
-Locked deliverable (project-context.md §0): a live demo. Confirmed: there will be a frontend UI showing the pipeline output + the project will be open-sourced.
+## Output is stable — what that means
 
-**Not started. Blocked on two decisions from Limin:**
-1. Frontend shape — what does the UI need to show? (work packs list + individual pack view? live pipeline run in browser? static export only?)
-2. Hosting — Vercel / GitHub Pages / something else?
+Work packs were generated at generate-v9. The output is considered stable. Any future prompt iteration would require:
+1. Clearing `pipeline/output/workpacks-v1.json` manually (idempotent skip is by cluster_members, not prompt version)
+2. Rerunning `python pipeline/generate.py`
+3. Rerunning verification sampling (4 clusters minimum)
 
-Once decided, implementation is Stage 8. Do not start Stage 8 until human eval is done and the work pack content is stable (a prompt iteration could change the output, and the frontend should show the final version).
-
-Who handles Stage 8: UI/design decisions → Claude.ai chat (the one with more Vela Pay product context); frontend code + open-source packaging → Claude Code.
+Do not start Stage 8 frontend work on a moving target — the output is now frozen at v9.
 
 ---
 
@@ -80,3 +68,5 @@ These are locked or settled — do not reopen without re-reading the reasoning:
 - FB-02/FB-11 NOT merged — defensible judgment call (data/03-golden-set-labeled.md note #6)
 - Sonnet (not Haiku) for work-pack generation — based on this project's own evidence (docs/13-workpack-spec.md)
 - dimension is always a distribution array, never a single enum (eval/04-taxonomy-and-schema.md)
+- CLU-010 opening matrix: "process friction" → acknowledge (not apology) — deliberate framework choice, not a bug (docs/06-iteration-log.md Round 3)
+- CLU-016 intent_type=actionable_bug possibly misclassified — known observation, deferred to future classification eval extension (docs/06-iteration-log.md Round 3)

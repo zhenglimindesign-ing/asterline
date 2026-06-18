@@ -46,7 +46,7 @@ asterline/
     prompts/
       classify.txt                 ← versioned separately from code (classify-v5 currently)
       cluster.txt                  ← versioned separately from code (cluster-v3 currently)
-      generate.txt                 ← versioned separately from code (generate-v4 currently)
+      generate.txt                 ← versioned separately from code (generate-v9 currently)
     output/
       classified-25-v4.json        ← latest full classification run (all 29 items)
       clusters-v1.json             ← latest cluster.py output
@@ -96,7 +96,7 @@ ingest
 1. `python pipeline/classify_all.py` — classifies every item, writes `pipeline/output/classified-25-v4.json`.
 2. `python pipeline/cluster.py` — clusters all items, computes signal_strength, writes `pipeline/output/clusters-v1.json` and `docs/12-cluster-eval.md` (comparison against the golden set's cluster hypothesis).
 3. `cluster.py` raises `ClusteringScaleError` above 50 items — see "Known gaps" below before raising that threshold.
-4. `python pipeline/generate.py` — generates one work pack per cluster (Sonnet, generate-v4), writes `pipeline/output/workpacks-v1.json`, `workpacks-v1.md`, `workpack-generation-log.json`. Idempotent: rerunning skips clusters whose membership hasn't changed since the last successful run.
+4. `python pipeline/generate.py` — generates one work pack per cluster (Sonnet, generate-v9), writes `pipeline/output/workpacks-v1.json`, `workpacks-v1.md`, `workpack-generation-log.json`. Idempotent: rerunning skips clusters whose membership hasn't changed since the last successful run.
 
 Auto rubric checks (R-01–R-04, R-06, R-08–R-09, R-13–R-17, R-19) run programmatically inside generate.py on every output. Human checks (R-05, R-07, R-10–R-12, R-18, R-20) are scored offline by a human reviewer reading `pipeline/output/workpacks-v1.md`. Record scores and failure notes in `docs/06-iteration-log.md`.
 
@@ -135,5 +135,5 @@ All code comments, docstrings, and file content must be written in **English**.
 | No ingest field validation | v1 limitation, deliberate | `docs/07-case-study-draft.md` §6 — FB-20's missing timestamp is a deliberate test of this gap, not an oversight |
 | requirements.txt has no version ceiling | Latent risk, not urgent | no dedicated doc — a future breaking change in the `anthropic` SDK could break a fresh clone; not stage-specific |
 | No single orchestration script (classify → cluster → generate run manually in sequence) | Minor convenience gap, growing with each stage | no dedicated doc — worth revisiting once Stage 6 adds a third manual step |
-| README.md / case study Stage 6 section | Pending | `docs/07-case-study-draft.md` — needs another pass once Stage 6 (work-pack generation) has output to report |
+| README.md / case study Stage 6 + 7 section | `RESOLVED` 2026-06-18 | `docs/07-case-study-draft.md` §5.3 updated to generate-v9 with final flag counts; README updated to v9 |
 | Productization / monetization | `[DEFERRED]` | `project-context.md` §8 — eval results now exist for classification + clustering; work-pack generation results are still pending |

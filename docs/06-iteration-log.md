@@ -10,6 +10,230 @@
 
 ---
 
+Date: 2026-06-18
+Chat: Vela Pay-4 (continued)
+Run: Stage 7 — final self-audit → generate-v9
+
+Systematic self-audit of generate-v8 output (all 22 clusters) before declaring eval done. Four issues found and fixed in one pass:
+
+V9-1 — feature_request clusters consistently produced 2 consecutive Product tasks ("Document need" + "Evaluate feasibility").
+Before: feature_request section said "write tasks like 'Document reported need' or 'Evaluate whether X fits RM-Y'" — implicit split. 6/22 clusters produced 2 Product tasks (CLU-003, 007, 008, 009, 022, and CLU-014 as complaint). Merge rule existed in task discipline but was not specific enough to catch this pattern.
+After: explicit rule in feature_request section: "one Product task combining documentation and scoping." All 7 feature_request clusters now produce 1 Product task.
+
+V9-2 — Task text occasionally started with the assignee_team name.
+Before: no rule against this. CLU-005 tasks 2 and 3 began with "Engineering: ..." and "Product: ..." — redundant since assignee_team is already a separate field.
+After: added rule to task discipline: "Do not begin the task description with the assignee_team name."
+
+V9-3 — Prompt had duplicate "## quality_flags" section header.
+Before: two sections both titled "## quality_flags" — one for the leave-empty rule, one for the remediation-field requirement. Redundant and confusing.
+After: merged into a single section with both rules.
+
+V9-4 — Opening matrix row 4 over-broad: "customer's own action or external circumstance."
+Before: CLU-019 (SMS 2FA codes not delivered by carrier) was caught by "external circumstance" row → no apology. But carrier delivery failure is part of Vela Pay's authentication service — users experience it as a service failure.
+After: narrowed to "customer's own action" only (e.g. lost device, wrong details entered). External service failures (carrier, partner bank) are now correctly handled by the Vela Pay material failure row → apology.
+
+generate-v9 quality flag summary:
+- quality_flags: 7 (ambiguous_timestamp: 5, tone_violation: 1, non_english_feedback: 1)
+- review_flags: 15 (needs_human_review: 15)
+- fabricated_quote: 0, internal_ref_in_reply: 0, consecutive_same_assignee: 0
+
+Human eval spot-checks pending (2 clusters): CLU-003 or CLU-007 (single task complete?), CLU-019 (apology specific and contextual?).
+
+---
+
+Date: 2026-06-18
+Chat: Vela Pay-4 (continued)
+Run: Stage 7 — human eval (Round 4, verification) → generate-v8
+
+generate-v8 prompt changes (based on Round 3 findings P-A/B/C):
+
+P-A — Clause IDs must not appear in reply_draft.
+Before: no rule. Model occasionally included "(SP-3)" inline in reply body (CLU-005 in v7).
+After: added explicit rule "Never include SP-x, KI-x, TG-x, or RM-x in reply_draft — express policy in plain language." Added auto-check INTERNAL_REF_RE in generate.py; fires quality_flag internal_ref_in_reply.
+
+P-B — assignee_team restricted to defined values.
+Before: schema listed "Engineering | Support Operations | Product | Design | Compliance | Finance". Model used "Compliance" for CLU-016 (not defined in context docs). Same class of defect as the "Design" fabrication fixed in v5.
+After: valid list narrowed to "Engineering | Support Operations | Product | Design". Compliance and Finance removed.
+
+P-C — Opening matrix now accounts for fault attribution.
+Before: apology triggered by "payment at risk" regardless of cause. CLU-016 (admin lost their own 2FA device) opened with an apology. CLU-010 (Vela Pay sent English reply to Spanish ticket) opened with acknowledgment only.
+After: added explicit row: customer's own action or external circumstance → empathy, no apology. Apology is reserved for material failures Vela Pay caused (payment failed, SLA breached, service disrupted by a Vela Pay system error).
+
+Minor nudges also added: (1) problem_brief must use exact member count ("two customers" not "multiple customers"); (2) proactive support tasks framed as "confirm if needed and offer the process" rather than asserting immediate action.
+
+Verification sampling results (generate-v8, 4 clusters):
+
+| Cluster | Check | Result |
+|---|---|---|
+| CLU-005 | P-A: no clause ID in reply_draft | Pass — "1–3 business day window" without "(SP-3)" |
+| CLU-016 | P-C: opening no longer apologizes for user-caused situation | Pass — "We understand this puts you in a difficult position" |
+| CLU-019 | Proactive task framing | Pass — "Confirm whether... require recovery and, if so, offer the process" |
+| CLU-011 | No regressions (fresh cluster, UI bug) | Pass — Engineering → Product, acknowledge no apology, no flags |
+
+Observation (CLU-019, not a fail): opening changed from apology (v7) to empathy (v8) for SMS delivery failure. This is a carrier/infrastructure issue; P-C treated it as "external circumstance." Borderline — defensible either way.
+
+generate-v8 quality flag summary:
+- quality_flags: 10 (ambiguous_timestamp: 6, tone_violation: 3, non_english_feedback: 1, internal_ref_in_reply: 0)
+- review_flags: 15 (needs_human_review: 15)
+- fabricated_quote: 0
+- invalid assignee_team: 0
+
+Stage 7 human eval declared complete at generate-v8. 12 clusters sampled across rounds 3–4. No blocking issues remain.
+
+---
+
+Date: 2026-06-17
+Chat: Vela Pay-4
+Run: Stage 7 — human eval (Round 3, sampling) with generate-v7
+
+Two additional auto-check bugs fixed in generate.py before Round 3 eval began:
+
+Bug 1 — R-03 regex written as r'\\s+' instead of r'\s+' (double backslash).
+Before: whitespace normalization in _norm_source() was a no-op — the pattern matched a literal backslash+s, not whitespace. Multi-line source text was never collapsed, so any quote that spanned a line break in the source failed the verbatim check. Result: 43 fabricated_quote flags across ~18 clusters in the previous run.
+After: corrected to r'\s+'. fabricated_quote count dropped from 43 to 0. All previous fabricated_quote flags were false positives from this bug.
+
+Bug 2 — R-09 tone_violation fired for security/compliance SP clauses (SP-10, SP-11).
+Before: the money/timing-first-sentence check triggered whenever any SP-x clause appeared in source_refs. SP-10 (account recovery) and SP-11 (KYB document portal) have no money/timing implication, so flagging them as "first sentence should reference transaction/amount/timing" was misleading.
+After: check now only fires when source_refs contains a payment/SLA clause (SP-1 through SP-9). tone_violation count dropped from 4 to 2. The 2 remaining flags (CLU-014 citing SP-6, CLU-020 citing SP-8) are legitimate.
+
+Human eval Round 3 (generate-v7, 6 clusters reviewed across 2 batches):
+
+Batch 1: CLU-005, CLU-010, CLU-017
+
+| Cluster | Intent | R-05 | R-07 | R-10 | R-11 | R-12 | R-18 | R-20 | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| CLU-005 | actionable_bug | Pass | Pass | Pass | Pass | Pass | Pass | Pass | SP-3 clause ID appears in reply_draft body — see pattern P-A below |
+| CLU-010 | complaint | Pass | Pass | Pass | Pass | Pass | Pass | Pass | 3 tasks appropriate for process complaint (different assignees/deliverables); "isn't acceptable" is framework-correct acknowledgment for process friction; non_english_feedback flag is correct (source in English but describes Spanish tickets) |
+| CLU-017 | praise | Pass | N/A | N/A | Pass | Pass | Pass | N/A | multi-member review_flag correct; 0 tasks correct for praise |
+
+Additional free feedback on CLU-010 (R-11 boundary case, noted but not a fail): opening matrix distinguishes "payment blocked" (→ apology) from "process friction" (→ acknowledge). Language routing failure triggered "acknowledge" path. Framework-correct, but repeated failure twice could reasonably warrant an apology. Noted as an edge case to watch in future iterations — not a prompt change now.
+
+Batch 2: CLU-012, CLU-016, CLU-018
+
+| Cluster | Intent | R-05 | R-07 | R-10 | R-11 | R-12 | R-18 | R-20 | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| CLU-012 | complaint | Pass | Pass | Pass | Pass | Pass | Pass | Pass | Ticket #59014 in task correctly sourced from FB-12 raw_text (not fabricated) |
+| CLU-016 | actionable_bug | Pass | **Fail** | Pass | **Fail** | Pass | Pass | Pass | R-07: Compliance assignee not defined in context docs (see P-B); R-11: reply apologizes for a customer-caused situation (see P-C) |
+| CLU-018 | noise | Pass | N/A | N/A | N/A | N/A | N/A | N/A | No reply_draft for noise is correct; problem_brief correctly explains why these are noise |
+
+Additional note on CLU-016 classification (not a generate.py issue): intent_type=actionable_bug is questionable — admin losing a 2FA device is user-caused and arguably fits complaint or support_request better than actionable_bug. Tagged for follow-up if classification eval is extended; not a generate prompt change.
+
+New systemic patterns found in Round 3 (generate-v7):
+
+P-A — Clause IDs leak into reply_draft.
+CLU-005 reply_draft contains "(SP-3)" inline: "beyond our typical 1–3 business day window (SP-3)". Internal clause identifiers are not customer-readable. Policy content is correct; the parenthetical citation is the problem. Only 1 occurrence in 22 clusters but the pattern is not caught by any existing check.
+Action: (1) Add explicit prompt rule: reply_draft must express policy in plain language — never include a clause ID (SP-x, KI-x, TG-x, RM-x). (2) Add auto-check: scan reply_draft for clause ID pattern and flag.
+
+P-B — Model invents assignee_team values not defined in context docs.
+CLU-016 task assigns to "Compliance" — not a team defined anywhere in context docs or the prompt. This is the same pattern as the "Design" fabrication fixed in v5, now reappearing with a different invented team name. Prompt lists Design as a valid assignee_team value but does not constrain the full list.
+Action: Add an explicit exhaustive list of valid assignee_team values to the prompt. Model must choose from this list only.
+
+P-C — Opening matrix does not account for fault attribution; apology fires on user-caused situations.
+CLU-016 (admin lost 2FA device — user-caused): reply_draft opens with "We're sorry you're locked out right before payroll." CLU-010 (Vela Pay sent English replies to Spanish tickets — Vela Pay's fault): reply_draft opens with acknowledgment, no apology. The opening matrix currently triggers apology based on "payment risk present" regardless of who caused the situation. This inverts the intuition: apologize for things we didn't do, don't apologize for things we did.
+Action: Add a fault-attribution dimension to opening matrix: (a) Vela Pay caused the situation → apology; (b) customer or external circumstance caused it, we're helping → empathy/acknowledgment, no apology.
+
+---
+
+Date: 2026-06-17
+Chat: Vela Pay-3
+Run: Stage 7 — human eval (Round 2, partial) → generate-v6 → generate-v7
+
+Round 2 eval was paused after 3 clusters (CLU-001, CLU-006, CLU-007) because two auto-check defects were identified that were producing false-positive quality_flags at scale, obscuring genuine signals. Methodology: fix defects, regenerate, then continue sampling on cleaner output.
+
+**Auto-check defects found in generate-v6 and fixed in generate.py for v7:**
+
+Defect 1 — R-03 verbatim normalization incomplete (two-attempt fix).
+Before: verbatim check normalized whitespace only (from 2026-06-16 fix). Three false-positive fabricated_quote flags appeared in v6 (CLU-007, CLU-015, CLU-020) because: (a) CLU-007: model converted internal double-quotes to single-quotes within a JSON string — `"repeat monthly"` → `'repeat monthly'`; (b) CLU-015, CLU-020: model capitalized the first letter of a mid-sentence excerpt used as a standalone quote.
+First fix attempt (v7, buggy): _normalize_for_verbatim() lowercased only the first character of both source and quote. Bug: applying this to the full concatenated source text only lowercased the first character of the entire string — quotes appearing mid-paragraph (starting with capital letters) still failed the check, producing 14 fabricated_quote flags in the first v7 run.
+Correct fix: split into _norm_source() (whitespace + quote style + full lowercase) and _norm_quote() (same + rstrip trailing punctuation). Both sides fully lowercased before substring check. Case-insensitive comparison is correct: if content matches regardless of case or trailing punctuation, it is not fabricated.
+
+Defect 2 — model-generated ambiguous_timestamp flags (v6 side effect).
+Before: generate-v6's deadline derivation rules made the model timestamp-aware, causing it to add its own quality_flags saying "No submission timestamp available in feedback metadata." These were not auto-check flags — they were the model filling quality_flags[] itself. Result: 28 quality flags in v6, most of which were this new noise pattern.
+After (two-part fix): (a) In generate.py, model-generated flags whose types are owned by the auto-check (ambiguous_timestamp, fabricated_quote, tone_violation, fabricated_source_ref) are stripped before the auto-check runs. (b) In generate.txt (v7), model is explicitly told "Leave quality_flags as [] — automated checks populate this field. The only exception is non_english_feedback." The model no longer generates its own ambiguous_timestamp flags.
+
+**Prompt changes in generate-v7 (beyond the auto-check ownership fix):**
+
+Conciseness guidance added. Before: problem_brief was "2-4 sentences describing the issue" — no guidance on compression. reply_draft had no length target. Result: outputs were consistently verbose (CLU-001 human eval noted excessive filler).
+After: problem_brief guidance changed to "as concise as the complexity allows — most issues need 2 sentences, complex ones up to 3; do not restate the title; do not repeat what's in key_quotes." reply_draft guidance: simple acknowledgments under 80 words, complex policy citations under 150 words. This is a principle rather than a hard limit — preserves flexibility for genuinely complex clusters.
+
+Quote style normalization hint added. For CLU-007's recurring false positive: model instructed "if the source contains double-quotes inside the passage, render them as single-quotes in the JSON string." This aligns model behavior with the normalized comparison.
+
+**Human eval rubric scores from Round 2 (generate-v6, 3 clusters):**
+
+CLU-001 (actionable_bug, 3 members): R-05 Pass, R-07 Pass (review_flag merited), R-10 Pass, R-11 Pass, R-12 Pass, R-18 Pass, R-20 Pass.
+CLU-006 (actionable_bug): R-05 Pass, R-07 Pass, R-10 Pass, R-11 Pass, R-12 Pass, R-18 Pass, R-20 Pass. Free: no issues beyond quality_flags noise.
+CLU-007 (feature_request): R-05 Pass, R-07 N/A, R-10 N/A, R-11 Pass, R-12 Pass, R-18 Pass, R-20 Pass. Free: fabricated_quote is false positive (quote style difference), noted above.
+
+Free feedback from Round 2 (consolidated):
+- review_flags and quality_flags purpose/logic was not self-evident to a first-time reader — needs better documentation in the output format and in how-to-use guidance (docs gap, not a pipeline bug).
+- Tasks are recommendations/proposals, not auto-assigned. This was unclear. Added to handover doc and case study.
+- work pack outputs still verbose in some fields (addressed in v7 conciseness guidance).
+
+---
+
+Date: 2026-06-17
+Chat: Vela Pay-3
+Run: Stage 7 — human eval (partial, 8/22 clusters) → generate-v5
+
+Human eval was paused after 8 clusters (CLU-018, CLU-017, CLU-003, CLU-008, CLU-021, CLU-010, CLU-012, CLU-014) because systemic patterns appeared across multiple clusters before full coverage was reached. Methodology decision: fix the systemic issues in a new prompt version before continuing eval, then continue as sampling. This is how real eval iteration works — reviewing more clusters with a known-broken prompt wastes reviewer bandwidth on patterns that are already identified.
+
+Rubric results from the 8 reviewed clusters (7 human items: R-05, R-07, R-10, R-11, R-12, R-18, R-20):
+
+| Cluster | Intent | R-05 | R-07 | R-10 | R-11 | R-12 | R-18 | R-20 | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| CLU-018 | actionable_bug | N/A | N/A | N/A | N/A | N/A | Pass | N/A | |
+| CLU-017 | praise | N/A | N/A | N/A | N/A | N/A | Pass | N/A | |
+| CLU-003 | feature_request | Pass | N/A | N/A | **Fail** | N/A | Pass | Pass | R-11: overpromise individual follow-up |
+| CLU-008 | feature_request | Pass | N/A | Pass | **Fail** | N/A | Pass | Pass | R-11: "notified when it moves into development"; fabricated ticket #58701 in tasks; task updates roadmap from single feedback |
+| CLU-021 | feature_request | Pass | N/A | N/A | N/A | Pass | Pass | N/A | Design missing from assignee_team; "product updates" wording inaccurate for unshipped feature |
+| CLU-010 | complaint | Pass | N/A | Pass | **Fail** | Pass | Pass | N/A | R-11: promises Spanish routing before root cause known; reply in English for Spanish-language feedback; no empathy opening |
+| CLU-012 | complaint | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Internal ticket #59014 exposed in reply_draft; High priority with deadline=None; no empathy opening |
+| CLU-014 | complaint | **Fail** | Pass | Pass | Pass | N/A | Pass | Pass | R-05: task prescribes direct roadmap implementation from single feedback; KYB docs directed to email (security concern) |
+
+R-11 fail rate: 3/5 clusters where R-11 applies (CLU-003, CLU-008, CLU-010). The pattern was systemic — the model consistently overpromised individual follow-up for feature requests and complaint resolutions.
+
+Systemic patterns identified (consolidated from 8 clusters, free feedback):
+1. Feature_request replies promised personal follow-up ("we'll contact you when this ships") — cannot be honored at scale.
+2. Complaint replies opened with facts/policy rather than acknowledging the customer's experience first (CLU-010, CLU-012, CLU-014).
+3. Model fabricated internal ticket/reference numbers in tasks and reply_draft (CLU-008: #58701; CLU-012: #59014) — no existing auto-check caught this.
+4. Internal ticket references exposed in customer-facing reply_draft (CLU-012).
+5. Single feedback → task to directly implement/update product spec (CLU-008: "Update RM-3 to explicitly include..."; CLU-014: "design and implement a proactive warning").
+6. Task splitting defaulted to 3 tasks regardless of context; same-role same-concept sub-steps should merge.
+7. Praise cluster with multiple members attributed all praised items to all members in reply_draft — each member praised different things (CLU-017).
+8. High-priority tasks with deadline=None (CLU-012) — High without time-pressure justification is a contradiction.
+9. Language mismatch: Spanish feedback received English reply (CLU-010) — no language detection in pipeline.
+10. "Product updates" used as a vehicle for unshipped features (CLU-021) — product updates announce shipped features.
+11. Design missing from assignee_team options (CLU-021).
+12. KYB materials directed to email channel — security risk (CLU-014). Not in existing SP-x policy.
+
+generate-v5 changes (all systemic patterns addressed in one pass):
+- Added prohibitions in prompt: no personal follow-up promises; no fabricated identifiers; no internal ticket IDs in reply_draft; no direct implementation tasks from single feedback (evaluate/scope instead); no "product updates" for unshipped features; no KYB via email.
+- Added complaint-specific rule: reply_draft must open with a sentence acknowledging the customer's experience before citing policy or facts (empathy ≠ filler — "This isn't right" vs "We're sorry for any inconvenience").
+- Added praise-cluster rule: if multiple members, use generic thank-you — do not attribute all praised items to all recipients.
+- Added task discipline rules: merge same assignee_team + related concept; split only for different teams or genuine blocking dependency; High priority requires time-pressure justification or deadline.
+- Added language detection: if feedback is non-English, add quality_flag non_english_feedback.
+- Added SP-11 to data/01-vela-pay-context-docs.md: KYB document submission must use the secure portal, never email. Generate prompt references SP-11 explicitly (Option A + Option B: traceable citation + hard constraint).
+- Fixed SP-6 wording: "above $1,000" → "exceeding $1,000" for consistency with SP-7 ("exceed $10,000") — both now use the same term for exclusive threshold semantics.
+- Added Design to assignee_team valid values.
+
+Spot-check results (generate-v5, same 8 clusters):
+- CLU-008: No fabricated ticket; single evaluate task (not 3); reply directs to changelog, not personal contact.
+- CLU-012: #59014 gone from reply_draft; empathy-first opening; still High+deadline=None but SLA breach context makes High defensible without a fixed date.
+- CLU-014: Explicitly says "do not send any documents by email"; cites SP-11; empathy opening; tasks now conditional (investigate first, scope second).
+- CLU-017: Generic reply; no attribution of specific praised items.
+- CLU-021: Design assignee now used; "you'll see it in our changelog" replaces "product updates."
+- CLU-010: Empathy opening; non_english_feedback quality_flag generated.
+
+Quality flag summary (generate-v5 vs generate-v4):
+- v4: 8 quality flags across 5 clusters (after false-positive fixes)
+- v5: 11 quality flags across 8 clusters — increase is expected: 1 new flag type (non_english_feedback on CLU-010), 3 newly detected ambiguous_timestamps (CLU-002, CLU-003, CLU-012 — model quoting slightly different phrases that happen to be relative). The 2 genuine fabricated_quotes from v4 are now 1 (CLU-007 remains; CLU-016 cleared in v5).
+
+Remaining observations for second-round sampling eval:
+- CLU-012 High+deadline=None: partially addressed — High is now more justified (SLA already breached, urgency is real), but the absence of a deadline is still technically inconsistent with the rubric's intent. Worth watching in second pass.
+- CLU-014 tone_violation auto-flag: flagged "first sentence does not reference transaction/amount/timing" — likely a false positive, since CLU-014 is about account hold (not a delayed/failed payment). TG-5 check may be too broad; consider narrowing to "payment-delay and payment-failure" intent signals rather than all complaints. Not fixed in v5 — defer to v6 if pattern repeats.
+
+---
+
 Date: 2026-06-16
 Chat: Vela Pay-2
 Run: Stage 5 — added clustering positive-control items (FB-26 to FB-29), validated on real data
