@@ -1007,9 +1007,9 @@ class Component extends DCLogic {
     const d = this.state.data; if (!d) return;
     const noCtx = this.state.source === "nocontext";
     const clusters = noCtx ? d.NO_CONTEXT_CLUSTERS : d.CLUSTERS;
-    const labelMap = { paste: "Pasted feedback", csv: "Uploaded CSV", demo: "Vela Pay demo pack", nocontext: "Public-dataset pack" };
+    const labelMap = { paste: "Pasted feedback", csv: "Uploaded CSV", demo: "Vela Pay demo pack", nocontext: "Public-dataset pack (25 of 250 sampled)" };
     const label = labelMap[this.state.source] || "Run";
-    const items = this.uniqueItems(clusters);
+    const items = noCtx ? 25 : this.uniqueItems(clusters);
     const qf = this.sumQuality(clusters);
     const counts = clusters.map ? [] : [];
     const stageCounts = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => this.countText(i, clusters, items, qf, noCtx));
