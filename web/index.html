@@ -470,20 +470,22 @@
           <div>
             <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">New run</div>
             <h1 class="rsp-product-h1" style="font-size:32px; letter-spacing:-0.02em; font-weight:720; margin:0 0 10px; line-height:1.1;">Pick a source of feedback.</h1>
-            <p style="font-size:16px; line-height:1.5; color:#5A584F; max-width:560px; margin:0 0 28px;">Explore the pipeline's output on built-in datasets. The Vela Pay demo shows real pipeline output; the CFPB pack shows pre-computed no-context behavior. Live processing for custom input is in development.</p>
+            <p style="font-size:16px; line-height:1.5; color:#5A584F; max-width:560px; margin:0 0 28px;">Paste your own feedback to run the live pipeline, or explore the built-in datasets. Vela Pay shows real cached output from generate-v9; the CFPB pack shows pre-computed no-context behavior.</p>
 
             <div style="display:flex; gap:10px; margin-bottom:22px;">
-              <button style="padding:9px 16px; border-radius:5px; font-size:14px; font-weight:600; background:#F1EFE8; color:#A2A095; border:1px solid #E5E2DB; cursor:default;" title="Live pipeline in development">Paste text</button>
-              <button style="padding:9px 16px; border-radius:5px; font-size:14px; font-weight:600; background:#F1EFE8; color:#A2A095; border:1px solid #E5E2DB; cursor:default;" title="Live pipeline in development">Upload CSV</button>
+              <button onClick="{{ pickPaste }}" style="{{ tabPasteStyle }}">Paste text</button>
+              <button style="padding:9px 16px; border-radius:5px; font-size:14px; font-weight:600; background:#F1EFE8; color:#A2A095; border:1px solid #E5E2DB; cursor:default;" title="Coming soon">Upload CSV</button>
               <button onClick="{{ pickBuiltin }}" style="{{ tabBuiltinStyle }}">Built-in pack</button>
             </div>
 
-            <!-- paste panel (disabled — live pipeline in development) -->
+            <!-- paste panel — live pipeline -->
             <sc-if value="{{ showPaste }}">
             <div>
-              <div style="padding:32px 20px; text-align:center; background:#FBFAF6; border:1px solid #E5E2DB; border-radius:6px;">
-                <div style="font-size:15px; font-weight:600; color:#76746A; margin-bottom:6px;">Live pipeline in development</div>
-                <div style="font-size:13px; color:#A2A095; line-height:1.5;">Paste your own feedback and run the real pipeline — coming soon.<br>For now, explore the built-in packs to see real pipeline output.</div>
+              <textarea onChange="{{ onPaste }}" oninput="{{ onPaste }}" style="width:100%; height:230px; resize:vertical; padding:16px; border:1px solid #D7D3C9; border-radius:6px; background:#fff; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.55; color:#2c2b26;" placeholder="Paste feedback items here, separated by blank lines.">{{ pasteText }}</textarea>
+              <div style="font-size:12.5px; color:#908E83; margin-top:8px;">One item per block (separated by blank lines). Up to 3 items run through the real pipeline — if you paste more, 3 are randomly sampled.</div>
+              <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#ECEDFC; border:1px solid #DADFFA; border-radius:5px; margin-top:8px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#2438C8; white-space:nowrap; margin-top:2px; flex:none;">Live pipeline</span>
+                <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your text runs through the full 8-stage pipeline (PII redaction → classify → cluster → generate). Results are real, not pre-computed. Max 5 runs per day.</span>
               </div>
             </div>
             </sc-if>
@@ -519,6 +521,13 @@
                   <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#936412; background:#F6EFDD; padding:3px 8px; border-radius:3px; white-space:nowrap;">no context</span>
                 </div>
               </button>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ liveError }}">
+            <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#FAEAE3; border:1px solid #E8C9BC; border-radius:5px; margin-top:12px;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#B23B1E; white-space:nowrap; margin-top:2px; flex:none;">Error</span>
+              <span style="font-size:12.5px; color:#8A3119; line-height:1.45;">{{ liveError }}</span>
             </div>
             </sc-if>
 
@@ -932,13 +941,14 @@ class Component extends DCLogic {
     filterSignal: "",
     filterFlag: "",
     contextDocName: "",
+    liveError: "",
+    liveFeedback: {},
   };
 
   componentDidMount() {
     import("./asterline-data.js").then((m) => {
-      const pre = m.RAW_DEMO.map((r) => `[${r.id} · ${r.channel}] ${r.text}`).join("\n\n");
       const sp = this.props.defaultPack === "No-context pack" ? "nocontext" : "demo";
-      this.setState({ data: m, pasteText: pre, source: sp });
+      this.setState({ data: m, source: sp });
     });
     this.timers = [];
   }
@@ -971,15 +981,104 @@ class Component extends DCLogic {
     }
   }
 
+  transformApiClusters(apiClusters) {
+    return apiClusters.map((c) => {
+      const quotes = (c.key_quotes || []).map((q) => {
+        if (typeof q === "string") return { text: q, ref: (c.cluster_members || [])[0] || "?" };
+        return { text: q.text || q, ref: q.ref || q.source || (c.cluster_members || [])[0] || "?" };
+      });
+      const tasks = (c.tasks || []).map((t) => ({
+        p: t.priority || "Medium",
+        team: t.assignee_team || t.team || "Product",
+        text: t.task || t.text || t.description || "",
+        acc: t.acceptance_criteria || t.acc || null,
+        deadline: t.deadline || null,
+      }));
+      const reviewFlags = (c.review_flags || []).map((f) => ({
+        text: f.reason || f.text || "",
+      }));
+      const qualityFlags = (c.quality_flags || []).map((f) => ({
+        type: f.flag || f.type || "unknown",
+        text: f.reason || f.text || "",
+      }));
+      return {
+        id: c.cluster_id || "CLU-?",
+        title: c.title || "(untitled)",
+        intent: c.intent_type || "noise",
+        dimension: Array.isArray(c.dimension) ? (c.dimension[0] || {}).dimension || "Other/Uncategorized" : (c.dimension || "Other/Uncategorized"),
+        signal: c.signal_strength || "Low",
+        confidence: c.confidence || "Medium",
+        members: c.cluster_members || [],
+        brief: c.problem_brief || "",
+        quotes,
+        refs: c.source_refs || [],
+        tasks,
+        reply: c.reply_draft || null,
+        noReply: !c.reply_draft,
+        reviewFlags,
+        qualityFlags,
+      };
+    });
+  }
+
+  parseItems(text) {
+    return text.split(/\n\s*\n/).map((s) => s.trim()).filter((s) => s.length > 10);
+  }
+
+  startRunLive() {
+    const text = this.state.pasteText || "";
+    let allItems = this.parseItems(text);
+    if (!allItems.length) { alert("Paste at least one feedback item (separated by blank lines)."); return; }
+    const totalCount = allItems.length;
+    let items = allItems;
+    if (totalCount > 3) {
+      const shuffled = [...allItems];
+      for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+      items = shuffled.slice(0, 3);
+    }
+    const label = totalCount > 3 ? "Pasted feedback (3 of " + totalCount + " sampled)" : "Pasted feedback";
+    const liveFb = {};
+    items.forEach((t, i) => { liveFb["UI-" + String(i + 1).padStart(3, "0")] = t; });
+    this.clearTimers();
+    this.setState({ pstage: "running", runStageIdx: 0, stageCounts: ["Processing…"], runLabel: label, runNoCtx: true, selected: null, liveError: "", liveFeedback: liveFb });
+
+    const stageNames = ["PII redaction", "Classification", "Clustering", "Work pack generation"];
+    let si = 0;
+    const tick = () => { if (si < stageNames.length) { this.setState({ runStageIdx: si, stageCounts: [stageNames[si] + "…"] }); si++; } };
+    const interval = setInterval(tick, 2500);
+
+    fetch("/api/pipeline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    })
+    .then((res) => {
+      clearInterval(interval);
+      if (res.status === 429) throw new Error("Rate limit reached — max 5 runs per day. Try again tomorrow.");
+      if (!res.ok) return res.json().then((e) => { throw new Error(e.error || "Pipeline error"); });
+      return res.json();
+    })
+    .then((data) => {
+      const clusters = this.transformApiClusters(data.clusters || []);
+      const qf = clusters.reduce((n, c) => n + (c.qualityFlags || []).length, 0);
+      this.finishRun(clusters, label, true, data.meta?.items_processed || items.length, qf);
+    })
+    .catch((err) => {
+      clearInterval(interval);
+      this.setState({ pstage: "pick", liveError: err.message || "Pipeline failed. Try again." });
+    });
+  }
+
   startRun() {
+    const src = this.state.source;
+    if (src === "paste") { this.startRunLive(); return; }
     const d = this.state.data; if (!d) return;
-    const noCtx = this.state.source === "nocontext";
+    const noCtx = src === "nocontext";
     const clusters = noCtx ? d.NO_CONTEXT_CLUSTERS : d.CLUSTERS;
-    const labelMap = { paste: "Pasted feedback", csv: "Uploaded CSV", demo: "Vela Pay demo pack", nocontext: "CFPB complaints · no product context" };
-    const label = labelMap[this.state.source] || "Run";
+    const labelMap = { demo: "Vela Pay demo pack", nocontext: "CFPB complaints · no product context" };
+    const label = labelMap[src] || "Run";
     const items = noCtx ? 25 : this.uniqueItems(clusters);
     const qf = this.sumQuality(clusters);
-    const counts = clusters.map ? [] : [];
     const stageCounts = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => this.countText(i, clusters, items, qf, noCtx));
     this.clearTimers();
     this.setState({ pstage: "running", runStageIdx: 0, stageCounts, runLabel: label, runNoCtx: noCtx, selected: null });
@@ -1010,7 +1109,15 @@ class Component extends DCLogic {
   toggleFlag(key) { const c = Object.assign({}, this.state.cleared); c[key] = !c[key]; this.setState({ cleared: c }); }
   redactPII(t) { if (!t) return ""; return t.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[redacted email]").replace(/\+\d[\d\s().-]{6,}\d/g, "[redacted phone]"); }
   openClause(id) { const d = this.state.data; if (!d || !d.CLAUSES[id]) return; const c = d.CLAUSES[id]; this.setState({ viewer: { kind: "clause", id, kindLabel: c.kind, text: c.text } }); }
-  openFeedback(ref) { const d = this.state.data; if (!d || !d.FEEDBACK[ref]) return; const f = d.FEEDBACK[ref]; this.setState({ viewer: { kind: "feedback", id: ref, channel: f.channel, account: f.account, text: this.redactPII(f.raw) } }); }
+  openFeedback(ref) {
+    const d = this.state.data;
+    if (d && d.FEEDBACK && d.FEEDBACK[ref]) {
+      const f = d.FEEDBACK[ref];
+      this.setState({ viewer: { kind: "feedback", id: ref, channel: f.channel, account: f.account, text: this.redactPII(f.raw) } });
+    } else if (this.state.liveFeedback[ref]) {
+      this.setState({ viewer: { kind: "feedback", id: ref, channel: "pasted input", account: "your data", text: this.redactPII(this.state.liveFeedback[ref]) } });
+    }
+  }
   closeViewer() { this.setState({ viewer: null }); }
   setFilter(key, val) { const c = this.state[key]; this.setState({ [key]: c === val ? "" : val }); }
   clearFilters() { this.setState({ filterIntent: "", filterSignal: "", filterFlag: "" }); }
@@ -1131,7 +1238,7 @@ class Component extends DCLogic {
 
     // ---- product: pick ----
     const sourceTab = s.sourceTab;
-    const pickSourceLabelMap = { paste: "→ pasted feedback", csv: "→ uploaded CSV", demo: "→ Vela Pay demo pack (rich context)", nocontext: "→ public-dataset pack (no context)" };
+    const pickSourceLabelMap = { paste: "→ live pipeline · up to 3 items", csv: "→ uploaded CSV", demo: "→ Vela Pay demo pack (cached)", nocontext: "→ CFPB complaints (cached)" };
 
     // ---- product: running ----
     const idx = s.runStageIdx;
@@ -1256,6 +1363,7 @@ class Component extends DCLogic {
       onPaste: (e) => this.setState({ pasteText: e.target.value }),
       useCsvSample: () => this.setState({ source: "csv" }),
       startRun: () => this.startRun(),
+      liveError: s.liveError || "",
       hasRuns: s.runs.length > 0, noRuns: s.runs.length === 0,
       runCount: s.runs.length + (s.runs.length === 1 ? " run" : " runs"),
       sessionRuns,
