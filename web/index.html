@@ -265,7 +265,7 @@
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Eval-first, not vibes</div>
               <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">20-item golden set · 65%* overall</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">“Correct” was written down — a rubric and a hand-labeled golden set — before anything ran at scale. Output is scored against that standard, and the score is always shown with the set it was measured on.</p>
+              <p style=”font-size:14px; line-height:1.55; color:#5A584F; margin:0;”>The definition of “correct” — a 20-item rubric and a hand-labeled golden set — was written before any output was generated. Every version since is scored against that standard. One prompt iteration made accuracy worse; it was caught by the eval, reverted, and kept in the log rather than hidden.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Every claim is cited</div>
@@ -278,7 +278,7 @@
               <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Tasks are recommendations, not filed tickets. Any reply touching money, timing, or policy is blocked by a review flag until a person verifies it. Nothing sends itself.</p>
             </div>
           </div>
-          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0;">* figures from the current eval log and still being finalized — shown here with their evaluation set, never as a bare percentage.</p>
+          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0;">* 65% overall on a 20-item golden set with strict multi-axis scoring — intent, dimension, impact, and urgency must all match to count. Individual axes score 75–90%. Shown with their evaluation set, never as a bare percentage.</p>
         </div>
       </section>
 
@@ -381,7 +381,7 @@
           <div class="rsp-eval" style="display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;">
             <div>
               <p style="font-size:18px; line-height:1.55; color:#2c2b26; margin:0 0 18px;">Before any work pack was generated at scale, twenty real-looking feedback items were hand-labeled against a written rubric — what a correct classification looks like, what a passing work pack has to include.</p>
-              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The rubric mixes deterministic checks the code runs automatically with judgment calls a human still has to make.</p>
+              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The rubric mixes deterministic checks the code runs automatically (13 rules) with judgment calls scored by a human reviewer (7 rules) — including whether tasks are correctly scoped and whether the reply tone matches the situation.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; overflow:hidden;">
               <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
@@ -548,6 +548,11 @@
               </button>
             </div>
             </sc-if>
+
+            <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#F6EFDD; border:1px solid #E6D6AE; border-radius:5px; margin-top:12px;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#936412; white-space:nowrap; margin-top:2px; flex:none;">Prototype note</span>
+              <span style="font-size:12.5px; color:#6b4d10; line-height:1.45;">This demo runs a simulated pipeline against pre-generated results — no model is called. A production deployment would run the full 8-stage pipeline on your input.</span>
+            </div>
 
             <button onClick="{{ startRun }}" style="margin-top:26px; display:inline-flex; align-items:center; gap:10px; background:#2438C8; color:#fff; border:none; padding:14px 26px; border-radius:4px; font-size:15.5px; font-weight:650;">
               Run pipeline <span style="font-size:16px;">→</span>
