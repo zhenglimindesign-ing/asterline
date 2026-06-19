@@ -156,7 +156,7 @@ def check_rate_limit(ip: str) -> bool:
 
 # --- Main pipeline ---
 
-def run_pipeline(items: list[str]) -> dict:
+def run_pipeline(items: list[str], context_doc: str = "") -> dict:
     client = _get_client()
 
     # 1. PII redaction + assign IDs
@@ -197,7 +197,8 @@ def run_pipeline(items: list[str]) -> dict:
         )
 
         try:
-            wp = generate_workpack(client, intent_type, members_text, "(no context documents loaded)")
+            ctx = context_doc if context_doc else "(no context documents loaded)"
+            wp = generate_workpack(client, intent_type, members_text, ctx)
             wp["cluster_id"] = cluster["cluster_id"]
             wp["cluster_members"] = members
             wp["signal_strength"] = signal
@@ -266,8 +267,10 @@ class handler(BaseHTTPRequestHandler):
                 self._error(400, "No valid feedback items after filtering.")
                 return
 
+            context_doc = str(body.get("context_doc", ""))[:50000]
+
             # Run pipeline
-            result = run_pipeline(items)
+            result = run_pipeline(items, context_doc)
 
             self.send_response(200)
             self._cors_headers()

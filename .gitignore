@@ -155,6 +155,8 @@ activemq-data/
 project-context.md
 docs/10-next-chat-handover.md
 docs/14-frontend-brief.md
+api/dev_server.py
+api/test_local.py
 .venv
 env/
 venv/
