@@ -405,6 +405,7 @@
         <div class="rsp-sec" style="max-width:1140px; margin:0 auto; padding:72px 32px;">
           <h2 style="font-size:13px; font-family:'JetBrains Mono',monospace; letter-spacing:0.18em; text-transform:uppercase; color:#8A887E; margin:0 0 14px; font-weight:500;">04 — Iteration evidence</h2>
           <p style="font-size:19px; line-height:1.5; max-width:720px; margin:0 0 46px; color:#E4E2DA;">The first version of the classifier got about <b style="color:#fff;">40%</b> of the golden set right. Four rounds of changing the prompt brought that to about <b style="color:#fff;">65%</b> — including one round that made things <i>worse</i> and was reverted, kept in the log rather than hidden.</p>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#5b6bd6; margin-bottom:16px;">Classification accuracy — 20-item golden set</div>
           <div style="display:flex; align-items:flex-end; gap:0; height:240px; border-bottom:1px solid #45433C; padding-bottom:0;">
             <sc-for list="{{ iterBars }}" as="b" hint-placeholder-count="5">
               <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:0; position:relative;">
@@ -1235,7 +1236,7 @@ class Component extends DCLogic {
         intentGlyph: this.glyph(selC.intent), intentLabel: (d && d.INTENTS[selC.intent] ? d.INTENTS[selC.intent].label : selC.intent),
         quotes: (selC.quotes || []).map((q) => ({ text: q.text, ref: q.ref, open: () => this.openFeedback(q.ref) })), hasQuotes: (selC.quotes || []).length > 0,
         tasks, hasTasks: tasks.length > 0,
-        members: selC.members.map((m) => ({ id: m, open: () => this.openFeedback(m) })), memberLabel: selC.members.length + " items across " + selC.members.length + " feedback IDs",
+        members: selC.members.map((m) => ({ id: m, open: () => this.openFeedback(m) })), memberLabel: selC.members.length + " feedback " + (selC.members.length === 1 ? "item" : "items"),
         dots: this.dotStyles(selC.signal),
         refs: (selC.refs || []).map((r) => ({ id: r, kind: (d && d.CLAUSES[r] ? d.CLAUSES[r].kind : this.refKind(r)), open: () => this.openClause(r) })),
         hasRefs: (selC.refs || []).length > 0, noRefs: (selC.refs || []).length === 0,
@@ -1296,7 +1297,7 @@ class Component extends DCLogic {
       noContext: !!(run && run.noCtx),
       resultCount: filterActive ? filteredClusters.length + " of " + allClusters.length : (run ? run.clusters.length : 0),
       resultRows,
-      flagSummary: run ? ((run.flagCount || 0) + " quality flags · 0 hard fails") : "",
+      flagSummary: run ? (run.clusters.reduce((n,c) => n + (c.reviewFlags||[]).length, 0) + " review · " + (run.flagCount || 0) + " quality · 0 hard fails") : "",
       closeDetail: () => this.closeDetail(),
       sel: sel || {},
       copyReply: () => this.copyReply(),
