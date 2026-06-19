@@ -918,30 +918,28 @@
     </div>
   </footer>
 
-  <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
-  <div onClick="{{ closeViewer }}" style="position:fixed; inset:0; z-index:80; background:rgba(26,25,22,0.42); display:flex; align-items:center; justify-content:center; padding:24px;">
+  <div onClick="{{ closeViewer }}" style="position:fixed; inset:0; z-index:80; background:rgba(26,25,22,0.42); display:{{ viewerDisplay }}; align-items:center; justify-content:center; padding:24px;">
     <div class="rsp-modal" onClick="{{ stopProp }}" style="background:#fff; border:1px solid #E5E2DB; border-radius:10px; max-width:560px; width:100%; max-height:80vh; overflow:auto; box-shadow:0 24px 60px rgba(26,25,22,0.28);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid #EFEDE6; position:sticky; top:0; background:#fff;">
         <div style="display:flex; align-items:center; gap:10px; min-width:0;">
           <span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#2438C8; background:#ECEDFC; padding:4px 9px; border-radius:4px; white-space:nowrap;">{{ viewer.id }}</span>
-          <sc-if value="{{ viewerIsClause }}"><span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#76746A;">{{ viewer.kindLabel }}</span></sc-if>
-          <sc-if value="{{ viewerIsFeedback }}"><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#76746A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ viewer.channel }} · {{ viewer.account }}</span></sc-if>
+          <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#76746A; display:{{ viewerClauseDisplay }};">{{ viewer.kindLabel }}</span>
+          <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#76746A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:{{ viewerFeedbackDisplay }};">{{ viewer.channel }} · {{ viewer.account }}</span>
         </div>
         <button onClick="{{ closeViewer }}" style="background:none; border:none; font-size:22px; color:#908E83; cursor:pointer; line-height:1; padding:0 4px;">×</button>
       </div>
       <div style="padding:20px 22px;">
-        <sc-if value="{{ viewerIsClause }}">
-        <div style="font-size:15px; line-height:1.6; color:#2c2b26;">{{ viewer.text }}</div>
-        <div style="font-size:12px; color:#A2A095; margin-top:16px; padding-top:12px; border-top:1px dashed #E5E2DB; line-height:1.5;">From the Vela Pay context documents — the exact clause this work pack cites. Every claim in a pack traces back to a source like this one.</div>
-        </sc-if>
-        <sc-if value="{{ viewerIsFeedback }}">
-        <div style="white-space:pre-line; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:#2c2b26; background:#FBFAF6; border:1px solid #EFEDE6; border-radius:6px; padding:16px;">{{ viewer.text }}</div>
-        <div style="font-size:12px; color:#A2A095; margin-top:14px; line-height:1.5;">Emails and phone numbers are auto-redacted by regex before processing. Human names are <b style="color:#76746A; font-weight:600;">not</b> caught by regex — a documented v1 limitation, shown here rather than hidden.</div>
-        </sc-if>
+        <div style="display:{{ viewerClauseDisplay }};">
+          <div style="font-size:15px; line-height:1.6; color:#2c2b26;">{{ viewer.text }}</div>
+          <div style="font-size:12px; color:#A2A095; margin-top:16px; padding-top:12px; border-top:1px dashed #E5E2DB; line-height:1.5;">From the Vela Pay context documents — the exact clause this work pack cites. Every claim in a pack traces back to a source like this one.</div>
+        </div>
+        <div style="display:{{ viewerFeedbackDisplay }};">
+          <div style="white-space:pre-line; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:#2c2b26; background:#FBFAF6; border:1px solid #EFEDE6; border-radius:6px; padding:16px;">{{ viewer.text }}</div>
+          <div style="font-size:12px; color:#A2A095; margin-top:14px; line-height:1.5;">Emails and phone numbers are auto-redacted by regex before processing. Human names are <b style="color:#76746A; font-weight:600;">not</b> caught by regex — a documented v1 limitation, shown here rather than hidden.</div>
+        </div>
       </div>
     </div>
   </div>
-  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:900},&quot;runSpeed&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Cinematic&quot;,&quot;Quick&quot;],&quot;default&quot;:&quot;Cinematic&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;defaultPack&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Demo pack&quot;,&quot;No-context pack&quot;],&quot;default&quot;:&quot;Demo pack&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
@@ -1308,6 +1306,9 @@ class Component extends DCLogic {
       copyReply: () => this.copyReply(),
       exportMd: () => this.exportMd(), exportJson: () => this.exportJson(),
       viewerOpen: !!s.viewer, viewer: s.viewer || {}, closeViewer: () => this.closeViewer(),
+      viewerDisplay: s.viewer ? "flex" : "none",
+      viewerClauseDisplay: s.viewer && s.viewer.kind === "clause" ? "block" : "none",
+      viewerFeedbackDisplay: s.viewer && s.viewer.kind === "feedback" ? "block" : "none",
       viewerIsClause: !!(s.viewer && s.viewer.kind === "clause"),
       viewerIsFeedback: !!(s.viewer && s.viewer.kind === "feedback"),
       stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
