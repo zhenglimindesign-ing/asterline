@@ -948,16 +948,34 @@ class Component extends DCLogic {
   componentDidMount() {
     import("./asterline-data.js").then((m) => {
       const sp = this.props.defaultPack === "No-context pack" ? "nocontext" : "demo";
-      this.setState({ data: m, source: sp });
+      const route = this._hashToRoute(window.location.hash);
+      this.setState({ data: m, source: sp, route });
     });
     this.timers = [];
+    this._onHash = () => {
+      const route = this._hashToRoute(window.location.hash);
+      if (route !== this.state.route) this.setState({ route });
+    };
+    window.addEventListener("hashchange", this._onHash);
   }
-  componentWillUnmount() { this.clearTimers(); }
+  componentWillUnmount() { this.clearTimers(); window.removeEventListener("hashchange", this._onHash); }
   clearTimers() { (this.timers || []).forEach(clearTimeout); this.timers = []; }
 
+  _hashToRoute(hash) {
+    const h = (hash || "").replace("#", "").toLowerCase();
+    if (h === "how-it-works" || h === "how") return "how";
+    if (h === "product" || h === "run") return "product";
+    return "landing";
+  }
+  _routeToHash(route) {
+    if (route === "how") return "#how-it-works";
+    if (route === "product") return "#product";
+    return "#overview";
+  }
+
   // ---- nav ----
-  go(route) { this.clearTimers(); this.setState({ route }); }
-  newRun() { this.clearTimers(); this.setState({ route: "product", pstage: "pick", selected: null, runStageIdx: -1 }); }
+  go(route) { this.clearTimers(); this.setState({ route }); window.history.pushState(null, "", this._routeToHash(route)); }
+  newRun() { this.clearTimers(); this.setState({ route: "product", pstage: "pick", selected: null, runStageIdx: -1 }); window.history.pushState(null, "", "#product"); }
 
   // ---- source pick ----
   setTab(t) { this.setState({ sourceTab: t, source: t === "builtin" ? (this.state.source === "nocontext" ? "nocontext" : "demo") : t }); }
