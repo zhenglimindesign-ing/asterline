@@ -151,6 +151,10 @@ activemq-data/
 .env
 .envrc
 .DS_Store
+.claude/
+project-context.md
+docs/10-next-chat-handover.md
+docs/14-frontend-brief.md
 .venv
 env/
 venv/

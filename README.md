@@ -1,5 +1,7 @@
 # Asterline
 
+**Live site:** [asterline.liminzheng.com](https://asterline.liminzheng.com)
+
 Turns raw user feedback into traceable, ready-to-work product packs.
 
 Asterline is a feedback-to-work-pack pipeline built as a portfolio project for AI Product Manager / Technical Product Manager roles. The product itself (a feedback triage tool) is not the point — the point is demonstrating three capabilities central to AI product work:
@@ -60,6 +62,7 @@ data/      synthetic feedback, context docs, golden set + cluster hypothesis
 eval/      taxonomy, schema, rubric
 pipeline/  classification, PII redaction, clustering, generation
 docs/      iteration log, case study, cluster spec, eval results
+web/       deployed product site (static, served via Vercel)
 ```
 
 For contributor / Claude Code instructions, see [`CLAUDE.md`](CLAUDE.md).

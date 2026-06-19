@@ -548,8 +548,8 @@
               <button onClick="{{ pickNoCtx }}" style="{{ packNoCtxStyle }}">
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
                   <div style="text-align:left;">
-                    <div style="font-size:15.5px; font-weight:680; margin-bottom:4px;">Public-dataset pack</div>
-                    <div style="font-size:13px; line-height:1.45; color:#5A584F;">Generic app-store-style feedback that runs with no product context loaded. Classifies and clusters, but can't trace to policy clauses — shown honestly.</div>
+                    <div style="font-size:15.5px; font-weight:680; margin-bottom:4px;">CFPB complaints pack</div>
+                    <div style="font-size:13px; line-height:1.45; color:#5A584F;">150 real consumer financial complaints from the CFPB public database. Runs with no product context loaded — classifies and clusters, but can't trace to policy clauses. Shown honestly.</div>
                   </div>
                   <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#936412; background:#F6EFDD; padding:3px 8px; border-radius:3px; white-space:nowrap;">no context</span>
                 </div>
@@ -1015,7 +1015,7 @@ class Component extends DCLogic {
     const d = this.state.data; if (!d) return;
     const noCtx = this.state.source === "nocontext";
     const clusters = noCtx ? d.NO_CONTEXT_CLUSTERS : d.CLUSTERS;
-    const labelMap = { paste: "Pasted feedback", csv: "Uploaded CSV", demo: "Vela Pay demo pack", nocontext: "Public-dataset pack (25 of 250 sampled)" };
+    const labelMap = { paste: "Pasted feedback", csv: "Uploaded CSV", demo: "Vela Pay demo pack", nocontext: "CFPB complaints · no product context" };
     const label = labelMap[this.state.source] || "Run";
     const items = noCtx ? 25 : this.uniqueItems(clusters);
     const qf = this.sumQuality(clusters);
