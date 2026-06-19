@@ -913,7 +913,7 @@
     </div>
   </footer>
 
-  <sc-if value="{{ viewerOpen }}">
+  <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
   <div onClick="{{ closeViewer }}" style="position:fixed; inset:0; z-index:80; background:rgba(26,25,22,0.42); display:flex; align-items:center; justify-content:center; padding:24px;">
     <div class="rsp-modal" onClick="{{ stopProp }}" style="background:#fff; border:1px solid #E5E2DB; border-radius:10px; max-width:560px; width:100%; max-height:80vh; overflow:auto; box-shadow:0 24px 60px rgba(26,25,22,0.28);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid #EFEDE6; position:sticky; top:0; background:#fff;">
