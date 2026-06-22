@@ -97,11 +97,11 @@ The split of severity into impact × urgency was a mid-process discovery: a sing
 
 ### 3.3 Rubric
 
-18 rubric items derived inductively from three worked examples (FB-05: Critical actionable bug with source refs and HITL trigger; FB-03: feature request with no source match; FB-20: noise). Each item specifies the field checked, the yes/no check, the evaluation mode, and the failure action.
+20 rubric items derived inductively from three worked examples (FB-05: Critical actionable bug with source refs and HITL trigger; FB-03: feature request with no source match; FB-20: noise), with two added during generation-stage iteration (R-19, R-20). Each item specifies the field checked, the yes/no check, the evaluation mode, and the failure action.
 
-**12 automated items (runtime checks):** timestamp format (R-01), quote count (R-02), quote verbatim fidelity (R-03), task field completeness (R-04), review_flags blocks field (R-06), banned filler phrases (R-08), money/timing first sentence (R-09), noise: null reply (R-13), noise: empty tasks (R-14), noise: empty quotes (R-15), cluster_members validity (R-16), confidence field (R-17).
+**14 automated items (runtime checks):** timestamp format (R-01), quote count (R-02), quote verbatim fidelity (R-03), task field completeness (R-04), review_flags blocks field (R-06), banned filler phrases (R-08), money/timing first sentence (R-09), noise: null reply (R-13), noise: empty tasks (R-14), noise: empty quotes (R-15), cluster_members validity (R-16), confidence field (R-17), source_ref validity (R-19), clause IDs in reply_draft (R-PA).
 
-**6 human-judgment items (offline eval):** acceptance criteria specificity (R-05), human review trigger (R-07), no blame-shifting (R-10), no overpromising (R-11), no fabricated source references (R-12), title accuracy (R-18).
+**7 human-judgment items (offline eval):** acceptance criteria specificity (R-05), human review trigger (R-07), no blame-shifting (R-10), no overpromising (R-11), no fabricated source references (R-12), title accuracy (R-18), reply vs policy contradiction (R-20).
 
 Hard-fail items (block export): R-04, R-13, R-14, R-15, R-17. All others add quality flags but allow export with review.
 
@@ -231,9 +231,10 @@ Bug 4 (pre-v8, discovered during human eval Round 3): R-09 tone_violation check 
 
 ---
 
-## 7. Appendix *(links to be added at deploy time)*
+## 7. Appendix
 
-- GitHub repository: [link]
-- Live demo: [link]
-- Golden set CSV: [link]
-- Rubric v1: [link]
+- GitHub repository: [github.com/zhenglimindesign-ing/asterline](https://github.com/zhenglimindesign-ing/asterline)
+- Live demo: [asterline.liminzheng.com](https://asterline.liminzheng.com)
+- Golden set: [`data/03-golden-set-labeled.md`](https://github.com/zhenglimindesign-ing/asterline/blob/main/data/03-golden-set-labeled.md)
+- Rubric v1: [`eval/05-rubric-v1.md`](https://github.com/zhenglimindesign-ing/asterline/blob/main/eval/05-rubric-v1.md)
+- Full iteration log: [`docs/06-iteration-log.md`](https://github.com/zhenglimindesign-ing/asterline/blob/main/docs/06-iteration-log.md)
