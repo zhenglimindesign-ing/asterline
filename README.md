@@ -12,7 +12,7 @@ Asterline is a feedback-to-work-pack pipeline built as a portfolio project for A
 
 The demo uses a synthetic B2B payments product (Vela Pay) with authored context documents, synthetic feedback, and a hand-labeled golden set. All data is synthetic; the eval process is real.
 
-**Full case study:** [`docs/07-case-study-draft.md`](docs/07-case-study-draft.md)
+**Full case study:** [`docs/07-case-study.md`](docs/07-case-study.md)
 
 ## What the output looks like
 
