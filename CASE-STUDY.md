@@ -1,7 +1,4 @@
 # Asterline — Case Study
-# Status: Sections 1–6 complete through Stage 7 (human eval, generate-v9).
-# Section 7 (Appendix) pending — needs deploy links.
-# Language: English
 
 ---
 
@@ -107,9 +104,9 @@ Hard-fail items (block export): R-04, R-13, R-14, R-15, R-17. All others add qua
 
 ---
 
-## 4. Iteration Log
+## 4. Key Iterations
 
-Full entry-by-entry log: `docs/06-iteration-log.md`. Four examples below, chosen to show different kinds of iteration — a clean prompt fix, a failed attempt that was reverted, a corrected design assumption, and an eval-design gap that required new data rather than a new prompt.
+Full entry-by-entry log with every prompt version and score delta: [`docs/06-iteration-log.md`](docs/06-iteration-log.md). Four examples below, chosen to show different kinds of iteration — a clean prompt fix, a failed attempt that was reverted, a corrected design assumption, and an eval-design gap that required new data rather than a new prompt.
 
 ### 4.1 Classification: noise misclassification (v0 → v1)
 
@@ -210,6 +207,32 @@ Bug 3 (v6→v7): Verbatim check still too strict after Bug 1 fix. Three new fals
 Bug 4 (pre-v8, discovered during human eval Round 3): R-09 tone_violation check was scoped to all SP-x clauses including SP-10 (account recovery) and SP-11 (KYB). This caused false-positive tone_violation flags on clusters where a customer lost their 2FA device (SP-10) — "money or timing" first-sentence requirement does not apply to account recovery situations. Fix: narrowed PAYMENT_SP_REFS to {SP-1 through SP-9} only; SP-10/SP-11 excluded.
 
 **Stage 7 human eval results (generate-v5 through v9):** 12 clusters sampled across 4 rounds. No blocking issues in the final (v9) output. Final flag counts: quality_flags 7 (ambiguous_timestamp: 5, tone_violation: 1, non_english_feedback: 1), review_flags 15, fabricated_quote 0, internal_ref_in_reply 0.
+
+---
+
+## 5.4 Live pipeline and public dataset
+
+After the offline eval was complete, the pipeline was deployed as a live product:
+
+- **Vercel Python serverless function** (`api/pipeline.py`) runs the full 8-stage pipeline on user-submitted input in real time — paste text or upload CSV, get real work packs back, not pre-computed results.
+- **CFPB public dataset** — 150 real consumer financial complaints from the Consumer Financial Protection Bureau, sampled and run through the live pipeline with no product context. This tests RAG degradation on real-world data: the pipeline classifies and generates work packs, but `source_refs` are empty because no context documents are loaded.
+- **Rate limits** — up to 3 items per run (randomly sampled if more are submitted), 5 runs per day. These limits reflect the demo-stage cost constraint, not a technical limitation.
+
+The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation). The only difference is that ingest parses JSON from the API request body instead of reading a Markdown file from disk.
+
+---
+
+## 5.5 What I built vs. what AI tools did
+
+I used AI coding tools (Claude Code) to write the Python pipeline and build the frontend. I owned:
+
+- **Pipeline architecture** — the 8-stage sequence, the deterministic/model split, which stages use which model and why
+- **Prompt design and iteration** — 5 classification versions, 3 clustering versions, 9 generation versions, each driven by eval failures I identified and documented
+- **Evaluation system** — golden set curation, rubric design (20 rules, inductively derived), scoring methodology, the decision to revert v3 rather than push forward
+- **Output schema** — work-pack field definitions, quality_flags taxonomy, review_flags trigger conditions, the split of severity into impact × urgency
+- **Product decisions** — what to automate vs. require human review, what limitations to accept in v1, what upgrade triggers to document for v2
+
+The prompts went through 17+ versions total. Each change traces to a specific eval failure documented in the [iteration log](docs/06-iteration-log.md).
 
 ---
 

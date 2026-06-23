@@ -26,9 +26,10 @@ asterline/
     04-taxonomy-and-schema.md      ← taxonomy axis definitions + work pack JSON schema
     05-rubric-v1.md                ← 20-item eval rubric (14 Auto, 7 Human)
 
+  CASE-STUDY.md                    ← full technical narrative (design decisions, eval, iteration, results)
+
   docs/
     06-iteration-log.md            ← full iteration log: classify v0-v4, cluster v1-v3
-    07-case-study.md         ← English case study narrative
     10-next-chat-handover.md       ← rewritten at each stage boundary; currently points to Stage 6
     11-cluster-spec.md             ← clustering design rationale, merge-threshold logic, scale upgrade trigger
     12-cluster-eval.md             ← clustering vs. golden-set-hypothesis comparison report (regenerated each cluster.py run)
@@ -145,8 +146,8 @@ All code comments, docstrings, and file content must be written in **English**.
 | source_refs validity check coupled to context-doc formatting | Known limitation, low risk | `docs/13-workpack-spec.md` — clause IDs are parsed at runtime from `data/01-vela-pay-context-docs.md`'s heading format, not hardcoded, but the parser still assumes that exact formatting convention |
 | PII redaction doesn't catch names | `[LOCK]`'d v1 limitation, not a bug | `data/02-synthetic-feedback-25.md` header — regex can't reliably match arbitrary names; v2 path is NER |
 | generate.py idempotent rerun doesn't detect prompt-version changes | Known limitation, manual workaround exists | `pipeline/generate.py` — the skip check only compares `cluster_members`, not `prompt_version`. A prompt-only change (no cluster membership change) is silently skipped on rerun. Workaround used 2026-06-16: manually remove the affected cluster_id from `workpacks-v1.json` before rerunning. Not fixed because it's a rare case (prompt changes happen less often than reruns) and the workaround is simple — revisit if this becomes frequent. |
-| No ingest field validation | v1 limitation, deliberate | `docs/07-case-study.md` §6 — FB-20's missing timestamp is a deliberate test of this gap, not an oversight |
+| No ingest field validation | v1 limitation, deliberate | `CASE-STUDY.md` §6 — FB-20's missing timestamp is a deliberate test of this gap, not an oversight |
 | requirements.txt has no version ceiling | Latent risk, not urgent | no dedicated doc — a future breaking change in the `anthropic` SDK could break a fresh clone; not stage-specific |
 | No single orchestration script (classify → cluster → generate run manually in sequence) | Minor convenience gap, growing with each stage | no dedicated doc — worth revisiting once Stage 6 adds a third manual step |
-| README.md / case study Stage 6 + 7 section | `RESOLVED` 2026-06-18 | `docs/07-case-study.md` §5.3 updated to generate-v9 with final flag counts; README updated to v9 |
+| README.md / case study Stage 6 + 7 section | `RESOLVED` 2026-06-18 | `CASE-STUDY.md` §5.3 updated to generate-v9 with final flag counts; README updated to v9 |
 | Productization / monetization | `[DEFERRED]` | `project-context.md` §8 — eval results now exist for classification + clustering; work-pack generation results are still pending |
