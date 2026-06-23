@@ -14,7 +14,22 @@
 
 Product teams drown in feedback. Support tickets, app reviews, NPS responses, and sales call notes arrive in different formats, at different times, and with wildly different levels of specificity. The signal is there — but extracting it, grouping it, and turning it into something an engineer or PM can actually act on takes time that small teams rarely have.
 
-Asterline is a feedback intelligence tool that turns raw, unstructured user feedback into traceable, ready-to-work work packs. A work pack is a structured artifact containing a problem summary, key evidence quotes (with links back to source items), a suggested task with acceptance criteria and assignee team, a draft customer reply, and flags for human review where the stakes are high enough to warrant it.
+Asterline is a feedback intelligence tool that turns raw, unstructured user feedback into traceable, ready-to-work work packs. A work pack is a structured artifact containing a problem summary, key evidence quotes (with links back to source items), a suggested task with acceptance criteria and assignee team, a draft customer reply, and flags for human review where the stakes are high enough to warrant it. Here is an abbreviated example:
+
+> **CLU-001 — Batch CSV payout upload silently fails for files exceeding 500 rows**
+> Signal: High · Intent: actionable_bug · Source: 3 feedback items, 3 accounts
+>
+> **Problem:** When a batch payout CSV exceeds 500 rows, the upload hangs indefinitely with no error message — leaving finance teams unable to determine whether payments were dispatched.
+>
+> **Key quote:** *"no error, no confirmation, page just sat there for 10+ minutes"*
+>
+> **Tasks:** (1) Engineering: reproduce, identify root cause and scope. (2) Product: authorize fix scope.
+>
+> **Reply draft:** *We're sorry your batch upload hung without any message — not knowing whether your payments went out is not acceptable…*
+>
+> **Review flag:** Human must confirm payment status for each affected account before sending.
+
+All 22 work packs are in [`pipeline/output/workpacks-v1.md`](pipeline/output/workpacks-v1.md).
 
 The tool is designed for small product teams and indie builders — anyone who regularly digests user feedback and needs to move from signal to action without a dedicated ops function to support them.
 
