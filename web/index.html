@@ -246,7 +246,7 @@
               <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:12px;">Eight steps, none skipped</div>
               <h2 style="font-size:30px; letter-spacing:-0.02em; font-weight:700; margin:0; max-width:660px; line-height:1.16;">Eight checked steps turn a raw, messy inbox into work packs a human can act on.</h2>
             </div>
-            <button onClick="{{ goHow }}" style="display:inline-flex; align-items:center; gap:8px; background:none; border:1px solid #D7D3C9; padding:11px 17px; border-radius:4px; font-size:14.5px; font-weight:600; color:#1A1916; white-space:nowrap;">See the full walkthrough →</button>
+            <a href="#how-it-works" onClick="{{ goHow }}" style="display:inline-flex; align-items:center; gap:8px; background:none; border:1px solid #D7D3C9; padding:11px 17px; border-radius:4px; font-size:14.5px; font-weight:600; color:#1A1916; white-space:nowrap; text-decoration:none;">See the full walkthrough →</a>
           </div>
           <div class="rsp-pipe" style="position:relative; padding:8px 0;">
             <div style="position:absolute; left:0; right:0; top:21px; height:2px; background:#E0DCD2;"></div>
@@ -273,7 +273,7 @@
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Eval-first, not vibes</div>
               <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">20-item golden set · 65%* overall</div>
-              <p style=”font-size:14px; line-height:1.55; color:#5A584F; margin:0;”>The definition of “correct” — a 20-item rubric and a hand-labeled golden set — was written before any output was generated. Every version since is scored against that standard. One prompt iteration made accuracy worse; it was caught by the eval, reverted, and kept in the log rather than hidden.</p>
+              <p style=”font-size:14px; line-height:1.55; color:#5A584F; margin:0;”>The definition of “correct” — a 20-rule rubric and a 20-item hand-labeled golden set — was written before any output was generated. Every version since is scored against that standard. One prompt iteration made accuracy worse; it was caught by the eval, reverted, and kept in the log rather than hidden.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Every claim is cited</div>
@@ -389,7 +389,7 @@
           <div class="rsp-eval" style="display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;">
             <div>
               <p style="font-size:18px; line-height:1.55; color:#2c2b26; margin:0 0 18px;">Before any work pack was generated at scale, twenty real-looking feedback items were hand-labeled against a written rubric — what a correct classification looks like, what a passing work pack has to include.</p>
-              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The rubric mixes deterministic checks the code runs automatically (13 rules) with judgment calls scored by a human reviewer (7 rules) — including whether tasks are correctly scoped and whether the reply tone matches the situation.</p>
+              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The rubric mixes deterministic checks the code runs automatically (14 rules) with judgment calls scored by a human reviewer (7 rules) — including whether tasks are correctly scoped and whether the reply tone matches the situation.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; overflow:hidden;">
               <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
@@ -433,7 +433,7 @@
           <!-- workpack generation iteration -->
           <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:28px; margin-top:42px;">
             <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#8A887E; margin-bottom:8px;">Work pack generation — generate-v1 through v9 · 4 auto-check bugs fixed</div>
-            <p style="font-size:15px; color:#E4E2DA; max-width:660px; margin:0 0 24px; line-height:1.5;">Nine prompt versions across three sessions, validated by four rounds of human eval sampling (12 clusters total). Four code bugs in the automated quality checks were found and fixed during iteration — two from full-output scans, two surfaced during human review. None were visible from spot-checking alone.</p>
+            <p style="font-size:15px; color:#E4E2DA; max-width:660px; margin:0 0 24px; line-height:1.5;">Nine prompt versions across three sessions, validated by four rounds of human eval sampling (12 unique clusters across 4 rounds). Four code bugs in the automated quality checks were found and fixed during iteration — two from full-output scans, two surfaced during human review. None were visible from spot-checking alone.</p>
             <div style="display:flex; flex-direction:column; gap:0;">
               <sc-for list="{{ workpackIter }}" as="wi" hint-placeholder-count="3">
                 <div class="rsp-iter-row" style="display:grid; grid-template-columns:96px 1fr 1fr; gap:20px; padding:18px 0; border-top:1px solid rgba(255,255,255,0.07); align-items:start;">
@@ -485,7 +485,7 @@
               <div style="font-size:12.5px; color:#908E83; margin-top:8px; line-height:1.5;">Paste raw feedback — support tickets, survey responses, app reviews, or any unstructured text. One item per block, separated by blank lines. Up to 3 items run through the real pipeline; if you paste more, 3 are randomly sampled.</div>
               <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#ECEDFC; border:1px solid #DADFFA; border-radius:5px; margin-top:8px;">
                 <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#2438C8; white-space:nowrap; margin-top:2px; flex:none;">Live pipeline</span>
-                <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your text runs through the full 8-stage pipeline (PII redaction → classify → cluster → generate). Results are real, not pre-computed. Max 5 runs per day.</span>
+                <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your text runs through the full 8-stage pipeline. Results are real, not pre-computed. Max 5 runs per day.</span>
               </div>
             </div>
             </sc-if>
@@ -1359,7 +1359,7 @@ class Component extends DCLogic {
     const anatomy = [
       { field: "signal_strength", tag: "computed", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "How much evidence backs a cluster — High / Medium / Low. Computed from member count, account diversity, and severity, not a model's opinion." },
       { field: "intent_type", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "One of five: actionable bug, feature request, complaint, praise, or noise. Noise gets a minimal pack and no reply." },
-      { field: "dimension", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Which team owns the issue — Engineering, Product, Support Operations, Compliance, Finance & Reporting, UX." },
+      { field: "dimension", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Which area owns the issue — Engineering, Product/Roadmap, Support Process, Compliance, Finance & Reporting, UX, or Other/Uncategorized." },
       { field: "tasks[]", tag: "recommendation", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Suggested next actions with a team and priority. Recommendations for a human to triage — not tickets filed automatically." },
       { field: "reply_draft", tag: "body only", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "A drafted customer reply, body only. The CRM adds the salutation and sign-off from ticket metadata at send time." },
       { field: "review_flags[]", tag: "blocks send", tagColor: "#B23B1E", tagBg: "#FAEAE3", desc: "Something a human must verify — a money amount, a timing commitment, a policy implication. Blocks the reply from being sent until cleared." },

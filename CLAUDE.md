@@ -24,7 +24,7 @@ asterline/
 
   eval/
     04-taxonomy-and-schema.md      ← taxonomy axis definitions + work pack JSON schema
-    05-rubric-v1.md                ← 20-item eval rubric (13 Auto, 7 Human)
+    05-rubric-v1.md                ← 20-item eval rubric (14 Auto, 7 Human)
 
   docs/
     06-iteration-log.md            ← full iteration log: classify v0-v4, cluster v1-v3

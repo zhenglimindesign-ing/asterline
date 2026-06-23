@@ -6,7 +6,7 @@ Turns raw user feedback into traceable, ready-to-work product packs.
 
 Asterline is a feedback-to-work-pack pipeline built as a portfolio project for AI Product Manager / Technical Product Manager roles. The product itself (a feedback triage tool) is not the point — the point is demonstrating three capabilities central to AI product work:
 
-1. **Eval design** — defining what "good" looks like before generating at scale: a golden set, a taxonomy, and a 20-item rubric with both automated and human-judgment checks.
+1. **Eval design** — defining what "good" looks like before generating at scale: a golden set, a taxonomy, and a 20-rule rubric with both automated and human-judgment checks.
 2. **Iteration** — running the pipeline, measuring against the rubric, finding where it fails, changing something specific, and measuring again. Failed attempts are kept, not hidden (see [`docs/eval-results-v3-reverted.json`](docs/eval-results-v3-reverted.json)).
 3. **Traceability** — every output can be traced back to specific raw feedback items and, where applicable, specific policy clauses. Nothing is generated without a source.
 
