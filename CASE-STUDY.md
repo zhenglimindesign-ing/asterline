@@ -1,5 +1,13 @@
 # Asterline — Case Study
 
+**Live demo:** [asterline.liminzheng.com](https://asterline.liminzheng.com) · **Source:** [github.com/zhenglimindesign-ing/asterline](https://github.com/zhenglimindesign-ing/asterline)
+
+> **What:** An 8-stage pipeline that turns raw user feedback into traceable work packs — each backed by source quotes, grounded in policy documents, and flagged for human review where stakes are high.
+>
+> **How it was evaluated:** 20-rule rubric (14 automated, 7 human-judgment), scored against a 20-item hand-labeled golden set. Classification accuracy: 65% overall (intent 90%, dimension 90%, impact 75%, urgency 85%). Generation: 22/22 clusters, 0 fabricated quotes, 9 prompt versions across 4 human-eval rounds — including one revert.
+>
+> **What I owned:** Pipeline architecture, prompt design and iteration (17+ versions), evaluation system, output schema, and all product decisions. AI coding tools (Claude Code) wrote the Python and frontend; I directed what to build, how to evaluate it, and when to revert.
+
 ---
 
 ## 1. Problem & Context
@@ -24,19 +32,20 @@ The demo uses a synthetic product (Vela Pay, a B2B stablecoin payments platform)
 
 ### 2.1 Pipeline
 
-The core pipeline runs in sequence:
+| Stage | Executor | Prompt | Why this executor |
+|---|---|---|---|
+| 1. Ingest | Python (`data_loader.py` offline; API request body live) | — | Pure I/O: parse Markdown, CSV, or JSON into structured dicts |
+| 2. PII redaction | Python (`pii.py`) | — | Regex matching; must run before any text reaches a model |
+| 3. Intent classification | Anthropic Haiku (`classify.txt` v5) | [`pipeline/prompts/classify.txt`](pipeline/prompts/classify.txt) | Requires semantic understanding: is this a bug, a feature request, or just noise? |
+| 4. Dimension + severity | ↑ same prompt, same call | — | Co-determined with intent for consistency — splitting would risk contradictory labels |
+| 5. Clustering | Anthropic Haiku (`cluster.txt` v3) | [`pipeline/prompts/cluster.txt`](pipeline/prompts/cluster.txt) | Cross-item similarity judgment requires reasoning across all items at once |
+| 6. Signal-strength | Python (deterministic formula) | — | Member count × account diversity × severity — a defined formula, not a judgment call |
+| 7. Work-pack generation | Anthropic Sonnet (`generate.txt` v9) + Python post-processing | [`pipeline/prompts/generate.txt`](pipeline/prompts/generate.txt) | Sonnet generates structured output (title, brief, quotes, tasks, reply draft); Python overwrites deterministic fields and runs 14 auto-checks |
+| 8. Export | Python | — | Format Markdown + JSON with Jira/Linear-shaped fields |
 
-```
-ingest
-  → PII redaction            (regex; runs before any quote extraction)
-  → intent classification    (actionable_bug / feature_request / complaint / praise / noise)
-  → dimension + severity tagging  (dimension: 7 values; severity: impact × urgency)
-  → clustering               (group items describing the same underlying issue)
-  → signal-strength scoring  (per cluster: how much evidence, how diverse, how severe)
-  → work pack generation     (one work pack per cluster)
-  → runtime checks           (automated subset of rubric runs on every output)
-  → export                   (Markdown for humans + JSON in Jira/Linear-shaped format)
-```
+**Model selection.** Classification and clustering use Haiku — short-output tasks where speed and cost matter more than prose quality. Generation uses Sonnet — Haiku was tested early on generation and failed on constraint density (14 auto-checked rubric rules). Opus was not needed; Sonnet meets the rubric at acceptable quality for a 22-cluster dataset.
+
+**Deterministic/model split.** The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags. Python computes everything else: cluster_id, cluster_members, signal_strength, intent_type, dimension, confidence. This keeps model output auditable and deterministic logic testable without an API call.
 
 Intent and dimension are orthogonal axes: intent answers "should this become an action?"; dimension answers "who owns it?" This separation allows the same complaint about a delayed payout (intent: complaint) to be routed to Support Process, Finance & Reporting, or Engineering depending on its nature.
 

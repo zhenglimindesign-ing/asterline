@@ -2,79 +2,48 @@
 
 **Live demo:** [asterline.liminzheng.com](https://asterline.liminzheng.com) · **Case study:** [`CASE-STUDY.md`](CASE-STUDY.md)
 
-Turns raw user feedback into traceable, ready-to-work product packs.
+An 8-stage pipeline that turns raw user feedback into traceable, ready-to-work product packs. Each work pack includes a problem summary, source-linked quotes, suggested tasks, a drafted customer reply, and flags for human review where the stakes require it.
 
-Asterline is an open-source feedback-to-work-pack pipeline built as a portfolio project for AI PM / Technical PM roles. The product itself (a feedback triage tool) is not the point — the point is demonstrating eval design, iteration discipline, and traceability in an AI pipeline. The case study covers the full reasoning; this README covers the technical facts.
+Built as a portfolio project for AI PM / Technical PM roles. The product itself is not the point — the point is demonstrating **eval design**, **iteration discipline**, and **traceability** in an AI pipeline. The [case study](CASE-STUDY.md) covers the full technical narrative: pipeline architecture, design decisions, evaluation methodology, iteration history (including a reverted attempt), and results.
 
 ---
 
-## Pipeline architecture
+## Pipeline
 
-| Stage | Executor | Prompt | Why this executor |
-|---|---|---|---|
-| 1. Ingest | Python (`data_loader.py` offline; API request body live) | — | Pure I/O: parse Markdown, CSV, or JSON into structured dicts |
-| 2. PII redaction | Python (`pii.py`) | — | Regex matching; must run before any text reaches a model |
-| 3. Intent classification | Anthropic Haiku (`classify.txt` v5) | [`pipeline/prompts/classify.txt`](pipeline/prompts/classify.txt) | Requires semantic understanding: is this a bug, a feature request, or just noise? |
-| 4. Dimension + severity | ↑ same prompt, same call | — | Co-determined with intent for consistency — splitting would risk contradictory labels |
-| 5. Clustering | Anthropic Haiku (`cluster.txt` v3) | [`pipeline/prompts/cluster.txt`](pipeline/prompts/cluster.txt) | Cross-item similarity judgment requires reasoning across all items at once |
-| 6. Signal-strength | Python (deterministic formula) | — | Member count × account diversity × severity — a defined formula, not a judgment call |
-| 7. Work-pack generation | Anthropic Sonnet (`generate.txt` v9) + Python post-processing | [`pipeline/prompts/generate.txt`](pipeline/prompts/generate.txt) | Sonnet generates structured output (title, brief, quotes, tasks, reply draft); Python overwrites deterministic fields and runs 14 auto-checks |
-| 8. Export | Python | — | Format Markdown + JSON with Jira/Linear-shaped fields |
+```
+Raw feedback → PII redaction → Classification → Clustering → Signal-strength → Generation → Runtime checks → Export
+     Python        Python        Haiku (LLM)     Haiku (LLM)     Python        Sonnet (LLM)     Python        Python
+```
 
-**Model selection.** Classification and clustering use Haiku — short-output tasks where speed and cost matter more than prose quality. Generation uses Sonnet — Haiku was tested early on generation and failed on constraint density (14 auto-checked rubric rules). Opus was not needed; Sonnet meets the rubric at acceptable quality for a 22-cluster dataset.
-
-**Deterministic/model split.** The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags. Python computes everything else: cluster_id, cluster_members, signal_strength, intent_type, dimension, confidence. This keeps model output auditable and deterministic logic testable without an API call.
+3 prompts, 17+ prompt versions, 3 models (Haiku for classification/clustering, Sonnet for generation). Full architecture table with model selection rationale in the [case study §2.1](CASE-STUDY.md#21-pipeline).
 
 ---
 
 ## Live pipeline
 
-The pipeline runs live at [asterline.liminzheng.com](https://asterline.liminzheng.com) via a Vercel Python serverless function (`api/pipeline.py`). Users can:
+The pipeline runs live at [asterline.liminzheng.com](https://asterline.liminzheng.com):
 
-- **Paste feedback** or **upload CSV** — runs the full 8-stage pipeline in real time, returns real work packs (up to 3 items per run, 5 runs/day)
-- **Run CFPB complaints** — 150 real consumer financial complaints from the CFPB public database, sampled and run live with no product context (tests RAG degradation on real-world data)
-- **Browse the Vela Pay demo** — 22 pre-generated work packs from the offline pipeline (generate-v9), cached for speed
+- **Paste feedback** or **upload CSV** — full 8-stage pipeline in real time (up to 3 items per run, 5 runs/day)
+- **CFPB complaints** — 150 real consumer financial complaints, sampled and run live
+- **Vela Pay demo** — 22 pre-generated work packs from the offline pipeline (generate-v9)
 
 ---
 
 ## Build results
 
-| Stage | Versions iterated | Key result |
+| Stage | Versions | Result |
 |---|---|---|
-| Classification | 5 prompt versions (v0–v5, including one revert) | intent 90% · dimension 90% · impact 75% · urgency 85% · overall 65% |
+| Classification | 5 prompt versions (1 reverted) | intent 90% · dimension 90% · impact 75% · urgency 85% · overall 65% |
 | Clustering | 3 prompt versions | 22 clusters; no false merges; true-merge validated on real data |
-| Generation | 9 prompt versions, 4 human-eval rounds, 4 auto-check bugs found | 22/22 work packs; 0 fabricated quotes; 7 quality flags (all legitimate) |
-
-For the full accuracy tables, iteration history, and eval methodology, see the [case study](CASE-STUDY.md).
-
----
-
-## What the output looks like
-
-Each cluster of related feedback produces a **work pack**:
-
-> **CLU-001 — Batch CSV payout upload silently fails for files exceeding 500 rows**
-> Signal: High · Intent: actionable_bug · Source: 3 feedback items, 3 accounts
->
-> **Problem:** When a batch payout CSV exceeds 500 rows, the upload hangs indefinitely with no error message — leaving finance teams unable to determine whether payments were dispatched.
->
-> **Key quote:** *"no error, no confirmation, page just sat there for 10+ minutes"*
->
-> **Tasks:** (1) Engineering: reproduce, identify root cause and scope. (2) Product: authorize fix scope.
->
-> **Reply draft:** *We're sorry your batch upload hung without any message — not knowing whether your payments went out is not acceptable…*
->
-> **Review flag:** Human must confirm payment status for each affected account before sending.
-
-All 22 work packs: [`pipeline/output/workpacks-v1.md`](pipeline/output/workpacks-v1.md).
+| Generation | 9 prompt versions, 4 human-eval rounds | 22/22 work packs; 0 fabricated quotes; 7 quality flags |
 
 ---
 
 ## Repo structure
 
 ```
-CASE-STUDY.md    full technical narrative (design decisions, eval, iteration, results)
-data/            synthetic feedback, context docs, golden set + cluster hypothesis
+CASE-STUDY.md    full technical narrative — start here
+data/            synthetic feedback, context docs, golden set
 eval/            taxonomy, schema, 20-rule rubric
 pipeline/        classification, PII redaction, clustering, generation, prompts
 docs/            iteration log (raw data), cluster spec, eval result snapshots
