@@ -2,7 +2,7 @@
 
 ## What is Asterline
 
-Asterline is a feedback-to-work-pack pipeline that converts raw user feedback into traceable, ready-to-work work packs. It is a job-search portfolio project demonstrating eval design, iteration, and traceability for AI PM / Technical PM roles.
+Asterline is an open-source feedback-to-work-pack pipeline that converts raw user feedback into traceable, ready-to-work work packs, demonstrating eval design, iteration, and traceability.
 
 ---
 

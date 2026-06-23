@@ -78,6 +78,8 @@
     .rsp-anatomy { grid-template-columns: 1fr !important; }
     .rsp-eval { grid-template-columns: 1fr !important; }
     .rsp-iter-row { grid-template-columns: 1fr !important; }
+    .rsp-stat-grid { grid-template-columns: repeat(2,1fr) !important; }
+    .rsp-col-header { display: none !important; }
     .rsp-pick { grid-template-columns: 1fr !important; }
     .rsp-row { grid-template-columns: 1fr !important; }
     .rsp-detail { grid-template-columns: 1fr !important; gap: 24px !important; }
@@ -118,16 +120,17 @@
       <section style="position:relative; overflow:hidden; border-bottom:1px solid #E5E2DB;">
         <div class="rsp-hero" style="max-width:1140px; margin:0 auto; padding:96px 32px 104px; display:grid; grid-template-columns:1.04fr 0.96fr; gap:40px; align-items:center;">
           <div style="position:relative; z-index:2;">
-            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:#2438C8; margin-bottom:24px;">Portfolio project&nbsp;&nbsp;·&nbsp;&nbsp;AI PM / TPM</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:#2438C8; margin-bottom:24px;">Open-source · v1 pipeline</div>
             <h1 class="rsp-hero-h1" style="font-size:62px; line-height:1.0; letter-spacing:-0.032em; font-weight:750; margin:0 0 26px;">Feedback in.<br>Traceable work<br>packs out.</h1>
-            <p class="rsp-hero-sub" style="font-size:18.5px; line-height:1.5; color:#46443D; max-width:480px; margin:0 0 16px;">Asterline reads raw, unstructured feedback and turns it into structured work packs — one per underlying issue, each with the quotes it came from, the tasks it implies, and a drafted reply waiting on a human's sign-off.</p>
+            <p class="rsp-hero-sub" style="font-size:18.5px; line-height:1.5; color:#46443D; max-width:480px; margin:0 0 16px;">Asterline turns raw, unstructured feedback into structured work packs — one per underlying issue, each backed by the quotes that surfaced it, the tasks it implies, and a drafted reply that waits on a human before it goes anywhere.</p>
+            <p class="rsp-hero-sub" style="font-size:18.5px; line-height:1.5; color:#46443D; max-width:480px; margin:0 0 16px;">Built for whoever ends up with the feedback inbox — no assumed role, no assumed team size.</p>
             <div style="display:flex; gap:20px; margin-bottom:36px; flex-wrap:wrap;">
-              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">01</span>Eval design</div>
-              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">02</span>Iteration</div>
-              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">03</span>Traceability</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">01</span>Eval-first</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">02</span>Traceable output</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5A584F;"><span style="color:#2438C8; margin-right:6px;">03</span>Human-gated</div>
             </div>
             <div class="rsp-hero-cta" style="display:flex; align-items:center; gap:14px;">
-              <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#2438C8; color:#fff; border:none; padding:14px 22px; border-radius:4px; font-size:15.5px; font-weight:600;">Enter the product <span style="font-size:17px;">→</span></button>
+              <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#2438C8; color:#fff; border:none; padding:14px 22px; border-radius:4px; font-size:15.5px; font-weight:600;">Try the pipeline <span style="font-size:17px;">→</span></button>
               <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:8px; padding:14px 18px; border:1px solid #D7D3C9; border-radius:4px; font-size:15.5px; font-weight:600; color:#1A1916;">View the code</a>
             </div>
           </div>
@@ -183,8 +186,8 @@
       <!-- PROBLEM & VALUE -->
       <section style="border-bottom:1px solid #E5E2DB;">
         <div class="rsp-sec" style="max-width:1140px; margin:0 auto; padding:88px 32px;">
-          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">From noise to one artifact</div>
-          <h2 style="font-size:34px; line-height:1.12; letter-spacing:-0.02em; font-weight:700; margin:0 0 8px; max-width:680px;">Three tickets, different words, the same underlying issue.</h2>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Clustering</div>
+          <h2 style="font-size:34px; line-height:1.12; letter-spacing:-0.02em; font-weight:700; margin:0 0 8px; max-width:680px;">The same issue, however it arrives.</h2>
           <div class="rsp-pv" style="display:grid; grid-template-columns:1fr 64px 1fr; gap:0; align-items:stretch; margin-top:44px;">
             <!-- raw side -->
             <div style="display:flex; flex-direction:column; gap:14px;">
@@ -234,7 +237,7 @@
               </div>
             </div>
           </div>
-          <p style="font-size:15px; color:#76746A; margin:30px 0 0; max-width:720px; line-height:1.5;">Built for whoever ends up triaging feedback — support lead, PM, or a founder doing both — not a specific role or team size.</p>
+          <p style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#A2A095; margin:30px 0 0;">Built-in demo data — Vela Pay (synthetic)</p>
         </div>
       </section>
 
@@ -244,7 +247,7 @@
           <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:40px;">
             <div>
               <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:12px;">Eight steps, none skipped</div>
-              <h2 style="font-size:30px; letter-spacing:-0.02em; font-weight:700; margin:0; max-width:660px; line-height:1.16;">Eight checked steps turn a raw, messy inbox into work packs a human can act on.</h2>
+              <h2 style="font-size:30px; letter-spacing:-0.02em; font-weight:700; margin:0; max-width:660px; line-height:1.16;">The pipeline: eight stages from raw inbox to reviewable work packs.</h2>
             </div>
             <a href="#how-it-works" onClick="{{ goHow }}" style="display:inline-flex; align-items:center; gap:8px; background:none; border:1px solid #D7D3C9; padding:11px 17px; border-radius:4px; font-size:14.5px; font-weight:600; color:#1A1916; white-space:nowrap; text-decoration:none;">See the full walkthrough →</a>
           </div>
@@ -266,14 +269,14 @@
       <!-- WHY TRUST IT -->
       <section style="border-bottom:1px solid #E5E2DB;">
         <div class="rsp-sec" style="max-width:1140px; margin:0 auto; padding:88px 32px;">
-          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Why trust the output</div>
-          <h2 style="font-size:33px; letter-spacing:-0.02em; font-weight:700; margin:0 0 16px; max-width:760px; line-height:1.16;">The hard part isn't sorting feedback. It's drafting a reply about someone's money without confidently saying something false.</h2>
-          <p style="font-size:17px; line-height:1.55; color:#46443D; max-width:660px; margin:0 0 44px;">So the answer isn't “trust the model.” It's three guarantees the pipeline enforces — each one inspectable in the product itself.</p>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Output reliability</div>
+          <h2 style="font-size:33px; letter-spacing:-0.02em; font-weight:700; margin:0 0 16px; max-width:760px; line-height:1.16;">Not 'trust us.' Verify it yourself.</h2>
+          <p style="font-size:17px; line-height:1.55; color:#46443D; max-width:660px; margin:0 0 44px;">So the answer isn’t “trust the model.” It's three things the pipeline enforces — each one inspectable in the product itself.</p>
           <div class="rsp-trust" style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Eval-first, not vibes</div>
-              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">20-item golden set · 65%* overall</div>
-              <p style=”font-size:14px; line-height:1.55; color:#5A584F; margin:0;”>The definition of “correct” — a 20-rule rubric and a 20-item hand-labeled golden set — was written before any output was generated. Every version since is scored against that standard. One prompt iteration made accuracy worse; it was caught by the eval, reverted, and kept in the log rather than hidden.</p>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">20-rule rubric · scored every version</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">A rubric and 20 hand-labeled examples defined "correct" before any output ran. Every version scored against the same standard — including one that regressed, was reverted, and kept in the log. Overall 65%; individual axes 75–90%.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Every claim is cited</div>
@@ -286,7 +289,6 @@
               <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Tasks are recommendations, not filed tickets. Any reply touching money, timing, or policy is blocked by a review flag until a person verifies it. Nothing sends itself.</p>
             </div>
           </div>
-          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0;">* 65% overall on a 20-item golden set with strict multi-axis scoring — intent, dimension, impact, and urgency must all match to count. Individual axes score 75–90%. Shown with their evaluation set, never as a bare percentage.</p>
         </div>
       </section>
 
@@ -296,25 +298,21 @@
           <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">Safety &amp; data handling</div>
           <h2 style="font-size:33px; letter-spacing:-0.02em; font-weight:700; margin:0 0 16px; max-width:620px; line-height:1.14;">Honest about what it protects — and what it doesn't yet.</h2>
           <p style="font-size:17px; line-height:1.55; color:#46443D; max-width:660px; margin:0 0 44px;">Feedback is messy and often carries personal data. Here is what the pipeline does about that, stated plainly, including the limits it hasn't closed.</p>
-          <div class="rsp-safety" style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+          <div class="rsp-safety" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
               <div style="font-size:16px; font-weight:680; margin-bottom:8px;">PII redaction runs first</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Emails, phone numbers, and account identifiers are stripped before any model sees the text. The honest limit: human names aren't caught by regex in v1 — a documented gap, not a hidden one. You can see it directly: open any quote's source.</p>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Emails, phone numbers, and account identifiers are stripped in memory before your text reaches any model. The honest limit: human names aren't caught by regex in v1 — a documented gap, not a hidden one. You can see it directly: open any quote's source.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
-              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">No silent automation</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">The pipeline never files a ticket or sends a message on its own. It proposes; a human disposes. Every consequential step has a person in the loop by design.</p>
+              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Not stored on our servers</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Feedback you submit is processed in memory and not stored on our servers. Your text is sent to the Anthropic API for classification and generation — Anthropic does not use API inputs for model training. No database, no file storage, no content logging.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
-              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Traceable by construction</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Nothing is asserted without a source ref. When no supporting context is loaded, the run says so on the results — it does not paper over the gap with a plausible-sounding policy.</p>
-            </div>
-            <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
-              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Synthetic by design</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Vela Pay is the built-in demo dataset — a synthetic B2B payments company with realistic feedback, policies, and known issues, no real customers. The pipeline runs identically when you upload your own data; the context docs are what change.</p>
+              <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Nothing acts without you</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">The pipeline proposes tasks and drafts replies — it never files a ticket or sends a message on its own. Any reply touching money, timing, or policy is explicitly blocked until a person clears it.</p>
             </div>
           </div>
-          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0; line-height:1.5;">v1 limitations — regex PII redaction, direct RAG retrieval, manual orchestration — are documented in the repo, not hidden.</p>
+          <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0; line-height:1.5;">v1 design tradeoffs: PII is caught by rules, not AI — names may slip through. Context docs are loaded in full rather than searched. Both decisions are documented in the repo.</p>
         </div>
       </section>
 
@@ -323,10 +321,10 @@
         <div class="rsp-sec" style="max-width:1140px; margin:0 auto; padding:84px 32px; text-align:center;">
           <h2 style="font-size:40px; letter-spacing:-0.025em; font-weight:730; margin:0 0 30px; line-height:1.05;">See what the pipeline produces.</h2>
           <div class="rsp-cta-stack" style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-            <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#fff; color:#1A1916; border:none; padding:15px 24px; border-radius:4px; font-size:16px; font-weight:650;">Enter the product <span>→</span></button>
+            <button onClick="{{ goProduct }}" style="display:inline-flex; align-items:center; gap:9px; background:#fff; color:#1A1916; border:none; padding:15px 24px; border-radius:4px; font-size:16px; font-weight:650;">Try the pipeline <span>→</span></button>
             <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:9px; padding:15px 22px; border:1px solid #45433C; border-radius:4px; font-size:16px; font-weight:600; color:#F4F3EF;">View the code on GitHub</a>
           </div>
-          <div style="font-size:13px; line-height:1.5; color:#8A887E; margin:36px auto 0; max-width:540px;">The Vela Pay demo shows <span style="color:#C9C7BD;">real pipeline output</span> — 22 work packs generated by the actual pipeline (generate-v9) against synthetic feedback with full context docs. Paste your own feedback or try the CFPB complaints pack to run the live pipeline. No real customers, no real data.</div>
+          <div style="font-size:13px; line-height:1.5; color:#8A887E; margin:36px auto 0; max-width:540px;">The Vela Pay demo shows <span style="color:#C9C7BD;">real pipeline output</span> — 22 work packs generated by the actual pipeline (generate-v9) against synthetic feedback with full context docs. Paste your own feedback or try the CFPB complaints pack to run the live pipeline. </div>
         </div>
       </section>
     </div>
@@ -412,8 +410,11 @@
       <section style="background:#1A1916; color:#F4F3EF;">
         <div class="rsp-sec" style="max-width:1140px; margin:0 auto; padding:72px 32px;">
           <h2 style="font-size:13px; font-family:'JetBrains Mono',monospace; letter-spacing:0.18em; text-transform:uppercase; color:#8A887E; margin:0 0 14px; font-weight:500;">04 — Iteration evidence</h2>
-          <p style="font-size:19px; line-height:1.5; max-width:720px; margin:0 0 46px; color:#E4E2DA;">The first version of the classifier got about <b style="color:#fff;">40%</b> of the golden set right. Four rounds of changing the prompt brought that to about <b style="color:#fff;">65%</b> — including one round that made things <i>worse</i> and was reverted, kept in the log rather than hidden.</p>
-          <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#5b6bd6; margin-bottom:16px;">Classification accuracy — 20-item golden set</div>
+          <p style="font-size:19px; line-height:1.5; max-width:740px; margin:0 0 52px; color:#E4E2DA;">Two prompts, two different kinds of evidence. The classifier has a single accuracy metric — four prompt versions, one revert, <b style="color:#fff;">40% → 65%</b> on a fixed golden set. The work pack generator had no equivalent number: <b style="color:#fff;">nine prompt versions</b> across three sessions, four rounds of human eval sampling, and four automated-check code bugs found and fixed. The fuller system left the fuller record.</p>
+          <div style="margin-bottom:20px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#F4F3EF; margin-bottom:5px;">Classifier — Intent Classification Prompt</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#5b6bd6;">Classification Accuracy · 20-item Golden Set</div>
+          </div>
           <div style="display:flex; align-items:flex-end; gap:0; height:240px; border-bottom:1px solid #45433C; padding-bottom:0;">
             <sc-for list="{{ iterBars }}" as="b" hint-placeholder-count="5">
               <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:0; position:relative;">
@@ -431,24 +432,35 @@
             </sc-for>
           </div>
           <!-- workpack generation iteration -->
-          <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:28px; margin-top:42px;">
-            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#8A887E; margin-bottom:8px;">Work pack generation — generate-v1 through v9 · 4 auto-check bugs fixed</div>
-            <p style="font-size:15px; color:#E4E2DA; max-width:660px; margin:0 0 24px; line-height:1.5;">Nine prompt versions across three sessions, validated by four rounds of human eval sampling (12 unique clusters across 4 rounds). Four code bugs in the automated quality checks were found and fixed during iteration — two from full-output scans, two surfaced during human review. None were visible from spot-checking alone.</p>
-            <div style="display:flex; flex-direction:column; gap:0;">
-              <sc-for list="{{ workpackIter }}" as="wi" hint-placeholder-count="3">
-                <div class="rsp-iter-row" style="display:grid; grid-template-columns:96px 1fr 1fr; gap:20px; padding:18px 0; border-top:1px solid rgba(255,255,255,0.07); align-items:start;">
-                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#5b6bd6;">{{ wi.v }}</span>
-                  <div>
-                    <div style="font-size:14px; font-weight:650; color:#F4F3EF; margin-bottom:5px;">{{ wi.title }}</div>
-                    <div style="font-size:12.5px; line-height:1.5; color:#8A887E;">{{ wi.what }}</div>
-                  </div>
-                  <div>
-                    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#2438C8; margin-bottom:5px;">→ fixed</div>
-                    <div style="font-size:12.5px; line-height:1.5; color:#8A887E;">{{ wi.fixed }}</div>
-                  </div>
-                </div>
-              </sc-for>
+          <div style="border-top:1px solid #2E2C28; margin-top:64px; padding-top:56px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#F4F3EF; margin-bottom:28px;">Work Pack Generator — Generate Prompt</div>
+            <div class="rsp-stat-grid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#2E2C28; border:1px solid #2E2C28; border-radius:6px; margin-bottom:36px; overflow:hidden;">
+              <div style="padding:22px 20px; background:#1A1916;"><div style="font-family:'JetBrains Mono',monospace; font-size:40px; font-weight:700; color:#fff; letter-spacing:-0.02em; line-height:1; margin-bottom:9px;">9</div><div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.16em; color:#6E6C62; line-height:1.5;">prompt<br>versions</div></div>
+              <div style="padding:22px 20px; background:#1A1916;"><div style="font-family:'JetBrains Mono',monospace; font-size:40px; font-weight:700; color:#fff; letter-spacing:-0.02em; line-height:1; margin-bottom:9px;">4</div><div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.16em; color:#6E6C62; line-height:1.5;">rounds of<br>human eval</div></div>
+              <div style="padding:22px 20px; background:#1A1916;"><div style="font-family:'JetBrains Mono',monospace; font-size:40px; font-weight:700; color:#fff; letter-spacing:-0.02em; line-height:1; margin-bottom:9px;">12</div><div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.16em; color:#6E6C62; line-height:1.5;">clusters<br>reviewed</div></div>
+              <div style="padding:22px 20px; background:#1A1916;"><div style="font-family:'JetBrains Mono',monospace; font-size:40px; font-weight:700; color:#fff; letter-spacing:-0.02em; line-height:1; margin-bottom:9px;">4</div><div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.16em; color:#6E6C62; line-height:1.5;">auto-check<br>bugs fixed</div></div>
             </div>
+            <p style="font-size:18px; line-height:1.6; color:#B8B6AC; max-width:700px; margin:0 0 40px;">Nine prompt versions across three sessions, validated by four rounds of human eval sampling (12 unique clusters across 4 rounds). Four code bugs in the automated quality checks were found and fixed during iteration — two from full-output scans, two surfaced during human review. None were visible from spot-checking alone.</p>
+            <div class="rsp-col-header" style="display:grid; grid-template-columns:110px 1fr 1fr; gap:24px; padding:0 0 10px; border-bottom:1px solid #2E2C28;">
+              <div></div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#8A887E;">Issue found</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#4a5bc4;">→ Fixed</div>
+            </div>
+            <sc-for list="{{ workpackIter }}" as="wi" hint-placeholder-count="5">
+              <div class="rsp-iter-row" style="display:grid; grid-template-columns:110px 1fr 1fr; gap:24px; padding:22px 0; border-bottom:1px solid #2E2C28; align-items:start;">
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#5b6bd6; margin-bottom:8px;">{{ wi.v }}</div>
+                  <div style="display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; padding:3px 7px; border-radius:3px; background:{{ wi.typeBg }}; color:{{ wi.typeColor }};">{{ wi.type }}</div>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:650; color:#E4E2DA; margin-bottom:6px;">{{ wi.title }}</div>
+                  <div style="font-size:12.5px; line-height:1.55; color:#6E6C62;">{{ wi.what }}</div>
+                </div>
+                <div>
+                  <div style="font-size:12.5px; line-height:1.55; color:#6E6C62;">{{ wi.fixed }}</div>
+                </div>
+              </div>
+            </sc-for>
           </div>
 
           <div style="margin-top:28px; display:flex; gap:14px; flex-wrap:wrap;">
@@ -470,7 +482,7 @@
           <div>
             <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#908E83; margin-bottom:14px;">New run</div>
             <h1 class="rsp-product-h1" style="font-size:32px; letter-spacing:-0.02em; font-weight:720; margin:0 0 10px; line-height:1.1;">Pick a source of feedback.</h1>
-            <p style="font-size:16px; line-height:1.5; color:#5A584F; max-width:560px; margin:0 0 28px;">Paste your own feedback or upload a CSV to run the live pipeline. The CFPB pack samples real financial complaints and runs them live. The Vela Pay demo shows cached output from generate-v9.</p>
+            <p style="font-size:16px; line-height:1.5; color:#5A584F; max-width:560px; margin:0 0 28px;">Paste your own feedback or upload a CSV to run the live pipeline. The CFPB pack samples real financial complaints and runs them live. The Vela Pay demo shows cached output from the real pipeline.</p>
 
             <div style="display:flex; gap:10px; margin-bottom:22px;">
               <button onClick="{{ pickPaste }}" style="{{ tabPasteStyle }}">Paste text</button>
@@ -946,7 +958,7 @@
         <button onClick="{{ goHow }}" style="background:none; border:none; font-size:13px; font-weight:500; color:#5A584F; padding:6px 10px; border-radius:4px; cursor:pointer;">How it works</button>
         <a href="{{ repoUrl }}" target="_blank" rel="noopener" style="font-size:13px; font-weight:500; color:#5A584F; padding:6px 10px; border-radius:4px;">GitHub</a>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#A2A095;">v1 pipeline · synthetic data · no real customers</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#A2A095;">Open-source · v1 pipeline</div>
     </div>
   </footer>
 
@@ -1581,11 +1593,11 @@ class Component extends DCLogic {
       chipFlagNone: fChip(filterFlag === "none"),
       // new content
       workpackIter: [
-        { v: "v1→v5", title: "12 systemic patterns — Round 1 human eval", what: "8 clusters reviewed. R-11 failed 3/5 (overpromise follow-up on feature requests). Fabricated internal ticket numbers in tasks. No complaint empathy opening. Direct implementation tasks from single feedback items. Language mismatch on Spanish ticket.", fixed: "10 explicit rules added in one pass: no personal follow-up promises, no fabricated IDs, empathy-first for complaints, evaluate/scope instead of direct implement. Spot-check on same 8 clusters confirmed fixes." },
-        { v: "v5→v6", title: "Task architecture + 28 noise quality flags", what: "Engineering receiving direct implementation tasks without an investigate-first step. High-priority tasks with deadline=None (contradiction). Model generating its own quality_flags — 28 noise flags in v5, most self-generated timestamps.", fixed: "Tasks now follow Investigate → Authorize → Implement structure. Model explicitly told quality_flags[] is auto-populated only. 28 flags → 11 in v6." },
-        { v: "v6→v7", title: "43 fabricated_quote false positives (code bug)", what: "R-03 regex written as r'\\\\s+' (double backslash) — whitespace normalization was a no-op. Any quote spanning a line-break in the source always failed the verbatim check. 43 false positive flags across ~18 clusters.", fixed: "Fixed to r'\\s+'. fabricated_quote count dropped from 43 to 0 in one correction. Also: normalization extended to quote style and capitalization to catch two additional patterns." },
-        { v: "v7→v8", title: "Fault attribution — 3 patterns (P-A/B/C)", what: "P-A: Clause IDs appearing in customer-facing reply body (e.g. '(SP-3)'). P-B: Model inventing assignee teams not in schema (Compliance, Finance). P-C: Opening matrix apologized for customer-caused situations, didn't apologize for Vela Pay failures.", fixed: "P-A: Auto-check added; plain-language rule in prompt. P-B: Valid team list restricted to Engineering / Product / Support Operations / Design. P-C: Opening matrix now accounts for fault attribution — apology only when Vela Pay caused the failure." },
-        { v: "v8→v9", title: "Final self-audit — 4 issues, one pass", what: "V9-1: feature_request clusters producing 2 consecutive Product tasks instead of 1. V9-2: Task text starting with team name (redundant). V9-3: Duplicate '## quality_flags' section header confusing model. V9-4: SMS carrier failures treated as 'external circumstance' → no apology, but users experience it as a service failure.", fixed: "All 4 fixed. Final counts: quality_flags 7 (ambiguous_timestamp ×5, tone_violation ×1, non_english_feedback ×1), review_flags 15, fabricated_quote 0, internal_ref_in_reply 0." },
+        { v: "v1→v5", type: "Human eval", typeBg: "rgba(91,107,214,0.18)", typeColor: "#5b6bd6", title: "12 systemic patterns — Round 1 human eval", what: "8 clusters reviewed. R-11 failed 3/5 (overpromise follow-up on feature requests). Fabricated internal ticket numbers in tasks. No complaint empathy opening. Direct implementation tasks from single feedback items. Language mismatch on Spanish ticket.", fixed: "10 explicit rules added in one pass: no personal follow-up promises, no fabricated IDs, empathy-first for complaints, evaluate/scope instead of direct implement. Spot-check on same 8 clusters confirmed fixes." },
+        { v: "v5→v6", type: "Structural", typeBg: "rgba(255,255,255,0.07)", typeColor: "#A8A69C", title: "Task architecture + 28 noise quality flags", what: "Engineering receiving direct implementation tasks without an investigate-first step. High-priority tasks with deadline=None (contradiction). Model generating its own quality_flags — 28 noise flags in v5, most self-generated timestamps.", fixed: "Tasks now follow Investigate → Authorize → Implement structure. Model explicitly told quality_flags[] is auto-populated only. 28 flags → 11 in v6." },
+        { v: "v6→v7", type: "Code bug", typeBg: "rgba(147,100,18,0.22)", typeColor: "#C49845", title: "43 fabricated_quote false positives (code bug)", what: "R-03 regex written as r'\\\\s+' (double backslash) — whitespace normalization was a no-op. Any quote spanning a line-break in the source always failed the verbatim check. 43 false positive flags across ~18 clusters.", fixed: "Fixed to r'\\s+'. fabricated_quote count dropped from 43 to 0 in one correction. Also: normalization extended to quote style and capitalization to catch two additional patterns." },
+        { v: "v7→v8", type: "Human eval", typeBg: "rgba(91,107,214,0.18)", typeColor: "#5b6bd6", title: "Fault attribution — 3 patterns (P-A/B/C)", what: "P-A: Clause IDs appearing in customer-facing reply body (e.g. '(SP-3)'). P-B: Model inventing assignee teams not in schema (Compliance, Finance). P-C: Opening matrix apologized for customer-caused situations, didn't apologize for Vela Pay failures.", fixed: "P-A: Auto-check added; plain-language rule in prompt. P-B: Valid team list restricted to Engineering / Product / Support Operations / Design. P-C: Opening matrix now accounts for fault attribution — apology only when Vela Pay caused the failure." },
+        { v: "v8→v9", type: "Self-audit", typeBg: "rgba(255,255,255,0.05)", typeColor: "#8A887E", title: "Final self-audit — 4 issues, one pass", what: "V9-1: feature_request clusters producing 2 consecutive Product tasks instead of 1. V9-2: Task text starting with team name (redundant). V9-3: Duplicate '## quality_flags' section header confusing model. V9-4: SMS carrier failures treated as 'external circumstance' → no apology, but users experience it as a service failure.", fixed: "All 4 fixed. Final counts: quality_flags 7 (ambiguous_timestamp ×5, tone_violation ×1, non_english_feedback ×1), review_flags 15, fabricated_quote 0, internal_ref_in_reply 0." },
       ],
       goToPick: () => this.setState({ pstage: "pick", selected: null }),
       rubricUrl: repoUrl + "/blob/main/eval/05-rubric-v1.md",
