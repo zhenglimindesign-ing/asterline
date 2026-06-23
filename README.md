@@ -2,20 +2,30 @@
 
 **Live demo:** [asterline.liminzheng.com](https://asterline.liminzheng.com) · **Case study:** [`CASE-STUDY.md`](CASE-STUDY.md)
 
-An 8-stage pipeline that turns raw user feedback into traceable, ready-to-work product packs. Each work pack includes a problem summary, source-linked quotes, suggested tasks, a drafted customer reply, and flags for human review where the stakes require it.
+Turns raw, unstructured feedback into traceable work packs — one per underlying issue, each backed by the quotes that surfaced it, the tasks it implies, and a drafted reply that waits on a human before it goes anywhere.
 
-Built as a portfolio project for AI PM / Technical PM roles. The product itself is not the point — the point is demonstrating **eval design**, **iteration discipline**, and **traceability** in an AI pipeline. The [case study](CASE-STUDY.md) covers the full technical narrative: pipeline architecture, design decisions, evaluation methodology, iteration history (including a reverted attempt), and results.
+Built for whoever ends up with the feedback inbox. No assumed role, no assumed team size.
 
 ---
 
 ## Pipeline
 
-```
-Raw feedback → PII redaction → Classification → Clustering → Signal-strength → Generation → Runtime checks → Export
-     Python        Python        Haiku (LLM)     Haiku (LLM)     Python        Sonnet (LLM)     Python        Python
-```
+| Stage | Executor | Prompt | What happens |
+|---|---|---|---|
+| 1. Ingest | Python | — | `"Tried to upload our payroll CSV..."` → structured dict with feedback_id, channel, account, raw_text |
+| 2. PII redaction | Python | — | `user@company.com` → `[REDACTED]` · emails, phones, account IDs stripped before any model sees the text |
+| 3. Intent classification | Haiku | [`classify.txt`](pipeline/prompts/classify.txt) | → `intent: actionable_bug` · one of five types: actionable bug, feature request, complaint, praise, noise |
+| 4. Dimension + severity | ↑ same call | — | → `dimension: Engineering, impact: High, urgency: High` · co-determined with intent for label consistency |
+| 5. Clustering | Haiku | [`cluster.txt`](pipeline/prompts/cluster.txt) | FB-01 + FB-26 + FB-27 → CLU-001 · groups items describing the same underlying issue |
+| 6. Signal-strength | Python | — | 3 members × 3 accounts × High severity → `signal: High` · deterministic formula, not a model opinion |
+| 7. Work-pack generation | Sonnet + Python | [`generate.txt`](pipeline/prompts/generate.txt) | CLU-001 → title, problem brief, key quotes, tasks, reply draft, review flags · Sonnet generates; Python overwrites deterministic fields and runs 14 auto-checks |
+| 8. Export | Python | — | → Markdown for humans + JSON shaped for Jira or Linear |
 
-3 prompts, 17+ prompt versions, 3 models (Haiku for classification/clustering, Sonnet for generation). Full architecture table with model selection rationale in the [case study §2.1](CASE-STUDY.md#21-pipeline).
+**Model selection.** Haiku for classification/clustering (short output, speed matters). Sonnet for generation (Haiku was tested and failed on constraint density across 14 rubric rules). Opus not needed — Sonnet meets the rubric at acceptable quality.
+
+**Nothing sends itself.** Tasks are recommendations, not filed tickets. Any reply touching money, timing, or policy is blocked by a review flag until a human verifies it.
+
+Full design decisions, model/deterministic split rationale, and iteration history in the [case study](CASE-STUDY.md).
 
 ---
 
@@ -24,8 +34,8 @@ Raw feedback → PII redaction → Classification → Clustering → Signal-stre
 The pipeline runs live at [asterline.liminzheng.com](https://asterline.liminzheng.com):
 
 - **Paste feedback** or **upload CSV** — full 8-stage pipeline in real time (up to 3 items per run, 5 runs/day)
-- **CFPB complaints** — 150 real consumer financial complaints, sampled and run live
-- **Vela Pay demo** — 22 pre-generated work packs from the offline pipeline (generate-v9)
+- **CFPB complaints** — 150 real consumer financial complaints from the CFPB public database, sampled and run live
+- **Vela Pay demo** — 22 work packs from the offline pipeline (generate-v9) with full context docs, cached for speed
 
 ---
 
@@ -37,14 +47,16 @@ The pipeline runs live at [asterline.liminzheng.com](https://asterline.liminzhen
 | Clustering | 3 prompt versions | 22 clusters; no false merges; true-merge validated on real data |
 | Generation | 9 prompt versions, 4 human-eval rounds | 22/22 work packs; 0 fabricated quotes; 7 quality flags |
 
+Evaluated against a 20-item hand-labeled golden set and a 20-rule rubric (14 automated, 7 human-judgment). Every version scored against the same standard — including the one that regressed, was reverted, and kept in the log.
+
 ---
 
 ## Repo structure
 
 ```
-CASE-STUDY.md    full technical narrative — start here
+CASE-STUDY.md    full technical narrative — start here for depth
 data/            synthetic feedback, context docs, golden set
-eval/            taxonomy, schema, 20-rule rubric
+eval/            taxonomy, schema, rubric
 pipeline/        classification, PII redaction, clustering, generation, prompts
 docs/            iteration log (raw data), cluster spec, eval result snapshots
 web/             deployed product site (Vercel)

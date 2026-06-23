@@ -14,7 +14,7 @@
 
 Product teams drown in feedback. Support tickets, app reviews, NPS responses, and sales call notes arrive in different formats, at different times, and with wildly different levels of specificity. The signal is there — but extracting it, grouping it, and turning it into something an engineer or PM can actually act on takes time that small teams rarely have.
 
-Asterline is a feedback intelligence tool that turns raw, unstructured user feedback into traceable, ready-to-work product packs. A work pack is a structured artifact containing a problem summary, key evidence quotes (with links back to source items), a suggested task with acceptance criteria and assignee team, a draft customer reply, and flags for human review where the stakes are high enough to warrant it.
+Asterline is a feedback intelligence tool that turns raw, unstructured user feedback into traceable, ready-to-work work packs. A work pack is a structured artifact containing a problem summary, key evidence quotes (with links back to source items), a suggested task with acceptance criteria and assignee team, a draft customer reply, and flags for human review where the stakes are high enough to warrant it.
 
 The tool is designed for small product teams and indie builders — anyone who regularly digests user feedback and needs to move from signal to action without a dedicated ops function to support them.
 
@@ -103,9 +103,9 @@ The split of severity into impact × urgency was a mid-process discovery: a sing
 
 ### 3.3 Rubric
 
-20 rubric items derived inductively from three worked examples (FB-05: Critical actionable bug with source refs and HITL trigger; FB-03: feature request with no source match; FB-20: noise), with two added during generation-stage iteration (R-19, R-20). Each item specifies the field checked, the yes/no check, the evaluation mode, and the failure action.
+20 rubric items derived inductively from three worked examples (FB-05: Critical actionable bug with source refs and HITL trigger; FB-03: feature request with no source match; FB-20: noise), with two added during generation-stage iteration (R-19, R-20). One additional auto-check (R-PA: clause IDs in reply_draft) was added during generation iteration, bringing the runtime total to 14 automated checks. Each item specifies the field checked, the yes/no check, the evaluation mode, and the failure action.
 
-**14 automated items (runtime checks):** timestamp format (R-01), quote count (R-02), quote verbatim fidelity (R-03), task field completeness (R-04), review_flags blocks field (R-06), banned filler phrases (R-08), money/timing first sentence (R-09), noise: null reply (R-13), noise: empty tasks (R-14), noise: empty quotes (R-15), cluster_members validity (R-16), confidence field (R-17), source_ref validity (R-19), clause IDs in reply_draft (R-PA).
+**14 automated items (runtime checks):** timestamp format (R-01), quote count (R-02), quote verbatim fidelity (R-03), task field completeness (R-04), review_flags blocks field (R-06), banned filler phrases (R-08), money/timing first sentence (R-09), noise: null reply (R-13), noise: empty tasks (R-14), noise: empty quotes (R-15), cluster_members validity (R-16), confidence field (R-17), source_ref validity (R-19), clause IDs in reply_draft (R-PA, added during generation iteration).
 
 **7 human-judgment items (offline eval):** acceptance criteria specificity (R-05), human review trigger (R-07), no blame-shifting (R-10), no overpromising (R-11), no fabricated source references (R-12), title accuracy (R-18), reply vs policy contradiction (R-20).
 
