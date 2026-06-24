@@ -46,22 +46,22 @@ Built for whoever ends up with the feedback inbox — no assumed role, no assume
 
 ### 2.1 Pipeline
 
-Built with Python and Anthropic's Claude API, deployed on Vercel. Stages are split between Python and LLM based on what each task requires. LLM handles language understanding: classifying intent, judging cross-item similarity, generating structured prose. Python handles everything rule-based: PII stripping, signal-strength formulas, verbatim quote verification.
+Built with Python and Anthropic's Claude API (models: Haiku and Sonnet), deployed on Vercel. Stages are split between Python and LLM based on what each task requires. LLM handles language understanding: classifying intent, judging cross-item similarity, generating structured prose. Python handles everything rule-based: PII stripping, signal-strength formulas, verbatim quote verification.
 
 | Stage | Executor | Prompt | Why this executor |
 |---|---|---|---|
 | 1. Ingest | Python (`data_loader.py` offline; API request body live) | — | Pure I/O: parse Markdown, CSV, or JSON into structured dicts |
 | 2. PII redaction | Python (`pii.py`) | — | Regex matching; must run before any text reaches a model |
-| 3. Intent classification | Haiku · per item (a fast, cost-efficient LLM) | [`pipeline/prompts/classify.txt`](pipeline/prompts/classify.txt) | Requires semantic understanding: is this a bug, a feature request, or just noise? |
+| 3. Intent classification | Haiku · per item | [`pipeline/prompts/classify.txt`](pipeline/prompts/classify.txt) | Requires semantic understanding: is this a bug, a feature request, or just noise? |
 | 4. Dimension + severity | ↑ same prompt, same call | — | Co-determined with intent for consistency — splitting would risk contradictory labels |
 | 5. Clustering | Haiku · all items at once | [`pipeline/prompts/cluster.txt`](pipeline/prompts/cluster.txt) | Cross-item similarity judgment requires reasoning across all items at once |
 | 6. Signal-strength | Python (deterministic formula) | — | Member count × account diversity × severity — a defined formula, not a judgment call |
-| 7. Work-pack generation | Sonnet · per cluster (a more capable LLM for complex generation) + Python post-processing | [`pipeline/prompts/generate.txt`](pipeline/prompts/generate.txt) | Sonnet generates structured output (title, brief, quotes, tasks, reply draft); Python overwrites deterministic fields and runs 14 auto-checks |
+| 7. Work-pack generation | Sonnet · per cluster + Python | [`pipeline/prompts/generate.txt`](pipeline/prompts/generate.txt) | Sonnet generates structured output (title, brief, quotes, tasks, reply draft); Python overwrites deterministic fields and runs 14 auto-checks |
 | 8. Export | Python | — | Format Markdown + JSON with Jira/Linear-shaped fields |
 
 **Model selection.**  
-Classification and clustering use Haiku — short-output tasks where speed and cost matter more than prose quality.  
-Generation uses Sonnet — Haiku was tested early on generation and failed on constraint density (14 auto-checked rubric rules). Opus was not needed; Sonnet meets the rubric at acceptable quality for a 22-cluster dataset.
+Classification and clustering use Haiku, a fast and cost-efficient model — short-output tasks where speed and cost matter more than prose quality.  
+Generation uses Sonnet, a more capable model — Haiku was tested early on generation and failed on constraint density (14 auto-checked rubric rules). Opus was not needed; Sonnet meets the rubric at acceptable quality for a 22-cluster dataset.
 
 **Deterministic/model split.**  
 The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags.  
@@ -131,7 +131,7 @@ A golden set is a hand-labeled subset of the data used as ground truth — the p
 
 **7 human-judgment items (offline eval):** acceptance criteria specificity, human review trigger, no blame-shifting, no overpromising, no fabricated source references, title accuracy, reply vs policy contradiction.
 
-Hard-fail items (block export): R-04, R-13, R-14, R-15, R-17. All others add quality flags but allow export with review.
+Five items are hard-fail (block export): task field completeness, the three noise-enforcement checks (null reply, empty tasks, empty quotes), and confidence field populated. All others add quality flags but allow export with review.
 
 ---
 
@@ -235,7 +235,7 @@ Python computes everything else: cluster_id, cluster_members, signal_strength, i
 | v6 | Reply opening/closing frameworks, task architecture, priority/deadline rules | Complaint empathy incomplete, Engineering receiving direct implementation tasks, High priority with no deadline, model over-generating its own quality_flags |
 | v7 | Verbatim normalization (quote style + case), model quality_flag ownership, conciseness | 3 false-positive fabricated_quote flags from punctuation differences; 28 quality_flags in v6 (mostly model-generated noise); verbose outputs |
 | v8 | Three patterns from human eval Round 3 | Internal clause IDs leaked to reply_draft; model invented assignee_team values; apology logic inverted (apologized for customer-caused situations, not system failures) |
-| v9 | Four issues from self-audit | Feature requests still splitting into redundant tasks; team name duplicated in task text; duplicate prompt section confusing model; apology fix over-applied to carrier failures |
+| v9 | Single-task rule for feature requests, team-name dedup, prompt section merge, apology scope narrowed | Self-audit found 4 remaining issues after v8 |
 
 **Four auto-check bugs found and fixed during this stage:**
 
