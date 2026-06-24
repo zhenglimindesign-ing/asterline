@@ -580,6 +580,7 @@
                   <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; background:#ECEDFC; padding:3px 8px; border-radius:3px; white-space:nowrap;">rich context</span>
                 </div>
               </button>
+              <button onClick="{{ browseVelaPay }}" style="background:none; border:none; padding:0; margin:-4px 0 0 0; font-family:'JetBrains Mono',monospace; font-size:11px; color:#2438C8; cursor:pointer; text-align:left;">Browse source data & context docs →</button>
               <button onClick="{{ pickNoCtx }}" style="{{ packNoCtxStyle }}">
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
                   <div style="text-align:left;">
@@ -589,6 +590,7 @@
                   <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#936412; background:#F6EFDD; padding:3px 8px; border-radius:3px; white-space:nowrap;">no context</span>
                 </div>
               </button>
+              <button onClick="{{ browseCfpb }}" style="background:none; border:none; padding:0; margin:-4px 0 0 0; font-family:'JetBrains Mono',monospace; font-size:11px; color:#936412; cursor:pointer; text-align:left;">Sample 10 of 150 complaints →</button>
             </div>
             </sc-if>
 
@@ -963,6 +965,49 @@
     </div>
   </footer>
 
+  <div onClick="{{ closeBrowse }}" style="position:fixed; inset:0; z-index:75; background:rgba(26,25,22,0.42); display:{{ browseDisplay }}; align-items:center; justify-content:center; padding:24px;">
+    <div class="rsp-modal" onClick="{{ stopProp }}" style="background:#fff; border:1px solid #E5E2DB; border-radius:10px; max-width:640px; width:100%; max-height:80vh; overflow:auto; box-shadow:0 24px 60px rgba(26,25,22,0.28);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid #EFEDE6; position:sticky; top:0; background:#fff; z-index:1;">
+        <span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#1A1916;">{{ browseTitle }}</span>
+        <button onClick="{{ closeBrowse }}" style="background:none; border:none; font-size:22px; color:#908E83; cursor:pointer; line-height:1; padding:0 4px;">×</button>
+      </div>
+      <sc-if value="{{ browseHasTabs }}">
+      <div style="display:flex; gap:6px; padding:12px 20px; border-bottom:1px solid #EFEDE6; position:sticky; top:52px; background:#fff; z-index:1;">
+        <button onClick="{{ browseTabFeedback }}" style="{{ browseTabFeedbackStyle }}">Feedback ({{ browseItemCount }})</button>
+        <button onClick="{{ browseTabContext }}" style="{{ browseTabContextStyle }}">Context docs ({{ browseClauseCount }})</button>
+      </div>
+      </sc-if>
+      <div style="padding:0; display:{{ browseFeedbackDisplay }};">
+        <sc-for list="{{ browseItems }}" as="bi">
+          <div style="padding:14px 20px; border-bottom:1px solid #F1EFE8;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#2438C8; background:#ECEDFC; padding:3px 7px; border-radius:3px;">{{ bi.id }}</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#908E83;">{{ bi.channel }}</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#A2A095;">{{ bi.account }}</span>
+            </div>
+            <div style="font-size:13px; line-height:1.55; color:#46443D; white-space:pre-line; max-height:120px; overflow:hidden;">{{ bi.text }}</div>
+          </div>
+        </sc-for>
+        <div style="padding:12px 20px; border-top:1px solid #EFEDE6; background:#FBFAF6;">
+          <div style="font-size:12px; color:#A2A095; line-height:1.5;">Emails and phone numbers are auto-redacted. Human names are not caught by regex — a documented v1 limitation.</div>
+        </div>
+      </div>
+      <div style="padding:0; display:{{ browseContextDisplay }};">
+        <sc-for list="{{ browseClauses }}" as="cg">
+          <div style="padding:14px 20px 6px; border-bottom:1px solid #F1EFE8;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83; margin-bottom:10px;">{{ cg.group }}</div>
+            <sc-for list="{{ cg.items }}" as="cl">
+              <div style="display:flex; gap:12px; padding:8px 0; border-top:1px solid #F8F7F3; align-items:start;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#2438C8; background:#ECEDFC; padding:3px 7px; border-radius:3px; white-space:nowrap; flex:none;">{{ cl.id }}</span>
+                <span style="font-size:13px; line-height:1.5; color:#46443D;">{{ cl.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
   <div onClick="{{ closeViewer }}" style="position:fixed; inset:0; z-index:80; background:rgba(26,25,22,0.42); display:{{ viewerDisplay }}; align-items:center; justify-content:center; padding:24px;">
     <div class="rsp-modal" onClick="{{ stopProp }}" style="background:#fff; border:1px solid #E5E2DB; border-radius:10px; max-width:560px; width:100%; max-height:80vh; overflow:auto; box-shadow:0 24px 60px rgba(26,25,22,0.28);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid #EFEDE6; position:sticky; top:0; background:#fff;">
@@ -1014,6 +1059,11 @@ class Component extends DCLogic {
     csvFileName: "",
     csvRows: [],
     contextDocContent: "",
+    browseOpen: false,
+    browseItems: [],
+    browseTitle: "",
+    browseTab: "feedback",
+    browseHasTabs: false,
   };
 
   componentDidMount() {
@@ -1287,6 +1337,24 @@ class Component extends DCLogic {
     reader.readAsText(f);
   }
   clearContextDoc() { this.setState({ contextDocName: "", contextDocContent: "" }); }
+
+  browseVelaPay() {
+    const d = this.state.data; if (!d) return;
+    const items = Object.entries(d.FEEDBACK).map(([id, f]) => ({
+      id, channel: f.channel, account: f.account, text: this.redactPII(f.raw),
+    }));
+    this.setState({ browseItems: items, browseTitle: "Vela Pay — source data & context", browseOpen: true, browseTab: "feedback", browseHasTabs: true });
+  }
+  browseCfpb() {
+    const d = this.state.data; if (!d || !d.PUBLIC_REVIEWS) return;
+    const shuffled = [...d.PUBLIC_REVIEWS];
+    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+    const items = shuffled.slice(0, 10).map((r) => ({
+      id: r.id, channel: "CFPB complaint", account: "public record", text: r.text,
+    }));
+    this.setState({ browseItems: items, browseTitle: "CFPB — 10 of 150 sampled", browseOpen: true, browseTab: "feedback", browseHasTabs: false });
+  }
+  closeBrowse() { this.setState({ browseOpen: false, browseItems: [] }); }
 
   glyph(intent) { return ({ actionable_bug: "●", feature_request: "▲", complaint: "■", praise: "+", noise: "—" })[intent] || "●"; }
   dotStyles(signal) {
@@ -1602,6 +1670,28 @@ class Component extends DCLogic {
       ],
       goToPick: () => this.setState({ pstage: "pick", selected: null }),
       rubricUrl: repoUrl + "/blob/main/eval/05-rubric-v1.md",
+      browseOpen: !!s.browseOpen,
+      browseDisplay: s.browseOpen ? "flex" : "none",
+      browseTitle: s.browseTitle || "",
+      browseItems: s.browseItems || [],
+      browseHasTabs: !!s.browseHasTabs,
+      browseItemCount: (s.browseItems || []).length,
+      browseTabFeedback: () => this.setState({ browseTab: "feedback" }),
+      browseTabContext: () => this.setState({ browseTab: "context" }),
+      browseTabFeedbackStyle: this.tabStyle(s.browseTab === "feedback"),
+      browseTabContextStyle: this.tabStyle(s.browseTab === "context"),
+      browseFeedbackDisplay: s.browseTab === "feedback" ? "block" : "none",
+      browseContextDisplay: s.browseTab === "context" ? "block" : "none",
+      browseClauseCount: d ? Object.keys(d.CLAUSES || {}).length : 0,
+      browseClauses: d ? [
+        { group: "Support Policy", items: Object.entries(d.CLAUSES).filter(([k]) => k.startsWith("SP-")).map(([id, c]) => ({ id, text: c.text })) },
+        { group: "Tone & Voice", items: Object.entries(d.CLAUSES).filter(([k]) => k.startsWith("TG-")).map(([id, c]) => ({ id, text: c.text })) },
+        { group: "Known Issues", items: Object.entries(d.CLAUSES).filter(([k]) => k.startsWith("KI-")).map(([id, c]) => ({ id, text: c.text })) },
+        { group: "Roadmap", items: Object.entries(d.CLAUSES).filter(([k]) => k.startsWith("RM-")).map(([id, c]) => ({ id, text: c.text })) },
+      ] : [],
+      closeBrowse: () => this.closeBrowse(),
+      browseVelaPay: () => this.browseVelaPay(),
+      browseCfpb: () => this.browseCfpb(),
     };
   }
 }
