@@ -45,16 +45,16 @@ Built with Python and Anthropic's Claude API, deployed on Vercel. Stages are spl
 | 7. Work-pack generation | Sonnet · per cluster + Python | [`generate.txt`](pipeline/prompts/generate.txt) | CLU-001 → title, problem brief, key quotes, tasks, reply draft, review flags · Sonnet generates; Python overwrites deterministic fields and runs 14 auto-checks |
 | 8. Export | Python | — | → Markdown for humans + JSON shaped for Jira or Linear |
 
-**Model selection.**
-Haiku for classification and clustering — short-output tasks where speed and cost matter more than prose quality.
+**Model selection.**  
+Haiku for classification and clustering — short-output tasks where speed and cost matter more than prose quality.  
 Sonnet for generation — Haiku was tested early and failed on constraint density across 14 rubric rules. Opus not needed; Sonnet meets the rubric at acceptable quality.
 
-**Deterministic/model split.**
-The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags.
+**Deterministic/model split.**  
+The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags.  
 Python computes everything else: cluster_id, cluster_members, signal_strength, intent_type, dimension, confidence. This keeps model output auditable and deterministic logic testable without an API call.
 
-**Nothing sends itself.**
-Tasks are recommendations, not filed tickets.
+**Nothing sends itself.**  
+Tasks are recommendations, not filed tickets.  
 Any reply touching money, timing, or policy is blocked by a review flag until a human verifies it.
 
 ---
