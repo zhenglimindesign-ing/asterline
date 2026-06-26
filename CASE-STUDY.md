@@ -46,7 +46,7 @@ Built for whoever ends up with the feedback inbox — no assumed role, no assume
 
 ### 2.1 Pipeline
 
-Built with Python and Anthropic's Claude API (models: Haiku and Sonnet), deployed on Vercel. Stages are split between Python and LLM based on what each task requires. LLM handles language understanding: classifying intent, judging cross-item similarity, generating structured prose. Python handles everything rule-based: PII stripping, signal-strength formulas, verbatim quote verification.
+Built with Python and Anthropic's Claude API (models: Haiku and Sonnet), deployed on Vercel. Stages are split between Python and LLM based on what each task requires. LLM handles language understanding: classifying intent, judging cross-item similarity, generating structured prose. Python handles everything rule-based: PII stripping, signal-strength formulas, verbatim quote verification. This is what runs every time feedback enters the system — whether during development or when a user tries the live demo.
 
 | Stage | Executor | Prompt | Why this executor |
 |---|---|---|---|
@@ -136,6 +136,46 @@ Five items are hard-fail (block export): task field completeness, the three nois
 ---
 
 ## 4. Key Iterations
+
+The pipeline itself (§2.1) is what runs every time feedback enters the system. This section covers a separate process: how the pipeline was developed and validated — defining what "correct" looks like, measuring the pipeline against that standard, diagnosing failures, and fixing them.
+
+With the evaluation framework defined in §3 — a 20-item [golden set](data/03-golden-set-labeled.md), a 20-rule [rubric](eval/05-rubric-v1.md), and a 4-axis [taxonomy](eval/04-taxonomy-and-schema.md) — the iteration process began.
+
+**Stage 1 — Classification iteration (5 prompt versions, 1 reverted)**
+
+| Step | Input | What happened | Output | Who |
+|---|---|---|---|---|
+| Run | Initial classify prompt + 20 golden set items | Classified each item via Haiku | Classification results | Automated |
+| Score | Results + golden set labels | `eval.py` compared each output to ground truth | Accuracy: overall 40% | Automated |
+| Diagnose | Wrong items list | Identified why specific items were misclassified | e.g. "noise definition too narrow — casual inquiries classified as feature_request" | I judged |
+| Fix prompt | Diagnosis | Modified prompt rules or added examples | Updated classify prompt | Claude Code wrote, I reviewed |
+| Re-score | Updated prompt | Re-ran eval.py | overall 45% ✓ | Automated |
+| Repeat | 5 versions total | Same loop each round; one version regressed and was reverted | overall 40% → 65% | I decided keep/revert |
+
+**Stage 2 — Clustering iteration (3 prompt versions)**
+
+Cluster hypotheses — which items should merge, which should stay separate — were defined as part of the golden set (§3.2).
+
+| Step | Input | What happened | Output | Who |
+|---|---|---|---|---|
+| Run | Initial cluster prompt + 29 classified items | Clustered all items via Haiku (single call) | 22 clusters (all singletons) | Automated |
+| Compare | Clusters + hypotheses | `cluster.py` compared output to hypothesis table | Merges expected but didn't happen | Automated + I judged |
+| Diagnose | Comparison results | Identified wrong design assumption ("praise almost always singletons") and eval gap (no positive-merge test data) | Two issues: prompt assumption + dataset coverage gap | I judged |
+| Fix | Diagnosis | Changed merge threshold rules + added 4 test items (FB-26/27/28/29) to dataset | Updated cluster prompt + expanded dataset | Claude Code wrote, I reviewed; I decided to add test data |
+| Validate | Updated prompt + data | Re-ran clustering | Praise merged ✓ Adversarial split held ✓ Positive controls merged ✓ | Automated + I verified |
+
+**Stage 3 — Generation iteration (9 prompt versions, 4 human eval rounds)**
+
+| Step | Input | What happened | Output | Who |
+|---|---|---|---|---|
+| Run | Initial generate prompt + clusters + context docs | Generated 22 work packs via Sonnet | 22 work packs | Automated |
+| Auto-check | Work packs | 14 rubric rules run as code inside `generate.py` | quality_flags (16/22 flagged fabricated_quote) | Automated |
+| Diagnose auto-check | Flags | Investigated: are these real failures or code bugs? | Found: verbatim check bug (whitespace mismatch), not model error | I + Claude Code diagnosed |
+| Fix code | Diagnosis | Fixed auto-check logic | `generate.py` updated | Claude Code wrote, I reviewed |
+| Human eval | Work packs (Round 1, 8 clusters) | Read each work pack, scored against 7 human rubric items | 10 systemic issues found (overpromising, no empathy, fabricated tickets, etc.) | I reviewed |
+| Fix prompt | Human eval findings | Addressed all 10 issues in one prompt version | Updated generate prompt | Claude Code wrote, I reviewed |
+| Verify | Updated prompt | Re-ran + spot-checked same 8 clusters | All 10 patterns resolved ✓ New auto-check bug surfaced | Automated + I spot-checked |
+| Repeat | 9 versions total | Each round: auto-check + human eval sample | 4 rounds, 12 clusters reviewed, 4 code bugs fixed | I reviewed + decided |
 
 Full entry-by-entry log with every prompt version and score delta: [`docs/06-iteration-log.md`](docs/06-iteration-log.md). Five examples below, chosen to show different kinds of iteration — a clean prompt fix, a failed attempt that was reverted, a corrected design assumption, an eval-design gap that required new data, and a human-eval-driven batch fix across the generation prompt.
 
