@@ -75,18 +75,22 @@ Intent and dimension are orthogonal axes: intent answers "should this become an 
 
 **Regex PII redaction (v1 known limitation).** Structured PII — email addresses, phone numbers, transaction reference numbers — is caught by regex and replaced before any text is extracted for quotes or reply drafts. Human names and company names are not reliably caught by regex and are not redacted in v1. This is an honest scope boundary, not an oversight: the demo data is synthetic, and the limitation is documented as a v2 candidate (introducing NER-based redaction).
 
-**Human-in-the-loop at three positions, blocking at one.** Three HITL touchpoints exist: (1) after clustering, before generation — users can edit, merge, or split clusters (advisory, non-blocking); (2) before export — items flagged `needs_human_review` require human confirmation before the reply draft is released (blocking, but only for flagged items); (3) after generation — users can edit the work pack before export (advisory). Blocking review is reserved for the highest-cost scenarios: money-touching or timing-sensitive replies, and low-confidence clusters.
+**Human-in-the-loop at one enforced position, two more planned.** Review flags lock the reply draft — the Send button is disabled and each flag must be individually cleared by a human before the reply can be sent. Export (Markdown/JSON) remains available regardless, so teams can review flagged work packs in their own tools. Two additional HITL touchpoints are designed for v2: cluster editing before generation (merge, split, or reassign items) and work pack field editing before export.
 
-**Severity as two axes (impact × urgency).** A single severity score cannot distinguish between a high-impact event with no time pressure (a known bug affecting reconciliation) and a low-impact event with immediate urgency (a potential policy breach on a small transaction). Splitting severity into impact and urgency allows the pipeline to correctly label both without forcing a comparison between incommensurable cases.
+**Noise produces an audit trail, not a reply.** When feedback is classified as noise, the pipeline generates a minimal work pack (title and brief only) for traceability, but no tasks and no reply draft. Customer-facing responses to noise items are a support team responsibility — the pipeline is a triage tool, not a customer service system.
+
+**Severity as two axes (impact × urgency).** A single severity score cannot distinguish between a high-impact event with no time pressure (a known bug affecting reconciliation) and a low-impact event with immediate urgency (a potential policy breach on a small transaction). Splitting severity into impact and urgency allows the pipeline to correctly label both without forcing a comparison between incommensurable cases. Impact and urgency are labeled per feedback item during classification. Task priority and deadline in the work pack are set separately by the model during generation, based on the content and applicable SLA — not derived from the classification labels.
+
+**Signal-strength scoring (deterministic).** Signal-strength is computed in Python, not by the model. The rules, in priority order: (1) ≥2 items from ≥2 different accounts → High. (2) 1 item with impact=High → High. (3) ≥2 items from the same account → Medium. (4) 1 item with impact=Medium → Medium. (5) Otherwise → Low.
 
 ### 2.3 Built-in dataset (Vela Pay)
 
-The demo uses Vela Pay, a synthetic B2B stablecoin payments platform, as its product context. Four context documents were authored to support RAG citation:
+A built-in dataset lets users explore the full pipeline output without providing their own data. The demo uses Vela Pay, a synthetic B2B stablecoin payments platform, as its product context. Four context documents were authored to support RAG citation ([`data/01-vela-pay-context-docs.md`](data/01-vela-pay-context-docs.md)):
 
-- **Product one-pager**: features, pricing, out-of-scope items
-- **Support policy (SP-1 through SP-10)**: refund rules, dispute SLAs, KYC/KYB thresholds, account recovery
-- **Tone & voice guideline (TG-1 through TG-6)**: communication principles with positive/negative examples
-- **Known issues & roadmap (KI-1 through KI-4, RM-1 through RM-4)**: documented bugs and planned features
+- **Product one-pager (§1)**: features, pricing, out-of-scope items
+- **Support policy (§2, SP-1 through SP-10)**: refund rules, dispute SLAs, KYC/KYB thresholds, account recovery
+- **Tone & voice guideline (§3, TG-1 through TG-6)**: communication principles with positive/negative examples
+- **Known issues & roadmap (§4, KI-1 through KI-4, RM-1 through RM-4)**: documented bugs and planned features
 
 25 synthetic feedback items were authored across five channels (support tickets, email, app reviews, feature request forms, survey responses), with realistic metadata (timestamp UTC+0, contact email, account ID) and embedded PII in raw_text where channel-appropriate. The dataset is intentionally skewed toward novel issues (68%) with a minority matching known context doc clauses (32%), reflecting realistic feedback distribution.
 
@@ -96,7 +100,7 @@ The demo uses Vela Pay, a synthetic B2B stablecoin payments platform, as its pro
 
 ### 3.1 Taxonomy
 
-The taxonomy has four axes. Values were derived from golden set labeling and may evolve as the dataset grows.
+The taxonomy has four axes, developed during the labeling process — as feedback items were labeled, the categories and their boundaries took shape.
 
 **Intent** (5 values): `actionable_bug`, `feature_request`, `complaint`, `praise`, `noise`
 
