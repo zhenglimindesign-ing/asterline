@@ -69,7 +69,7 @@ Classification overall accuracy: **40% (v0) → 65% (v4)** across 5 prompt versi
 | Clustering | 3 prompt versions | 22 clusters; no false merges; true-merge validated on real data |
 | Generation | 9 prompt versions, 4 human-eval rounds | 22/22 work packs; 0 fabricated quotes; 7 quality flags |
 
-Evaluated against a 20-item hand-labeled golden set and a 20-rule rubric (14 automated, 7 human-judgment). The failed v3 attempt and its eval output are preserved ([`eval-results-v3-reverted.json`](docs/eval-results-v3-reverted.json)). Full accuracy tables (v0–v4) and generation iteration history (v1–v9): [case study §5](CASE-STUDY.md#5-results).
+Evaluated against a 20-item hand-labeled golden set and a 21-item rubric (14 automated, 7 human-judgment). The failed v3 attempt and its eval output are preserved ([`eval-results-v3-reverted.json`](docs/eval-results-v3-reverted.json)). Full accuracy tables (v0–v4) and generation iteration history (v1–v9): [case study §5](CASE-STUDY.md#5-results).
 
 ---
 

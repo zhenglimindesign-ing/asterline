@@ -4,7 +4,7 @@
 
 > **What:** An 8-stage pipeline that turns raw user feedback into traceable work packs — each backed by source quotes, grounded in policy documents, and flagged for human review where stakes are high. Deployed live at [asterline.liminzheng.com](https://asterline.liminzheng.com).
 >
-> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. Both stages evaluated against a 20-rule rubric — 14 checks run automatically on every output, 7 scored by human judgment.
+> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. Both stages evaluated against a 21-item rubric — 14 checks run automatically on every output, 7 scored by human judgment.
 >
 > **What I owned:** Pipeline architecture, prompt design and iteration (17+ versions), evaluation system, output schema, and all product decisions. Claude Code (AI coding tool) wrote the Python and frontend; I directed what to build, how to evaluate it, and when to revert.
 
@@ -129,9 +129,9 @@ A golden set is a hand-labeled subset of the data used as ground truth — the p
 
 ### 3.3 Rubric
 
-20 rubric items derived inductively from three worked examples, with two added during generation-stage iteration (R-19, R-20). One additional auto-check (R-PA: clause IDs in reply_draft) was added during generation iteration, bringing the runtime total to 14 automated checks. Each item specifies the field checked, the yes/no check, the evaluation mode, and the failure action. Full rubric: [`eval/05-rubric-v1.md`](eval/05-rubric-v1.md).
+21 rubric items derived inductively from three worked examples, with three added during generation-stage iteration (R-19, R-20, R-21). Each item specifies the field checked, the yes/no check, the evaluation mode, and the failure action. Full rubric: [`eval/05-rubric-v1.md`](eval/05-rubric-v1.md).
 
-**14 automated items (runtime checks):** timestamp format, quote count, quote verbatim fidelity, task field completeness, review_flags blocks field, banned filler phrases, money/timing first sentence, noise: null reply, noise: empty tasks, noise: empty quotes, cluster_members validity, confidence field, source_ref validity, clause IDs in reply_draft.
+**14 automated items (runtime checks):** timestamp format, quote count, quote verbatim fidelity, task field completeness, review_flags blocks field, banned filler phrases, money/timing first sentence, noise: null reply, noise: empty tasks, noise: empty quotes, cluster_members validity, confidence field, low confidence enforces human review, clause IDs must not appear in reply_draft.
 
 **7 human-judgment items (offline eval):** acceptance criteria specificity, human review trigger, no blame-shifting, no overpromising, no fabricated source references, title accuracy, reply vs policy contradiction.
 
@@ -143,7 +143,7 @@ Five items are hard-fail (block export): task field completeness, the three nois
 
 The pipeline itself (§2.1) is what runs every time feedback enters the system. This section covers a separate process: how the pipeline was developed and validated — defining what "correct" looks like, measuring the pipeline against that standard, diagnosing failures, and fixing them.
 
-With the evaluation framework defined in §3 — a 20-item [golden set](data/03-golden-set-labeled.md), a 20-rule [rubric](eval/05-rubric-v1.md), and a 4-axis [taxonomy](eval/04-taxonomy-and-schema.md) — the iteration process began.
+With the evaluation framework defined in §3 — a 20-item [golden set](data/03-golden-set-labeled.md), a 21-item [rubric](eval/05-rubric-v1.md), and a 4-axis [taxonomy](eval/04-taxonomy-and-schema.md) — the iteration process began.
 
 **Stage 1 — Classification iteration (5 prompt versions, 1 reverted)**
 
@@ -313,7 +313,7 @@ The live pipeline uses the same prompts and models as the offline pipeline (Haik
 
 - **Pipeline architecture** — the 8-stage sequence, the deterministic/model split, which stages use which model and why
 - **Prompt design and iteration** — 5 classification versions, 3 clustering versions, 9 generation versions, each driven by eval failures I identified and documented
-- **Evaluation system** — golden set curation, rubric design (20 rules, inductively derived), scoring methodology, the decision to revert v3 rather than push forward
+- **Evaluation system** — golden set curation, rubric design (21 rules, inductively derived), scoring methodology, the decision to revert v3 rather than push forward
 - **Output schema** — work-pack field definitions, quality_flags taxonomy, review_flags trigger conditions, the split of severity into impact × urgency
 - **Product decisions** — what to automate vs. require human review, what limitations to accept in v1, what upgrade triggers to document for v2
 

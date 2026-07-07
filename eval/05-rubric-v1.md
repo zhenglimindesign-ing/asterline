@@ -1,12 +1,12 @@
 # Asterline — Eval Rubric (v1)
-# 20 items derived from 3 worked examples (FB-05, FB-03, FB-20)
+# 21 items: 20 derived from 3 worked examples (FB-05, FB-03, FB-20), plus R-21 added during generation-stage iteration
 # Each item: field checked / check (yes/no) / mode / fail action
 #
 # Mode:
 #   Auto = programmatic runtime check (runs in-product on every output)
 #   Human = offline eval only (requires human judgment; not automated in v1)
 #
-# Auto items (13): R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19
+# Auto items (14): R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19, R-21
 # Human items (7): R-05, R-07, R-10, R-11, R-12, R-18, R-20
 #
 # Fail actions:
@@ -87,6 +87,7 @@
 - **Check**: When source_refs = [], reply_draft contains no references to specific policy clauses, SP-x numbers, or stated company commitments — it must acknowledge the gap plainly rather than inventing a policy
 - **Mode**: Human
 - **Fail action**: quality_flag: fabricated_source_ref
+- **Implementation note**: a narrower Auto sub-check runs in code — if source_refs[] is non-empty, each cited clause ID is verified against the context doc and flagged `fabricated_source_ref` if not found. This automates the "does the ID exist" case only; full R-12 compliance (does the *content* match the clause) still requires human judgment. See `docs/13-workpack-spec.md`.
 
 ## R-13 — Noise: reply_draft must be null
 - **Field(s)**: intent_type, reply_draft
@@ -138,13 +139,20 @@
 - **Mode**: Human
 - **Fail action**: `quality_flag: policy_conflict`
 
+## R-21 — No internal clause IDs in reply_draft
+- **Field(s)**: `reply_draft`
+- **Check**: reply_draft contains no raw clause ID references (e.g. "(SP-4)") — internal identifiers must be expressed in plain language for customer-facing text
+- **Mode**: Auto (regex: detect clause ID patterns)
+- **Fail action**: `quality_flag: internal_ref_in_reply`
+- Added during generation-stage iteration (informally referred to as R-PA before being given a formal number); see `pipeline/generate.py`.
+
 ---
 
 ## Rubric summary by mode
 
 | Mode | Items | Notes |
 |---|---|---|
-| Auto (runtime) | R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19 | These 13 run programmatically on every pipeline output |
+| Auto (runtime) | R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19, R-21 | These 14 run programmatically on every pipeline output |
 | Human (offline) | R-05, R-07, R-10, R-11, R-12, R-18, R-20 | These 7 require human judgment; scored during offline eval against golden set |
 
 ## Rubric summary by fail severity
@@ -152,4 +160,4 @@
 | Severity | Items | Effect |
 |---|---|---|
 | hard_fail | R-04, R-13, R-14, R-15, R-17 | Work pack blocked from export; must be resolved |
-| quality_flag only | All others, incl. R-19, R-20 | Work pack exported with flag; reviewer decides next action |
+| quality_flag only | All others, incl. R-19, R-20, R-21 | Work pack exported with flag; reviewer decides next action |

@@ -276,7 +276,7 @@
           <div class="rsp-trust" style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Eval-first, not vibes</div>
-              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">20-rule rubric · scored every version</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">21-item rubric · scored every version</div>
               <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">A rubric and 20 hand-labeled examples defined "correct" before any output ran. Every version scored against the same standard — including one that regressed, was reverted, and kept in the log.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
@@ -393,7 +393,7 @@
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; overflow:hidden;">
               <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
                 <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#5A584F;">What counts as a pass</span>
-                <a href="{{ rubricUrl }}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#2438C8; letter-spacing:0.06em; text-decoration:underline; text-underline-offset:2px;">5 of 20 — see all →</a>
+                <a href="{{ rubricUrl }}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#2438C8; letter-spacing:0.06em; text-decoration:underline; text-underline-offset:2px;">5 of 21 — see all →</a>
               </div>
               <sc-for list="{{ rubric }}" as="r" hint-placeholder-count="5">
                 <div style="display:grid; grid-template-columns:46px 1fr 88px; gap:12px; align-items:center; padding:13px 18px; border-bottom:1px solid #F1EFE8;">
@@ -1450,11 +1450,11 @@ class Component extends DCLogic {
 
     // rubric sample
     const rubric = [
-      { id: "R-01", text: "Intent type matches the golden label", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
-      { id: "R-04", text: "Every quote appears verbatim in a member's raw text", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
-      { id: "R-09", text: "Every source ref resolves to a real context clause", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
-      { id: "R-11", text: "Tasks are appropriate and correctly scoped to the issue", kind: "human", kindColor: "#936412", kindBg: "#F6EFDD" },
-      { id: "R-18", text: "Reply tone matches the policy and the situation", kind: "human", kindColor: "#936412", kindBg: "#F6EFDD" },
+      { id: "R-01", text: "All time references are absolute timestamps, no relative expressions", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
+      { id: "R-03", text: "Every quote appears verbatim in a member's raw text", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
+      { id: "R-04", text: "Every task has a valid assignee, priority, and acceptance criteria", kind: "auto", kindColor: "#2438C8", kindBg: "#ECEDFC" },
+      { id: "R-11", text: "No promises outside Vela Pay's direct control", kind: "human", kindColor: "#936412", kindBg: "#F6EFDD" },
+      { id: "R-18", text: "Title accurately reflects the cluster's core problem", kind: "human", kindColor: "#936412", kindBg: "#F6EFDD" },
     ];
 
     // iteration bars
