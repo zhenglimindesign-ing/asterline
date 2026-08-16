@@ -44,6 +44,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pipeline.data_loader import load_feedback
 from pipeline.pii import redact
+from pipeline.runtime_checks import (
+    apply_runtime_guardrails,
+    get_cluster_intent_type,
+    parse_valid_clause_ids,
+    validate_required_fields,
+)
 
 load_dotenv()
 
@@ -60,30 +66,6 @@ CONTEXT_DOCS_PATH = REPO_ROOT / "data" / "01-vela-pay-context-docs.md"
 WORKPACKS_JSON_PATH = REPO_ROOT / "pipeline" / "output" / "workpacks-v1.json"
 WORKPACKS_MD_PATH = REPO_ROOT / "pipeline" / "output" / "workpacks-v1.md"
 LOG_PATH = REPO_ROOT / "pipeline" / "output" / "workpack-generation-log.json"
-
-CONFIDENCE_RANK = {"High": 3, "Medium": 2, "Low": 1}
-RANK_TO_LABEL = {v: k for k, v in CONFIDENCE_RANK.items()}
-
-BANNED_PHRASES = [
-    "sorry for the inconvenience",
-    "sorry for any inconvenience",
-    "thank you for your patience",
-    "as quickly as possible",
-    "we apologize for",
-    "we're sorry to hear",
-]
-
-RELATIVE_TIME_RE = re.compile(
-    r"\b(yesterday|today|tomorrow|\d+\s+(day|days|hour|hours|week|weeks)\s+ago|"
-    r"recently|last\s+(week|month|year)|soon|shortly)\b",
-    re.IGNORECASE,
-)
-
-MONEY_OR_TIME_RE = re.compile(
-    r"\$\d|\d+\s*(day|days|business day)|\d{4}-\d{2}-\d{2}|VP-\d+"
-)
-
-INTERNAL_REF_RE = re.compile(r"\b(SP|KI|TG|RM)-\d+\b")
 
 _client: Optional[anthropic.Anthropic] = None
 
@@ -106,17 +88,6 @@ def _strip_code_fence(text: str) -> str:
     return text.strip()
 
 
-def parse_valid_clause_ids(context_docs_text: str) -> set:
-    """Parse valid SP-x/TG-x/KI-x/RM-x IDs from the context doc itself, not a
-    hardcoded list — keeps the doc as the single source of truth (see
-    docs/13-workpack-spec.md)."""
-    # The context doc uses two bold formats:
-    #   SP/KI: **SP-1.** Description...  (bold closes immediately after ID + period)
-    #   TG/RM: **TG-2. Full title.**  (bold spans ID + period + full title text)
-    # Only match the ID before the period — don't require ** to follow it.
-    return set(re.findall(r"\*\*((?:SP|TG|KI|RM)-\d+)\.", context_docs_text))
-
-
 def load_clusters(path: Path) -> list:
     return json.loads(path.read_text(encoding="utf-8"))["clusters"]
 
@@ -124,39 +95,6 @@ def load_clusters(path: Path) -> list:
 def load_classified(path: Path) -> dict:
     data = json.loads(path.read_text(encoding="utf-8"))
     return {r["feedback_id"]: r for r in data["results"]}
-
-
-def compute_dimension_distribution(members: list, classified: dict) -> list:
-    counts: dict = {}
-    for m in members:
-        dim = (classified.get(m, {}).get("classification") or {}).get("dimension")
-        if dim:
-            counts[dim] = counts.get(dim, 0) + 1
-    sorted_dims = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-    return [{"dimension": d, "count": c} for d, c in sorted_dims]
-
-
-def compute_cluster_confidence(members: list, classified: dict) -> str:
-    """Most conservative (lowest) confidence among cluster members."""
-    ranks = []
-    for m in members:
-        conf = (classified.get(m, {}).get("classification") or {}).get("confidence")
-        if conf in CONFIDENCE_RANK:
-            ranks.append(CONFIDENCE_RANK[conf])
-    if not ranks:
-        return "Low"
-    return RANK_TO_LABEL[min(ranks)]
-
-
-def get_cluster_intent_type(members: list, classified: dict, cluster_id: str) -> str:
-    intents = {
-        (classified.get(m, {}).get("classification") or {}).get("intent_type")
-        for m in members
-    }
-    intents.discard(None)
-    if len(intents) != 1:
-        raise ValueError(f"members have inconsistent intent_type: {intents}")
-    return next(iter(intents))
 
 
 def build_member_block(members: list, feedback_by_id: dict) -> str:
@@ -183,193 +121,6 @@ def generate_workpack_content(intent_type: str, members_block: str, context_docs
     )
     raw = response.content[0].text
     return json.loads(_strip_code_fence(raw))
-
-
-def apply_deterministic_fields(
-    content: dict, cluster: dict, intent_type: str, dimension_dist: list,
-    confidence: str, valid_clause_ids: set, feedback_by_id: dict,
-) -> dict:
-    """Overwrite/enforce all deterministic fields and run auto rubric checks."""
-    workpack = dict(content)
-    workpack["cluster_id"] = cluster["cluster_id"]
-    workpack["cluster_members"] = cluster["cluster_members"]
-    workpack["signal_strength"] = cluster["signal_strength"]
-    workpack["intent_type"] = intent_type
-    workpack["dimension"] = dimension_dist
-    workpack["confidence"] = confidence
-
-    # Only carry forward model-generated quality_flags that are in the allowed set.
-    # ambiguous_timestamp and fabricated_quote are owned by the auto-check below —
-    # any model-generated versions are removed to prevent duplicates and suppress
-    # false "missing timestamp in metadata" flags introduced in v6 when the model
-    # became timestamp-aware from the deadline derivation rules.
-    AUTO_CHECK_OWNED_FLAGS = {"ambiguous_timestamp", "fabricated_quote", "tone_violation", "fabricated_source_ref"}
-    quality_flags = [
-        f for f in (workpack.get("quality_flags") or [])
-        if f.get("flag") not in AUTO_CHECK_OWNED_FLAGS
-    ]
-    review_flags = list(workpack.get("review_flags") or [])
-
-    # R-13/14/15: noise enforcement, regardless of model output
-    if intent_type == "noise":
-        workpack["reply_draft"] = None
-        workpack["tasks"] = []
-        workpack["key_quotes"] = []
-
-    # tasks=[] for praise too (schema field-rules table)
-    if intent_type == "praise":
-        workpack["tasks"] = []
-
-    # R-02: truncate key_quotes to 2
-    quotes = workpack.get("key_quotes") or []
-    if len(quotes) > 2:
-        quotes = quotes[:2]
-        workpack["key_quotes"] = quotes
-
-    # R-03: verbatim check against the union of all members' raw_text.
-    # Normalization before comparison handles four known false-positive sources:
-    #   1. Whitespace: markdown mid-sentence line wraps (\n) vs model's space-joined text.
-    #      Fixed 2026-06-16 — was firing on most quotes across the dataset.
-    #   2. First-character case: model capitalizes the first letter of a mid-sentence
-    #      excerpt when using it as a standalone quote.
-    #   3. Quote style: model converts internal double-quotes to single-quotes inside
-    #      a JSON string to avoid nesting conflicts ("repeat" → 'repeat').
-    #   4. Trailing punctuation: model sometimes drops the trailing period.
-    # All four are surface formatting differences, not fabrication. The check's purpose
-    # is to catch cases where the model invented content not present in source at all.
-    def _norm_source(s: str) -> str:
-        # Normalize source for verbatim check: whitespace + quote style + full lowercase.
-        s = re.sub(r'\s+', ' ', s).strip()
-        s = s.replace(chr(0x201C), chr(0x27)).replace(chr(0x201D), chr(0x27)).replace('"', chr(0x27))
-        return s.lower()
-
-    def _norm_quote(s: str) -> str:
-        # Same as _norm_source plus strip trailing punctuation.
-        return _norm_source(s).rstrip('.,;!?')
-
-    all_raw_text = _norm_source(
-        ' '.join(redact(feedback_by_id[m]['raw_text'])[0] for m in cluster['cluster_members'])
-    )
-    for q in quotes:
-        if _norm_quote(q) not in all_raw_text:
-            quality_flags.append({
-                "flag": "fabricated_quote",
-                "reason": f"quote not found verbatim in any cluster member's raw_text: {q!r}",
-                "remediation": "Remove this key_quote or replace it with a verbatim substring from the source feedback.",
-            })
-
-    # R-16: cluster_members reference validity
-    invalid_members = [m for m in cluster["cluster_members"] if m not in feedback_by_id]
-    if invalid_members:
-        quality_flags.append({
-            "flag": "invalid_cluster_reference",
-            "reason": f"unknown feedback_ids: {invalid_members}",
-            "remediation": "Check pipeline/output/classified-25-v4.json — these IDs are missing from the classified set.",
-        })
-
-    # R-06: every needs_human_review flag must have a non-empty blocks field
-    for f in review_flags:
-        if f.get("flag") == "needs_human_review" and not f.get("blocks"):
-            quality_flags.append({
-                "flag": "unclear_execution_order",
-                "reason": "needs_human_review flag is missing a populated blocks field",
-                "remediation": "Add a 'blocks' field to the review_flag indicating which output field requires human sign-off.",
-            })
-
-    # R-19: confidence=Low -> needs_human_review must be present
-    if confidence == "Low":
-        has_flag = any(f.get("flag") == "needs_human_review" for f in review_flags)
-        if not has_flag:
-            review_flags.append({
-                "flag": "needs_human_review",
-                "reason": "Pipeline confidence is Low for this cluster.",
-                "blocks": "reply_draft",
-            })
-        quality_flags.append({
-            "flag": "low_confidence",
-            "reason": "confidence=Low for this cluster",
-            "remediation": "Review the classification output for this cluster's members before acting on the work pack.",
-        })
-
-    # R-01: relative-time scan — only flags when the GENERATED OUTPUT contains a
-    # relative time expression (e.g. "yesterday", "6 days ago"). Does NOT flag
-    # because the source feedback lacked a timestamp — that is a data gap, not a
-    # generation error. The model is told to use absolute timestamps; this check
-    # catches cases where it slipped back to relative language despite the rule.
-    generated_text = " ".join(filter(None, [
-        workpack.get("problem_brief") or "",
-        " ".join(quotes),
-        workpack.get("reply_draft") or "",
-    ]))
-    if RELATIVE_TIME_RE.search(generated_text):
-        quality_flags.append({
-            "flag": "ambiguous_timestamp",
-            "reason": "relative time expression detected in problem_brief/key_quotes/reply_draft",
-            "remediation": "Replace the relative expression with the absolute UTC+0 timestamp from the feedback metadata, or remove the time reference if the timestamp is unknown.",
-        })
-
-    # R-08: banned filler phrases
-    reply_lower = (workpack.get("reply_draft") or "").lower()
-    for phrase in BANNED_PHRASES:
-        if phrase in reply_lower:
-            quality_flags.append({
-                "flag": "tone_violation",
-                "reason": f"banned phrase detected: {phrase!r}",
-                "remediation": "Remove or rewrite this sentence — state what happened and what happens next instead.",
-            })
-
-    # R-09: money/timing-first sentence check
-    # Only fires for payment/SLA clauses (SP-1 through SP-9). Security and compliance
-    # clauses (SP-10, SP-11) don't require a transaction/amount/timing opener.
-    PAYMENT_SP_REFS = {"SP-1", "SP-2", "SP-3", "SP-4", "SP-5", "SP-6", "SP-7", "SP-8", "SP-9"}
-    source_refs = workpack.get("source_refs") or []
-    has_payment_sp_ref = any(ref in PAYMENT_SP_REFS for ref in source_refs)
-    reply_draft = workpack.get("reply_draft")
-    if intent_type in ("actionable_bug", "complaint") and has_payment_sp_ref and reply_draft:
-        first_sentence = re.split(r"(?<=[.!?])\s", reply_draft.strip())[0]
-        if not MONEY_OR_TIME_RE.search(first_sentence):
-            quality_flags.append({
-                "flag": "tone_violation",
-                "reason": "first sentence of reply_draft does not reference transaction/amount/timing",
-                "remediation": "Revise the first sentence to address the money or timing question directly (per TG-5).",
-            })
-
-    # R-PA: clause IDs must not appear in reply_draft (internal refs are for source_refs only)
-    if reply_draft and INTERNAL_REF_RE.search(reply_draft):
-        for match in INTERNAL_REF_RE.finditer(reply_draft):
-            quality_flags.append({
-                "flag": "internal_ref_in_reply",
-                "reason": f"clause ID {match.group()!r} found in reply_draft — internal identifiers must not appear in customer-facing text",
-                "remediation": "Remove the clause ID from reply_draft and express the policy in plain language (e.g. 'our 5-business-day review window' not '(SP-4)').",
-            })
-
-    # source_refs existence check — clause IDs parsed at runtime from the
-    # context doc itself, not a hardcoded list (see docs/13-workpack-spec.md)
-    for ref in source_refs:
-        if ref not in valid_clause_ids:
-            quality_flags.append({
-                "flag": "fabricated_source_ref",
-                "reason": f"cited clause {ref!r} not found in data/01-vela-pay-context-docs.md",
-                "remediation": "Remove this source_ref. Only cite clause IDs that appear in data/01-vela-pay-context-docs.md.",
-            })
-
-    workpack["review_flags"] = review_flags
-    workpack["quality_flags"] = quality_flags
-    return workpack
-
-
-def validate_required_fields(workpack: dict) -> Optional[str]:
-    """R-04 and R-17 hard_fail checks. Returns an error message if hard_fail, else None."""
-    for task in workpack.get("tasks") or []:
-        if (
-            not task.get("assignee_team")
-            or task.get("priority") not in ("High", "Medium", "Low")
-            or not task.get("acceptance_criteria")
-        ):
-            return "R-04 hard_fail: a task is missing assignee_team, valid priority, or acceptance_criteria"
-    if workpack.get("confidence") not in CONFIDENCE_RANK:
-        return "R-17 hard_fail: confidence is not a valid enum value"
-    return None
 
 
 def to_markdown(workpacks: list) -> str:
@@ -426,6 +177,10 @@ def main() -> None:
     classified = load_classified(CLASSIFIED_PATH)
     feedback = load_feedback(str(FEEDBACK_PATH))
     feedback_by_id = {f["feedback_id"]: f for f in feedback}
+    redacted_text_by_id = {
+        feedback_id: redact(item["raw_text"])[0]
+        for feedback_id, item in feedback_by_id.items()
+    }
     context_docs_text = CONTEXT_DOCS_PATH.read_text(encoding="utf-8")
     valid_clause_ids = parse_valid_clause_ids(context_docs_text)
 
@@ -452,15 +207,19 @@ def main() -> None:
             continue
 
         try:
-            intent_type = get_cluster_intent_type(members, classified, cluster_id)
-            dimension_dist = compute_dimension_distribution(members, classified)
-            confidence = compute_cluster_confidence(members, classified)
+            intent_type = get_cluster_intent_type(members, classified)
             members_block = build_member_block(members, feedback_by_id)
 
             content = generate_workpack_content(intent_type, members_block, context_docs_text)
-            workpack = apply_deterministic_fields(
-                content, cluster, intent_type, dimension_dist, confidence,
-                valid_clause_ids, feedback_by_id,
+            workpack = apply_runtime_guardrails(
+                content,
+                cluster_id=cluster_id,
+                members=members,
+                signal_strength=cluster["signal_strength"],
+                classified=classified,
+                redacted_text_by_id=redacted_text_by_id,
+                valid_clause_ids=valid_clause_ids,
+                enable_context_rules=True,
             )
 
             hard_fail = validate_required_fields(workpack)

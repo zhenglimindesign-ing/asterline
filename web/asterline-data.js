@@ -6,9 +6,9 @@ export const PIPELINE = [
   { key: "intent",   n: "02", name: "Intent classification",  one: "Each item is sorted into one of five types: actionable bug, feature request, complaint, praise, or noise." },
   { key: "tag",      n: "03", name: "Dimension + severity",   one: "Classified items get tagged with which team owns the issue and how severe it is." },
   { key: "cluster",  n: "04", name: "Clustering",             one: "Items describing the same underlying issue are grouped, even across different accounts and different wording." },
-  { key: "score",    n: "05", name: "Signal-strength scoring", one: "Each cluster gets a strength score computed from member count, account diversity, and severity." },
+  { key: "score",    n: "05", name: "Signal-strength scoring", one: "Each cluster gets a strength score from member count and severity, plus account diversity when that metadata is available." },
   { key: "generate", n: "06", name: "Work pack generation",   one: "One work pack is generated per cluster — the actual artifact a human reviews." },
-  { key: "check",    n: "07", name: "Runtime checks",         one: "The same rubric used offline runs live against each work pack before it's shown." },
+  { key: "check",    n: "07", name: "Runtime checks",         one: "Shared deterministic guardrails validate each work pack before it is shown or exported." },
   { key: "export",   n: "08", name: "Export",                 one: "Finished work packs export as Markdown for people and JSON shaped for Jira or Linear." },
 ];
 

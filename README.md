@@ -4,7 +4,7 @@
 
 Product teams drown in feedback. Support tickets, app reviews, NPS comments, and survey responses arrive in different formats, with different levels of specificity, and nobody has time to turn them all into something actionable.
 
-Asterline is an 8-stage pipeline that turns raw, unstructured feedback into traceable work packs — one per underlying issue, each backed by the quotes that surfaced it, the tasks it implies, and a drafted reply that waits on a human before it goes anywhere. The pipeline runs live at [asterline.liminzheng.com](https://asterline.liminzheng.com) — try the built-in Vela Pay demo to explore 22 work packs, paste your own feedback, upload a CSV, or run 150 real CFPB consumer complaints.
+Asterline is an 8-stage pipeline that turns raw, unstructured feedback into traceable work packs — one per underlying issue, each backed by the quotes that surfaced it, the tasks it implies, and a drafted reply that waits on a human before it goes anywhere. The pipeline runs live at [asterline.liminzheng.com](https://asterline.liminzheng.com) — try the built-in Vela Pay demo to explore 22 work packs, paste your own feedback, upload a CSV, or sample one live complaint from a 150-item CFPB dataset.
 
 ---
 
@@ -36,13 +36,13 @@ Built with Python and Anthropic's Claude API, deployed on Vercel. Stages are spl
 
 | Stage | Executor | Prompt | What happens |
 |---|---|---|---|
-| 1. Ingest | Python | — | `"Tried to upload our payroll CSV..."` → structured dict with feedback_id, channel, account, raw_text |
+| 1. Ingest | Python | — | Offline data includes feedback_id, channel, account, and raw_text; anonymous live input receives a generated `UI-xxx` ID |
 | 2. PII redaction | Python | — | `user@company.com` → `[REDACTED]` · emails, phones, account IDs stripped before any model sees the text |
 | 3. Intent classification | Haiku · per item | [`classify.txt`](pipeline/prompts/classify.txt) | → `intent: actionable_bug` · one of five types: actionable bug, feature request, complaint, praise, noise |
 | 4. Dimension + severity | ↑ same call | — | → `dimension: Engineering, impact: High, urgency: High` · co-determined with intent for label consistency |
 | 5. Clustering | Haiku · all items | [`cluster.txt`](pipeline/prompts/cluster.txt) | FB-01 + FB-26 + FB-27 → CLU-001 · groups items describing the same underlying issue |
-| 6. Signal-strength | Python | — | 3 members × 3 accounts × High severity → `signal: High` · deterministic formula, not a model opinion |
-| 7. Work-pack generation | Sonnet · per cluster + Python | [`generate.txt`](pipeline/prompts/generate.txt) | CLU-001 → title, problem brief, key quotes, tasks, reply draft, review flags · Sonnet generates; Python overwrites deterministic fields and runs 14 auto-checks |
+| 6. Signal-strength | Python | — | 3 members × 3 known accounts × High severity → `signal: High`; anonymous live input does not assume account diversity |
+| 7. Work-pack generation | Sonnet · per cluster + Python | [`generate.txt`](pipeline/prompts/generate.txt) | CLU-001 → title, problem brief, key quotes, tasks, reply draft, review flags · Sonnet generates; shared Python guardrails overwrite deterministic fields and validate the result |
 | 8. Export | Python | — | → Markdown for humans + JSON shaped for Jira or Linear |
 
 **Model selection.**  
@@ -53,9 +53,12 @@ Sonnet for generation — Haiku was tested early and failed on constraint densit
 The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags.  
 Python computes everything else: cluster_id, cluster_members, signal_strength, intent_type, dimension, confidence. This keeps model output auditable and deterministic logic testable without an API call.
 
+**Live-path boundaries.**
+The evaluated Vela path runs all 14 automated rubric checks. The live endpoint reuses the context-independent guardrails without adding model calls; Vela-specific clause checks remain offline until arbitrary uploaded context documents have a defined clause schema. Live paste/CSV input has no account identity, so repeated anonymous items use the conservative `Medium` fallback rather than claiming cross-account evidence. CFPB remains one complaint per run for demo reliability.
+
 **Nothing sends itself.**  
 Tasks are recommendations, not filed tickets.  
-Any reply touching money, timing, or policy is blocked by a review flag until a human verifies it.
+The pipeline never sends a reply. High-stakes money, timing, and policy drafts are designed to carry review flags; low-confidence output receives one deterministically, and the human rubric checks whether other required flags are present.
 
 ---
 
@@ -89,10 +92,11 @@ Each prompt change traces to a specific eval failure documented in the [iteratio
 CASE-STUDY.md    full technical narrative — design decisions, eval, iteration, results
 data/            synthetic feedback, context docs, golden set
 eval/            taxonomy, schema, rubric
-pipeline/        classification, PII redaction, clustering, generation, prompts
+pipeline/        classification, PII redaction, clustering, generation, shared runtime checks, prompts
 docs/            iteration log (raw data), cluster spec, eval result snapshots
 web/             deployed product site (Vercel)
 api/             live pipeline endpoint (Vercel Python serverless function)
+tests/           deterministic guardrail and mocked live-path tests
 ```
 
 ## Running locally
@@ -104,6 +108,7 @@ python pipeline/eval.py            # classification accuracy vs. golden set
 python pipeline/classify_all.py    # classify all 29 items
 python pipeline/cluster.py         # cluster + signal_strength + comparison report
 python pipeline/generate.py        # work-pack generation (Sonnet, RAG-grounded)
+python -m unittest discover -s tests -v  # no-network guardrail + live-path tests
 ```
 
 For contributor / Claude Code instructions, see [`CLAUDE.md`](CLAUDE.md).

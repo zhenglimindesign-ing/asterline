@@ -280,14 +280,14 @@
               <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">A rubric and 20 hand-labeled examples defined "correct" before any output ran. Every version scored against the same standard — including one that regressed, was reverted, and kept in the log.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
-              <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Every claim is cited</div>
-              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">100% traceable to a source</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Each quote is verbatim from a real feedback item; each policy statement cites a clause ID you can open. If the context to back a claim isn't loaded, the draft says so rather than inventing a policy.</p>
+              <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">Evidence stays inspectable</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">Quotes checked against source text</div>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Each quote is checked against the submitted feedback. The evaluated Vela pack also validates every policy clause ID against its source document; arbitrary uploaded context does not yet have a generic clause schema.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:24px;">
               <div style="font-size:19px; font-weight:720; letter-spacing:-0.01em; margin-bottom:6px;">A human holds the trigger</div>
               <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#2438C8; margin-bottom:14px;">0 replies auto-sent</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Tasks are recommendations, not filed tickets. Any reply touching money, timing, or policy is blocked by a review flag until a person verifies it. Nothing sends itself.</p>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">Tasks are recommendations, not filed tickets, and no reply is sent automatically. Review flags identify drafts that need verification; low-confidence output receives one deterministically, while broader high-stakes triggers remain part of human review.</p>
             </div>
           </div>
         </div>
@@ -310,7 +310,7 @@
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; padding:22px 24px;">
               <div style="font-size:16px; font-weight:680; margin-bottom:8px;">Nothing acts without you</div>
-              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">The pipeline proposes tasks and drafts replies — it never files a ticket or sends a message on its own. Any reply touching money, timing, or policy is explicitly blocked until a person clears it.</p>
+              <p style="font-size:14px; line-height:1.55; color:#5A584F; margin:0;">The pipeline proposes tasks and drafts replies — it never files a ticket or sends a message on its own. Review flags identify drafts that require verification, and low-confidence output is flagged automatically.</p>
             </div>
           </div>
           <p style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#A2A095; margin:18px 0 0; line-height:1.5;">v1 design tradeoffs: PII is caught by rules, not AI — names may slip through. Context docs are loaded in full rather than searched. Both decisions are documented in the repo.</p>
@@ -388,7 +388,7 @@
           <div class="rsp-eval" style="display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;">
             <div>
               <p style="font-size:18px; line-height:1.55; color:#2c2b26; margin:0 0 18px;">Before any work pack was generated at scale, twenty real-looking feedback items were hand-labeled against a written rubric — what a correct classification looks like, what a passing work pack has to include.</p>
-              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The rubric mixes deterministic checks the code runs automatically (14 rules) with judgment calls scored by a human reviewer (7 rules) — including whether tasks are correctly scoped and whether the reply tone matches the situation.</p>
+              <p style="font-size:16px; line-height:1.55; color:#5A584F; margin:0;">That standard came first; everything since is measured against it, not the other way around. The evaluated Vela path runs 14 deterministic rules; 7 judgment calls are scored by a human reviewer. The live path reuses the context-independent guardrails.</p>
             </div>
             <div style="background:#fff; border:1px solid #E5E2DB; border-radius:6px; overflow:hidden;">
               <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#FBFAF6; border-bottom:1px solid #E5E2DB;">
@@ -498,7 +498,7 @@
               <div style="font-size:12.5px; color:#908E83; margin-top:8px; line-height:1.5;">Paste raw feedback — support tickets, survey responses, app reviews, or any unstructured text. One item per block, separated by blank lines. Up to 3 items run through the real pipeline; if you paste more, 3 are randomly sampled.</div>
               <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#ECEDFC; border:1px solid #DADFFA; border-radius:5px; margin-top:8px;">
                 <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#2438C8; white-space:nowrap; margin-top:2px; flex:none;">Live pipeline</span>
-                <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your text runs through the full 8-stage pipeline. Results are real, not pre-computed. Max 5 runs per day.</span>
+                <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your text runs live through all 8 stages, including deterministic runtime checks. Results are real, not pre-computed. Max 5 runs per day.</span>
               </div>
             </div>
             </sc-if>
@@ -519,7 +519,7 @@
                 </div>
                 <div style="display:flex; align-items:flex-start; gap:8px; padding:9px 12px; background:#ECEDFC; border:1px solid #DADFFA; border-radius:5px; margin-top:8px;">
                   <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#2438C8; white-space:nowrap; margin-top:2px; flex:none;">Live pipeline</span>
-                  <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your CSV runs through the full 8-stage pipeline. Max 5 runs per day.</span>
+                  <span style="font-size:12.5px; color:#2438C8; line-height:1.45;">Your CSV runs live through all 8 stages, including deterministic runtime checks. Max 5 runs per day.</span>
                 </div>
               </div>
               </sc-if>
@@ -544,7 +544,7 @@
                 <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#908E83;">Context document</span>
                 <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:#76746A; background:#F1EFE8; border:1px solid #E0DCD2; padding:2px 7px; border-radius:3px;">optional</span>
               </div>
-              <p style="font-size:13px; line-height:1.5; color:#76746A; margin:0 0 12px;">Upload a .md or .txt with your product's policies, known issues, or tone guide. The pipeline uses it to ground source_refs and reply drafts. Without one, source_refs will be empty.</p>
+              <p style="font-size:13px; line-height:1.5; color:#76746A; margin:0 0 12px;">Upload a .md or .txt with your product's policies, known issues, or tone guide. The generation prompt uses it to ground source_refs and reply drafts. Without one, source_refs are expected to be empty; generic live clause validation is not yet enabled.</p>
               <sc-if value="{{ noContextDoc }}">
               <label style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1.5px dashed #C9C5BB; border-radius:5px; font-size:13px; font-weight:600; color:#5A584F; cursor:pointer; background:#fff;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7 9m5-5 5 5" stroke="#908E83" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="#908E83" stroke-width="1.6" stroke-linecap="round"></path></svg>
@@ -863,7 +863,7 @@
                   </sc-for>
                   <span style="font-size:18px; font-weight:700; margin-left:6px; letter-spacing:-0.01em;">{{ sel.signal }}</span>
                 </div>
-                <div style="font-size:12.5px; line-height:1.5; color:#76746A; margin-bottom:16px;">Computed from member count, account diversity, and severity — not a model opinion.</div>
+                <div style="font-size:12.5px; line-height:1.5; color:#76746A; margin-bottom:16px;">Computed from member count and severity, plus account diversity when that metadata is available. Anonymous live input never assumes two items came from different accounts.</div>
                 <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#908E83; margin-bottom:9px;">Cluster members · the evidence</div>
                 <div style="display:flex; flex-wrap:wrap; gap:6px;">
                   <sc-for list="{{ sel.members }}" as="m" hint-placeholder-count="3">
@@ -1144,9 +1144,9 @@ class Component extends DCLogic {
         id: c.cluster_id || "CLU-?",
         title: c.title || "(untitled)",
         intent: c.intent_type || "noise",
-        dimension: Array.isArray(c.dimension) ? (c.dimension[0] || {}).dimension || "Other/Uncategorized" : (c.dimension || "Other/Uncategorized"),
+        dimension: Array.isArray(c.dimension) ? (c.dimension[0] || {}).dimension || "Unclassified" : (c.dimension || "Unclassified"),
         signal: c.signal_strength || "Low",
-        confidence: c.confidence || "Medium",
+        confidence: c.confidence || "Unknown",
         members: c.cluster_members || [],
         brief: c.problem_brief || "",
         quotes,
@@ -1237,8 +1237,9 @@ class Component extends DCLogic {
       const clusters = this.transformApiClusters(data.clusters || []);
       const qf = clusters.reduce((n, c) => n + (c.qualityFlags || []).length, 0);
       const cl = clusters.length;
-      this.setState({ stageCounts: [n + " items · PII stripped", n + " items classified · 5 intent types", "dimensions + severity tagged", cl + " clusters formed", "signal strength computed", cl + " work packs generated", qf + " quality flags · 0 hard fails", "ready · live results"], runStageIdx: 7 });
-      setTimeout(() => { this.finishRun(clusters, label, !hasCtx, data.meta?.items_processed || n, qf); }, 600);
+      const hardFails = data.meta?.hard_fails || 0;
+      this.setState({ stageCounts: [n + " items · PII stripped", n + " items classified · 5 intent types", "dimensions + severity tagged", cl + " clusters formed", "signal strength computed", cl + " work packs generated", qf + " quality flags · " + hardFails + " hard fails", "ready · live results"], runStageIdx: 7 });
+      setTimeout(() => { this.finishRun(clusters, label, !hasCtx, data.meta?.items_processed || n, qf, hardFails); }, 600);
     })
     .catch((err) => { clearInterval(interval); this.setState({ pstage: "pick", liveError: err.name === "AbortError" ? "Request timed out — the pipeline took too long. Try again." : (err.message || "Pipeline failed.") }); });
   }
@@ -1309,12 +1310,12 @@ class Component extends DCLogic {
     }
   }
 
-  finishRun(clusters, label, noCtx, items, qf) {
+  finishRun(clusters, label, noCtx, items, qf, hardFails = 0) {
     const run = {
       id: "RUN-" + (this.state.runs.length + 1),
       label, noCtx, clusters,
       ts: Date.now(),
-      itemCount: items, clusterCount: clusters.length, flagCount: qf,
+      itemCount: items, clusterCount: clusters.length, flagCount: qf, hardFailCount: hardFails,
     };
     this.setState({ runs: [run, ...this.state.runs], activeRun: run, pstage: "results", runStageIdx: 8, selected: null, cleared: {} });
   }
@@ -1452,14 +1453,14 @@ class Component extends DCLogic {
 
     // anatomy cards
     const anatomy = [
-      { field: "signal_strength", tag: "computed", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "How much evidence backs a cluster — High / Medium / Low. Computed from member count, account diversity, and severity, not a model's opinion." },
+      { field: "signal_strength", tag: "computed", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "How much evidence backs a cluster — High / Medium / Low. Uses member count and severity, plus account diversity when the input provides it. Anonymous input is scored conservatively." },
       { field: "intent_type", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "One of five: actionable bug, feature request, complaint, praise, or noise. Noise gets a minimal pack and no reply." },
       { field: "dimension", tag: "classified", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Which area owns the issue — Engineering, Product/Roadmap, Support Process, Compliance, Finance & Reporting, UX, or Other/Uncategorized." },
       { field: "tasks[]", tag: "recommendation", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "Suggested next actions with a team and priority. Recommendations for a human to triage — not tickets filed automatically." },
       { field: "reply_draft", tag: "body only", tagColor: "#5A584F", tagBg: "#EDEBE4", desc: "A drafted customer reply, body only. The CRM adds the salutation and sign-off from ticket metadata at send time." },
       { field: "review_flags[]", tag: "blocks send", tagColor: "#B23B1E", tagBg: "#FAEAE3", desc: "Something a human must verify — a money amount, a timing commitment, a policy implication. Blocks the reply from being sent until cleared." },
       { field: "quality_flags[]", tag: "non-blocking", tagColor: "#936412", tagBg: "#F6EFDD", desc: "A potential issue surfaced for awareness with remediation guidance — e.g. a relative time expression. Does not block the output." },
-      { field: "source_refs[]", tag: "traceable", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "Clause IDs (KI-, SP-, RM-) that trace each claim back to a specific clause in the context documents. Nothing asserted without one." },
+      { field: "source_refs[]", tag: "traceable", tagColor: "#2438C8", tagBg: "#ECEDFC", desc: "Clause IDs (KI-, SP-, RM-) connect policy claims to context documents. Vela IDs are validated automatically; arbitrary uploaded context does not yet have a generic clause schema." },
     ];
 
     // rubric sample
@@ -1579,7 +1580,7 @@ class Component extends DCLogic {
 
     const sessionRuns = s.runs.map((r) => ({
       label: r.label, time: this.timeStr(r.ts),
-      summary: r.clusterCount + " packs · " + r.itemCount + " items" + (r.noCtx ? " · no context" : ""),
+      summary: r.clusterCount + " packs · " + r.itemCount + " items" + (r.hardFailCount ? " · " + r.hardFailCount + " hard fails" : "") + (r.noCtx ? " · no context" : ""),
       open: () => this.openRun(r),
     }));
 
@@ -1628,7 +1629,7 @@ class Component extends DCLogic {
       noContext: !!(run && run.noCtx),
       resultCount: filterActive ? filteredClusters.length + " of " + allClusters.length : (run ? run.clusters.length : 0),
       resultRows,
-      flagSummary: run ? (run.clusters.reduce((n,c) => n + (c.reviewFlags||[]).length, 0) + " review · " + (run.flagCount || 0) + " quality · 0 hard fails") : "",
+      flagSummary: run ? (run.clusters.reduce((n,c) => n + (c.reviewFlags||[]).length, 0) + " review · " + (run.flagCount || 0) + " quality · " + (run.hardFailCount || 0) + " hard fails") : "",
       closeDetail: () => this.closeDetail(),
       sel: sel || {},
       copyReply: () => this.copyReply(),
