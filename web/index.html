@@ -1218,7 +1218,21 @@ class Component extends DCLogic {
     const ctrl = new AbortController();
     this.timers.push(setTimeout(() => { ctrl.abort(); }, 45000));
     fetch("/api/pipeline", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal })
-    .then((res) => { clearInterval(interval); if (res.status === 429) throw new Error("Rate limit reached — max 5 runs per day."); if (!res.ok) return res.json().then((e) => { throw new Error(e.error || "Pipeline error"); }); return res.json(); })
+    .then(async (res) => {
+      clearInterval(interval);
+      const raw = await res.text();
+      let data = null;
+      if (raw) {
+        try { data = JSON.parse(raw); } catch (_) { /* handled below */ }
+      }
+      if (res.status === 429) throw new Error((data && data.error) || "Rate limit reached — max 5 runs per day.");
+      if (!res.ok) {
+        const firstLine = raw.trim().split("\n")[0];
+        throw new Error((data && data.error) || (firstLine ? "Pipeline request failed (HTTP " + res.status + "): " + firstLine : "Pipeline request failed (HTTP " + res.status + ")."));
+      }
+      if (!data) throw new Error("Pipeline returned an invalid response (expected JSON).");
+      return data;
+    })
     .then((data) => {
       const clusters = this.transformApiClusters(data.clusters || []);
       const qf = clusters.reduce((n, c) => n + (c.qualityFlags || []).length, 0);

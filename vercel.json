@@ -1,13 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "",
   "outputDirectory": "web",
   "functions": {
     "api/pipeline.py": {
-      "runtime": "@vercel/python@4.5.0",
-      "maxDuration": 10
+      "maxDuration": 60
     }
-  },
-  "rewrites": [
-    { "source": "/api/pipeline", "destination": "/api/pipeline" }
-  ]
+  }
 }
