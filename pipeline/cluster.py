@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pipeline.data_loader import load_feedback
 from pipeline.pii import redact
+from pipeline.runtime_checks import compute_signal_strength
 
 load_dotenv()
 
@@ -102,25 +103,6 @@ def run_clustering(items_block: str) -> list[dict]:
     raw = response.content[0].text
     parsed = json.loads(_strip_code_fence(raw))
     return parsed["clusters"]
-
-
-def compute_signal_strength(members: list[str], feedback_by_id: dict, classified: dict) -> str:
-    """Axis 4 (eval/04-taxonomy-and-schema.md): deterministic rule over structured fields."""
-    accounts = {feedback_by_id[m]["account_id"] for m in members}
-    impacts = [
-        (classified.get(m, {}).get("classification") or {}).get("impact")
-        for m in members
-    ]
-
-    if len(members) >= 2 and len(accounts) >= 2:
-        return "High"
-    if any(i == "High" for i in impacts) and len(members) == 1:
-        return "High"
-    if len(members) >= 2:
-        return "Medium"
-    if any(i == "Medium" for i in impacts):
-        return "Medium"
-    return "Low"
 
 
 def parse_golden_hypothesis(path: Path) -> dict[str, tuple[str, frozenset]]:
@@ -197,6 +179,10 @@ def main() -> None:
         )
     feedback_by_id = {f["feedback_id"]: f for f in feedback}
     classified = load_classified(CLASSIFIED_PATH)
+    account_ids = {
+        feedback_id: item.get("account_id")
+        for feedback_id, item in feedback_by_id.items()
+    }
 
     print(f"Clustering {len(feedback)} items with {MODEL} (prompt {PROMPT_VERSION})...")
     items_block = build_items_block(feedback, classified)
@@ -216,7 +202,7 @@ def main() -> None:
 
     for c in clusters:
         c["signal_strength"] = compute_signal_strength(
-            c["cluster_members"], feedback_by_id, classified
+            c["cluster_members"], classified, account_ids
         )
 
     output = {

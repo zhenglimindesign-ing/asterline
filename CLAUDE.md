@@ -24,7 +24,7 @@ asterline/
 
   eval/
     04-taxonomy-and-schema.md      ← taxonomy axis definitions + work pack JSON schema
-    05-rubric-v1.md                ← 20-item eval rubric (14 Auto, 7 Human)
+    05-rubric-v1.md                ← 21-item eval rubric (14 Auto, 7 Human)
 
   CASE-STUDY.md                    ← full technical narrative (design decisions, eval, iteration, results)
 
@@ -42,6 +42,7 @@ asterline/
     classify.py                    ← per-item classification (intent/dimension/impact/urgency/confidence)
     classify_all.py                ← runs classify.py over all items, not just the golden-20
     cluster.py                     ← Stage 5: clustering + deterministic signal_strength + golden-set comparison report
+    runtime_checks.py              ← shared deterministic fields, signal rule, guardrails, and hard-fail checks
     smoke_test_cluster.py          ← isolated positive/negative merge test, never touches real data
     eval.py                        ← classification accuracy scoring against the golden-20
     prompts/
@@ -68,6 +69,8 @@ asterline/
   api/                             ← Vercel Python serverless function
     pipeline.py                    ← live pipeline endpoint (POST /api/pipeline)
     requirements.txt               ← anthropic SDK
+
+  tests/                           ← no-network shared-guardrail and mocked live-path tests
 
   vercel.json                      ← Vercel deployment config (Python runtime, output dir)
 ```
@@ -100,7 +103,7 @@ ingest
 |---|---|
 | Pipeline input | `data/02-synthetic-feedback-25.md` (29 items) |
 | Ground truth (golden set) | `data/03-golden-set-labeled.md` |
-| Rubric | `eval/05-rubric-v1.md` (20 items) |
+| Rubric | `eval/05-rubric-v1.md` (21 items) |
 
 **Classification eval** (golden-20 only, scored accuracy):
 1. `python pipeline/eval.py` — runs classify.py on the 20 golden-set items, scores against ground truth, writes `docs/eval-results-v{N}.json`.
@@ -112,7 +115,7 @@ ingest
 3. `cluster.py` raises `ClusteringScaleError` above 50 items — see "Known gaps" below before raising that threshold.
 4. `python pipeline/generate.py` — generates one work pack per cluster (Sonnet, generate-v9), writes `pipeline/output/workpacks-v1.json`, `workpacks-v1.md`, `workpack-generation-log.json`. Idempotent: rerunning skips clusters whose membership hasn't changed since the last successful run.
 
-Auto rubric checks (R-01–R-04, R-06, R-08–R-09, R-13–R-17, R-19) run programmatically inside generate.py on every output. Human checks (R-05, R-07, R-10–R-12, R-18, R-20) are scored offline by a human reviewer reading `pipeline/output/workpacks-v1.md`. Record scores and failure notes in `docs/06-iteration-log.md`.
+Auto rubric checks (R-01–R-04, R-06, R-08–R-09, R-13–R-17, R-19, R-21) live in `pipeline/runtime_checks.py`. The evaluated Vela path enables all 14. The public endpoint reuses the context-independent subset; R-09/R-21 and source-reference validation remain disabled there until arbitrary uploaded context documents have a defined clause schema. Human checks (R-05, R-07, R-10–R-12, R-18, R-20) are scored offline by a human reviewer reading `pipeline/output/workpacks-v1.md`.
 
 ---
 
@@ -143,8 +146,9 @@ All code comments, docstrings, and file content must be written in **English**.
 | Dimension labels for praise/noise | `RESOLVED` 2026-06-16 | `project-context.md` §8 — dimension is now always populated as a distribution array, not a single forced value |
 | Clustering scale limit (single-call clustering validated only to 29 items) | Guard rail in place, not solved | `docs/11-cluster-spec.md` "Scale limit and upgrade trigger" — hard limit `MAX_SINGLE_CALL_ITEMS=50` in `pipeline/cluster.py`; upgrade trigger is a 100+ item stress test showing <90% recall on known duplicates |
 | R-03 quote-source ambiguity in multi-member clusters | Known limitation, v1 accepted | `docs/13-workpack-spec.md` — `key_quotes[]` has no per-quote attribution to a specific cluster member; verbatim check matches against the union of all members' raw_text instead |
-| source_refs validity check coupled to context-doc formatting | Known limitation, low risk | `docs/13-workpack-spec.md` — clause IDs are parsed at runtime from `data/01-vela-pay-context-docs.md`'s heading format, not hardcoded, but the parser still assumes that exact formatting convention |
-| PII redaction doesn't catch names | `[LOCK]`'d v1 limitation, not a bug | `data/02-synthetic-feedback-25.md` header — regex can't reliably match arbitrary names; v2 path is NER |
+| source_refs validity check coupled to context-doc formatting | Evaluated path only; live deferred | `docs/13-workpack-spec.md` — Vela clause IDs are parsed from a fixed Markdown heading format; arbitrary uploaded live context has no equivalent schema yet |
+| Anonymous live input has no account identity | Conservative fallback in place | `CASE-STUDY.md` §5.4/§6 — live multi-item signal is `Medium` unless severity alone supports `High`; it never assumes account diversity |
+| PII redaction doesn't reliably catch names | `[LOCK]`'d v1 limitation, not a bug | `CASE-STUDY.md` §6 — offline has a limited heuristic; live name detection is deferred; v2 path is NER |
 | generate.py idempotent rerun doesn't detect prompt-version changes | Known limitation, manual workaround exists | `pipeline/generate.py` — the skip check only compares `cluster_members`, not `prompt_version`. A prompt-only change (no cluster membership change) is silently skipped on rerun. Workaround used 2026-06-16: manually remove the affected cluster_id from `workpacks-v1.json` before rerunning. Not fixed because it's a rare case (prompt changes happen less often than reruns) and the workaround is simple — revisit if this becomes frequent. |
 | No ingest field validation | v1 limitation, deliberate | `CASE-STUDY.md` §6 — FB-20's missing timestamp is a deliberate test of this gap, not an oversight |
 | requirements.txt has no version ceiling | Latent risk, not urgent | no dedicated doc — a future breaking change in the `anthropic` SDK could break a fresh clone; not stage-specific |

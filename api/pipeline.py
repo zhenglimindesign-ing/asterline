@@ -2,10 +2,11 @@
 
 POST /api/pipeline
 Body: { "items": ["feedback text 1", "feedback text 2", ...] }
-Response: { "clusters": [...], "meta": { "items_received": N, "items_processed": N } }
+Response: { "clusters": [...],
+            "meta": { "hard_fails": int, "hard_failures": [...], ... } }
 
 Constraints:
-- Max 3 items per request (Vercel Free plan 10s timeout)
+- Max 3 items per request for serverless reliability; the CFPB client sends 1
 - Rate limit: 5 runs per IP per day (in-memory, resets on cold start)
 - API key held server-side only (ANTHROPIC_API_KEY env var)
 """
@@ -26,6 +27,15 @@ MAX_ITEM_LENGTH = 2000
 
 # Paths — Vercel deploys the entire project
 ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
+
+from pipeline.runtime_checks import (
+    apply_runtime_guardrails,
+    compute_signal_strength,
+    get_cluster_intent_type,
+    validate_required_fields,
+)
+
 CLASSIFY_PROMPT = ROOT / "pipeline" / "prompts" / "classify.txt"
 CLUSTER_PROMPT = ROOT / "pipeline" / "prompts" / "cluster.txt"
 GENERATE_PROMPT = ROOT / "pipeline" / "prompts" / "generate.txt"
@@ -112,18 +122,7 @@ def run_clustering(client, items_block: str) -> list[dict]:
     return parsed.get("clusters", parsed.get("results", []))
 
 
-def compute_signal_strength(members: list[str], items_by_id: dict) -> str:
-    if len(members) >= 2:
-        return "High" if len(members) >= 2 else "Medium"
-    impacts = [items_by_id.get(m, {}).get("classification", {}).get("impact") for m in members]
-    if any(i == "High" for i in impacts):
-        return "High"
-    if any(i == "Medium" for i in impacts):
-        return "Medium"
-    return "Low"
-
-
-# --- Generate (from pipeline/generate.py, simplified) ---
+# --- Generate ---
 
 def generate_workpack(client, intent_type: str, members_block: str, context_docs: str) -> dict:
     prompt_template = GENERATE_PROMPT.read_text(encoding="utf-8")
@@ -177,19 +176,38 @@ def run_pipeline(items: list[str], context_doc: str = "") -> dict:
 
     items_by_id = {item["id"]: item for item in processed}
 
-    # 4. Compute signal strength + generate work packs
+    # 4. Compute signal strength + generate and validate work packs
     workpacks = []
+    hard_failures = []
+    classified_by_id = {
+        item["id"]: item["classification"]
+        for item in processed
+    }
+    redacted_text_by_id = {
+        item["id"]: item["redacted_text"]
+        for item in processed
+    }
     for cluster in clusters:
         members = cluster.get("cluster_members", [])
-        signal = compute_signal_strength(members, items_by_id)
+        cluster_id = cluster.get("cluster_id")
+        if not cluster_id:
+            hard_failures.append({
+                "cluster_id": None,
+                "reason": "cluster output is missing cluster_id",
+            })
+            continue
+
+        signal = compute_signal_strength(members, classified_by_id)
         cluster["signal_strength"] = signal
 
-        intent_types = {
-            items_by_id.get(m, {}).get("classification", {}).get("intent_type")
-            for m in members
-        }
-        intent_types.discard(None)
-        intent_type = next(iter(intent_types)) if intent_types else "noise"
+        try:
+            intent_type = get_cluster_intent_type(members, classified_by_id)
+        except ValueError as exc:
+            hard_failures.append({
+                "cluster_id": cluster_id,
+                "reason": str(exc),
+            })
+            continue
 
         members_text = "\n".join(
             f"### {m}\nraw_text: {items_by_id.get(m, {}).get('redacted_text', '')}\n"
@@ -198,27 +216,39 @@ def run_pipeline(items: list[str], context_doc: str = "") -> dict:
 
         try:
             ctx = context_doc if context_doc else "(no context documents loaded)"
-            wp = generate_workpack(client, intent_type, members_text, ctx)
-            wp["cluster_id"] = cluster["cluster_id"]
-            wp["cluster_members"] = members
-            wp["signal_strength"] = signal
-            wp["intent_type"] = intent_type
-            workpacks.append(wp)
-        except Exception as e:
-            workpacks.append({
-                "cluster_id": cluster["cluster_id"],
-                "cluster_members": members,
-                "signal_strength": signal,
-                "intent_type": intent_type,
-                "title": f"Generation failed: {str(e)[:100]}",
+            content = generate_workpack(client, intent_type, members_text, ctx)
+        except Exception as exc:
+            content = {
+                "title": f"Generation failed: {str(exc)[:100]}",
                 "problem_brief": "Work pack generation encountered an error.",
                 "key_quotes": [],
                 "source_refs": [],
                 "tasks": [],
                 "reply_draft": None,
                 "review_flags": [],
-                "quality_flags": [{"flag": "generation_error", "reason": str(e)[:200]}],
+                "quality_flags": [{"flag": "generation_error", "reason": str(exc)[:200]}],
+            }
+
+        try:
+            workpack = apply_runtime_guardrails(
+                content,
+                cluster_id=cluster_id,
+                members=members,
+                signal_strength=signal,
+                classified=classified_by_id,
+                redacted_text_by_id=redacted_text_by_id,
+                enable_context_rules=False,
+            )
+            hard_fail = validate_required_fields(workpack)
+        except Exception as exc:
+            hard_fail = f"runtime validation failed: {str(exc)[:200]}"
+        if hard_fail:
+            hard_failures.append({
+                "cluster_id": cluster_id,
+                "reason": hard_fail,
             })
+            continue
+        workpacks.append(workpack)
 
     return {
         "clusters": workpacks,
@@ -226,6 +256,9 @@ def run_pipeline(items: list[str], context_doc: str = "") -> dict:
             "items_received": len(items),
             "items_processed": len(processed),
             "clusters_formed": len(clusters),
+            "quality_flags": sum(len(wp.get("quality_flags") or []) for wp in workpacks),
+            "hard_fails": len(hard_failures),
+            "hard_failures": hard_failures,
         }
     }
 

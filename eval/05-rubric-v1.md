@@ -3,7 +3,9 @@
 # Each item: field checked / check (yes/no) / mode / fail action
 #
 # Mode:
-#   Auto = programmatic runtime check (runs in-product on every output)
+#   Auto = programmatic runtime check (all 14 run on evaluated Vela output;
+#          the public API runs the context-independent subset until uploaded
+#          context documents have a defined clause schema)
 #   Human = offline eval only (requires human judgment; not automated in v1)
 #
 # Auto items (14): R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19, R-21
@@ -87,7 +89,7 @@
 - **Check**: When source_refs = [], reply_draft contains no references to specific policy clauses, SP-x numbers, or stated company commitments — it must acknowledge the gap plainly rather than inventing a policy
 - **Mode**: Human
 - **Fail action**: quality_flag: fabricated_source_ref
-- **Implementation note**: a narrower Auto sub-check runs in code — if source_refs[] is non-empty, each cited clause ID is verified against the context doc and flagged `fabricated_source_ref` if not found. This automates the "does the ID exist" case only; full R-12 compliance (does the *content* match the clause) still requires human judgment. See `docs/13-workpack-spec.md`.
+- **Implementation note**: a narrower Auto sub-check runs on the evaluated Vela path — if source_refs[] is non-empty, each cited clause ID is verified against the context doc and flagged `fabricated_source_ref` if not found. This automates the "does the ID exist" case only; full R-12 compliance (does the *content* match the clause) still requires human judgment. Arbitrary live uploads defer this check until a context schema exists. See `docs/13-workpack-spec.md`.
 
 ## R-13 — Noise: reply_draft must be null
 - **Field(s)**: intent_type, reply_draft
@@ -144,7 +146,7 @@
 - **Check**: reply_draft contains no raw clause ID references (e.g. "(SP-4)") — internal identifiers must be expressed in plain language for customer-facing text
 - **Mode**: Auto (regex: detect clause ID patterns)
 - **Fail action**: `quality_flag: internal_ref_in_reply`
-- Added during generation-stage iteration (informally referred to as R-PA before being given a formal number); see `pipeline/generate.py`.
+- Added during generation-stage iteration (informally referred to as R-PA before being given a formal number); see `pipeline/runtime_checks.py`.
 
 ---
 
@@ -152,7 +154,7 @@
 
 | Mode | Items | Notes |
 |---|---|---|
-| Auto (runtime) | R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19, R-21 | These 14 run programmatically on every pipeline output |
+| Auto (runtime) | R-01, R-02, R-03, R-04, R-06, R-08, R-09, R-13, R-14, R-15, R-16, R-17, R-19, R-21 | All 14 run on evaluated Vela output; live arbitrary-context runs defer R-09/R-21 until a context schema exists |
 | Human (offline) | R-05, R-07, R-10, R-11, R-12, R-18, R-20 | These 7 require human judgment; scored during offline eval against golden set |
 
 ## Rubric summary by fail severity

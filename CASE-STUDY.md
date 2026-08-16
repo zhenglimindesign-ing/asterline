@@ -2,9 +2,9 @@
 
 **Live demo:** [asterline.liminzheng.com](https://asterline.liminzheng.com) · **Source:** [github.com/zhenglimindesign-ing/asterline](https://github.com/zhenglimindesign-ing/asterline)
 
-> **What:** An 8-stage pipeline that turns raw user feedback into traceable work packs — each backed by source quotes, grounded in policy documents, and flagged for human review where stakes are high. Deployed live at [asterline.liminzheng.com](https://asterline.liminzheng.com).
+> **What:** An 8-stage pipeline that turns raw user feedback into traceable work packs — each backed by source quotes, grounded in policy documents when context is supplied, and flagged for human review where stakes are high. Deployed live at [asterline.liminzheng.com](https://asterline.liminzheng.com).
 >
-> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. Both stages evaluated against a 21-item rubric — 14 checks run automatically on every output, 7 scored by human judgment.
+> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. The evaluated Vela path runs all 14 automated rubric checks; 7 additional checks are scored by human judgment. The live path reuses the context-independent guardrails.
 >
 > **What I owned:** Pipeline architecture, prompt design and iteration (17+ versions), evaluation system, output schema, and all product decisions. Claude Code (AI coding tool) wrote the Python and frontend; I directed what to build, how to evaluate it, and when to revert.
 
@@ -38,7 +38,7 @@ Built for whoever ends up with the feedback inbox — no assumed role, no assume
 
 1. **Eval-first** — defining what "good" looks like before generating at scale, using a golden set, a taxonomy, and a rubric with both automated and human-judgment components.
 2. **Traceable output** — every work pack output can be traced back to specific raw feedback items and, where applicable, specific policy clauses. Nothing is generated without a source.
-3. **Human-gated** — the pipeline proposes; a human disposes. Any reply touching money, timing, or policy is blocked until a person verifies it. Tasks are recommendations, not filed tickets.
+3. **Human-gated** — the pipeline proposes; a human disposes. It never sends replies or files tasks. Review flags mark drafts that require verification; low confidence is enforced automatically, while the human rubric verifies the broader money/timing/policy trigger.
 
 ---
 
@@ -46,17 +46,17 @@ Built for whoever ends up with the feedback inbox — no assumed role, no assume
 
 ### 2.1 Pipeline
 
-Built with Python and Anthropic's Claude API (models: Haiku and Sonnet), deployed on Vercel. Stages are split between Python and LLM based on what each task requires. LLM handles language understanding: classifying intent, judging cross-item similarity, generating structured prose. Python handles everything rule-based: PII stripping, signal-strength formulas, verbatim quote verification. This is what runs every time feedback enters the system — whether during development or when a user tries the live demo.
+Built with Python and Anthropic's Claude API (models: Haiku and Sonnet), deployed on Vercel. Stages are split between Python and LLM based on what each task requires. LLM handles language understanding: classifying intent, judging cross-item similarity, generating structured prose. Python handles everything rule-based: PII stripping, signal-strength formulas, deterministic field ownership, and runtime guardrails. The same eight-stage sequence runs offline and live; metadata- and context-dependent behavior differs where anonymous live input lacks the structured Vela dataset.
 
 | Stage | Executor | Prompt | Why this executor |
 |---|---|---|---|
 | 1. Ingest | Python (`data_loader.py` offline; API request body live) | — | Pure I/O: parse Markdown, CSV, or JSON into structured dicts |
-| 2. PII redaction | Python (`pii.py`) | — | Regex matching; must run before any text reaches a model |
+| 2. PII redaction | Python (`pii.py` offline; API regex live) | — | Regex matching; must run before any text reaches a model |
 | 3. Intent classification | Haiku · per item | [`pipeline/prompts/classify.txt`](pipeline/prompts/classify.txt) | Requires semantic understanding: is this a bug, a feature request, or just noise? |
 | 4. Dimension + severity | ↑ same prompt, same call | — | Co-determined with intent for consistency — splitting would risk contradictory labels |
 | 5. Clustering | Haiku · all items at once | [`pipeline/prompts/cluster.txt`](pipeline/prompts/cluster.txt) | Cross-item similarity judgment requires reasoning across all items at once |
-| 6. Signal-strength | Python (deterministic formula) | — | Member count × account diversity × severity — a defined formula, not a judgment call |
-| 7. Work-pack generation | Sonnet · per cluster + Python | [`pipeline/prompts/generate.txt`](pipeline/prompts/generate.txt) | Sonnet generates structured output (title, brief, quotes, tasks, reply draft); Python overwrites deterministic fields and runs 14 auto-checks |
+| 6. Signal-strength | Python (deterministic formula) | — | Member count + severity + known account diversity; anonymous live input never assumes cross-account evidence |
+| 7. Work-pack generation | Sonnet · per cluster + Python | [`pipeline/prompts/generate.txt`](pipeline/prompts/generate.txt) | Sonnet generates structured output; shared Python guardrails overwrite deterministic fields and validate the result |
 | 8. Export | Python | — | Format Markdown + JSON with Jira/Linear-shaped fields |
 
 **Model selection.**  
@@ -73,7 +73,7 @@ Intent and dimension are orthogonal axes: intent answers "should this become an 
 
 **RAG without a vector database (v1).** The four Vela Pay context documents (product one-pager, support policy, tone guideline, known issues / roadmap) are stuffed directly into the generation prompt rather than indexed. Each generated reply cites a specific clause ID (e.g. SP-3, KI-1) when one applies. The upgrade trigger is documented: if context docs grow beyond ~4 documents or ~8,000 tokens, vector retrieval becomes necessary. For v1 demo purposes, direct stuffing is sufficient and avoids infrastructure complexity.
 
-**Regex PII redaction (v1 known limitation).** Structured PII — email addresses, phone numbers, transaction reference numbers — is caught by regex and replaced before any text is extracted for quotes or reply drafts. Human names and company names are not reliably caught by regex and are not redacted in v1. This is an honest scope boundary, not an oversight: the demo data is synthetic, and the limitation is documented as a v2 candidate (introducing NER-based redaction).
+**Regex PII redaction (v1 known limitation).** Structured PII — email addresses, phone numbers, transaction reference numbers — is caught by regex and replaced before any text is extracted for quotes or reply drafts. The offline implementation has a limited name heuristic, but arbitrary human and company names are not reliably redacted, and the live endpoint does not attempt name detection. This remains a documented v2 candidate for NER-based redaction.
 
 **Human-in-the-loop at one enforced position, two more planned.** Review flags lock the reply draft — the Send button is disabled and each flag must be individually cleared by a human before the reply can be sent. Export (Markdown/JSON) remains available regardless, so teams can review flagged work packs in their own tools. Two additional HITL touchpoints are designed for v2: cluster editing before generation (merge, split, or reassign items) and work pack field editing before export.
 
@@ -173,7 +173,7 @@ Cluster hypotheses — which items should merge, which should stay separate — 
 | Step | Input | What happened | Output | Who |
 |---|---|---|---|---|
 | Run | Initial generate prompt + clusters + context docs | Generated 22 work packs via Sonnet | 22 work packs | Automated |
-| Auto-check | Work packs | 14 rubric rules run as code inside `generate.py` | quality_flags (16/22 flagged fabricated_quote) | Automated |
+| Auto-check | Work packs | 14 rubric rules run through shared deterministic checks | quality_flags (16/22 flagged fabricated_quote) | Automated |
 | Diagnose auto-check | Flags | Investigated: are these real failures or code bugs? | Found: verbatim check bug (whitespace mismatch), not model error | I + Claude Code diagnosed |
 | Fix code | Diagnosis | Fixed auto-check logic | `generate.py` updated | Claude Code wrote, I reviewed |
 | Human eval | Work packs (Round 1, 8 clusters) | Read each work pack, scored against 7 human rubric items | 10 systemic issues found (overpromising, no empathy, fabricated tickets, etc.) | I reviewed |
@@ -261,7 +261,7 @@ Full comparison table (all 29 items vs. golden-set hypothesis): [`docs/12-cluste
 
 All 22 clusters produced a work pack. 0 hard_fail items. Prompt iterated from generate-v1 through generate-v9 across three sessions, validated by four rounds of human eval (12 clusters sampled).
 
-**Auto-check coverage.** 14 rubric items run programmatically on every output inside generate.py. The remaining 7 items require human judgment and are scored offline.
+**Auto-check coverage.** The evaluated Vela path runs all 14 automated rubric items through `pipeline/runtime_checks.py`. The remaining 7 items require human judgment and are scored offline.
 
 **The deterministic/model split.**  
 The generation prompt asks the model for: title, problem_brief, key_quotes, source_refs, tasks[], reply_draft, review_flags.  
@@ -299,11 +299,11 @@ Bug 4 (pre-v8): Tone check fired for non-payment clauses. "Money/timing first se
 
 After the offline eval was complete, the pipeline was deployed as a live product:
 
-- **Vercel Python serverless function** (`api/pipeline.py`) runs the full 8-stage pipeline on user-submitted input in real time — paste text or upload CSV, get real work packs back, not pre-computed results.
-- **CFPB public dataset** — 150 real consumer financial complaints from the Consumer Financial Protection Bureau. Each run samples 1 complaint and runs it through the live pipeline with no product context. This tests RAG degradation on real-world data: the pipeline classifies and generates a work pack, but `source_refs` are empty because no context documents are loaded.
-- **Rate limits** — up to 3 items per run (randomly sampled if more are submitted), 5 runs per day. These limits reflect the demo-stage cost constraint, not a technical limitation.
+- **Vercel Python serverless function** (`api/pipeline.py`) runs all 8 stages on user-submitted input in real time — paste text or upload CSV, get real work packs back, not pre-computed results. Context-independent runtime guardrails are shared with the evaluated pipeline and hard failures are excluded from export.
+- **CFPB public dataset** — 150 real consumer financial complaints from the Consumer Financial Protection Bureau. Each run samples 1 complaint and runs it through the live pipeline with no product context. The generation prompt expects empty `source_refs` when no context is loaded; generic live clause validation remains deferred until a context schema exists.
+- **Rate and reliability limits** — paste/CSV runs process up to 3 items, CFPB runs process exactly 1, and each IP receives 5 runs per day. The item caps protect serverless timeout reliability; the daily cap controls demo-stage cost.
 
-The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation). The only difference is that ingest parses JSON from the API request body instead of reading a Markdown file from disk.
+The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation), without adding model calls for validation. It intentionally differs in three places: anonymous input has no account identity, so multi-item signal uses the conservative `Medium` fallback unless severity alone justifies `High`; arbitrary uploaded context documents do not yet run Vela-specific clause-ID checks; and live PII regex does not attempt name detection. CFPB remains limited to one complaint per run for timeout reliability; paste and CSV remain capped at three items.
 
 ---
 
@@ -319,7 +319,7 @@ The live pipeline uses the same prompts and models as the offline pipeline (Haik
 
 **What Claude Code wrote:**
 
-- **Python pipeline** — classify.py, cluster.py, generate.py, eval.py, pii.py, data_loader.py
+- **Python pipeline** — classify.py, cluster.py, generate.py, runtime_checks.py, eval.py, pii.py, data_loader.py
 - **Frontend** — product site, interactive demo, pipeline animation
 - **Live API** — Vercel serverless function (api/pipeline.py)
 - **Documentation** — CLAUDE.md, iteration log entries, cluster spec
@@ -330,7 +330,9 @@ The prompts went through 17+ versions total. Each change traces to a specific ev
 
 ## 6. Known Limitations & Next Steps
 
-**PII redaction scope.** v1 regex redaction reliably catches structured PII (email, phone, transaction IDs). Human names and company names are not covered — no regex pattern reliably matches arbitrary names. v2 path: introduce NER-based entity recognition for name/org redaction.
+**PII redaction scope.** v1 regex redaction reliably catches structured PII (email, phone, transaction IDs). The offline name heuristic is incomplete and the live endpoint deliberately leaves name detection deferred. v2 path: introduce NER-based entity recognition for name/org redaction.
+
+**Anonymous live input and arbitrary context docs.** Paste/CSV input currently carries text only, so live signal strength does not claim account diversity: repeated anonymous items fall back to `Medium` unless severity alone supports `High`. Uploaded context documents have no required clause-ID schema, so Vela-specific source-reference and clause-language checks remain offline. Adding structured metadata or a generic context schema is deferred until the product contract is defined.
 
 **No ingest validation.** v1 has no field validation or discard logic at the ingest step. One item with a missing timestamp was included deliberately to observe pipeline behavior. v2 should add explicit validation with defined behavior for missing required fields (reject with error vs. flag and proceed).
 
@@ -342,7 +344,7 @@ The prompts went through 17+ versions total. Each change traces to a specific ev
 
 **No live integrations (v1).** Export is Markdown + JSON with Jira/Linear-shaped fields. No live API push to any issue tracker. v2 path: optional webhook or direct integration, with user-provided credentials.
 
-**Overall v2 direction.** The five limitations above share a common pattern: each was deliberately held at the simplest viable implementation in v1 to keep scope bounded and the eval signal clean. None is architecturally expensive to address. The decision in each case was about what to build *now* vs. what to validate first — and the upgrade triggers above make the path to v2 explicit, not aspirational.
+**Overall v2 direction.** The limitations above share a common pattern: each was deliberately held at the simplest viable implementation in v1 to keep scope bounded and the eval signal clean. None is architecturally expensive to address. The decision in each case was about what to build *now* vs. what to validate first — and the upgrade triggers above make the path to v2 explicit, not aspirational.
 
 ---
 

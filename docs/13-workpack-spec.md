@@ -19,6 +19,8 @@ The rest of the work pack (title, problem_brief, key_quotes selection, tasks[], 
 
 Stage 5 kept signal_strength as a fixed rule because it was a lookup over already-structured data, not a natural-language judgment. Same principle applied here:
 
+The deterministic implementation is centralized in `pipeline/runtime_checks.py` and reused by the offline generator and public API. The evaluated Vela path enables the full Vela-specific context rules. The public API enables the context-independent subset until arbitrary uploaded context documents have a defined clause schema.
+
 **Deterministic (computed/enforced in Python, not asked of the model):**
 
 - `signal_strength` — already computed by cluster.py, just carried over unchanged.
@@ -53,7 +55,7 @@ Stage 5 kept signal_strength as a fixed rule because it was a lookup over alread
 
 - R-09 (money/timing-first scan) — regex/keyword scan of reply_draft's first sentence for transaction ref / amount / date tokens, when intent is actionable_bug/complaint and source_refs includes an SP-x clause; quality_flag if absent.
 
-- **New: source_refs existence check (not in original draft, added after review).** Before accepting a cited clause ID (e.g. "SP-3") in source_refs, verify it actually exists. The valid ID set is **parsed at runtime from `data/01-vela-pay-context-docs.md`** (regex over the doc's own `**SP-1.**` / `**TG-1.**` / `**KI-1.**` / `**RM-1.**` heading pattern) — not a hardcoded list in code, specifically so the context doc stays the single source of truth and this check never goes stale if the doc is edited. Footnote risk: this still couples the parser to the doc's current formatting convention (bold-markdown + number + period); if that formatting ever changes, the regex needs updating — smaller risk than a hardcoded ID list, but not zero. If a cited ID isn't found, quality_flag: fabricated_source_ref (this is a narrower, cheaper check than full R-12 compliance, which still requires human judgment of whether the *content* matches the clause).
+- **New: source_refs existence check (not in original draft, added after review).** Before accepting a cited clause ID (e.g. "SP-3") in source_refs, verify it actually exists. The valid ID set is **parsed at runtime from `data/01-vela-pay-context-docs.md`** (regex over the doc's own `**SP-1.**` / `**TG-1.**` / `**KI-1.**` / `**RM-1.**` heading pattern) — not a hardcoded list in code, specifically so the context doc stays the single source of truth and this check never goes stale if the doc is edited. Footnote risk: this still couples the parser to the doc's current formatting convention (bold-markdown + number + period); if that formatting ever changes, the regex needs updating — smaller risk than a hardcoded ID list, but not zero. If a cited ID isn't found, quality_flag: fabricated_source_ref. This Vela-specific rule remains disabled for arbitrary live uploads until their clause schema is defined.
 
 **Model judgment (in the generation prompt):**
 - `title`, `problem_brief`, `key_quotes` selection (which ≤2 quotes are most signal-rich)
