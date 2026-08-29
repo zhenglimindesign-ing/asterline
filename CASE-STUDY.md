@@ -4,7 +4,7 @@
 
 > **What:** An 8-stage pipeline that turns raw user feedback into traceable work packs — each backed by source quotes, grounded in policy documents when context is supplied, and flagged for human review where stakes are high. Deployed live at [asterline.liminzheng.com](https://asterline.liminzheng.com).
 >
-> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. The evaluated Vela path runs all 14 automated rubric checks; 7 additional checks are scored by human judgment. The live path reuses the context-independent guardrails. Production tracing also measures live runtime behavior; targeted runs identified serial work-pack generation — not raw input count by itself — as the interactive bottleneck.
+> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. The evaluated Vela path runs all 14 automated rubric checks; 7 additional checks are scored by human judgment. The live path reuses the context-independent guardrails.
 >
 > **What I owned:** Pipeline architecture, prompt design and iteration (17+ versions), evaluation system, output schema, and all product decisions. Claude Code (AI coding tool) wrote the Python and frontend; I directed what to build, how to evaluate it, and when to revert.
 
@@ -88,11 +88,11 @@ Intent and dimension are orthogonal axes: intent answers "should this become an 
 A built-in dataset lets users explore the full pipeline output without providing their own data. The demo uses Vela Pay, a synthetic B2B stablecoin payments platform, as its product context. Four context documents were authored to support RAG citation ([`data/01-vela-pay-context-docs.md`](data/01-vela-pay-context-docs.md)):
 
 - **Product one-pager (§1)**: features, pricing, out-of-scope items
-- **Support policy (§2, SP-1 through SP-10)**: refund rules, dispute SLAs, KYC/KYB thresholds, account recovery
+- **Support policy (§2, SP-1 through SP-11)**: refund rules, dispute SLAs, KYC/KYB thresholds, account recovery, secure document handling
 - **Tone & voice guideline (§3, TG-1 through TG-6)**: communication principles with positive/negative examples
 - **Known issues & roadmap (§4, KI-1 through KI-4, RM-1 through RM-4)**: documented bugs and planned features
 
-25 synthetic feedback items were authored across five channels (support tickets, email, app reviews, feature request forms, survey responses), with realistic metadata (timestamp UTC+0, contact email, account ID) and embedded PII in raw_text where channel-appropriate. The dataset is intentionally skewed toward novel issues (68%) with a minority matching known context doc clauses (32%), reflecting realistic feedback distribution.
+The dataset started with 25 synthetic feedback items across five channels (support tickets, email, app reviews, feature request forms, survey responses), with realistic metadata and embedded PII in `raw_text` where channel-appropriate. During clustering evaluation, four cross-account positive-control items (FB-26 through FB-29) were added because the original dataset had no unambiguous "should merge" cases. The current dataset therefore contains 29 items: 12 map to known context clauses and 17 are novel issues.
 
 ---
 
@@ -118,7 +118,7 @@ The split of severity into impact × urgency was a mid-process discovery: a sing
 
 A golden set is a hand-labeled subset of the data used as ground truth — the pipeline's output is scored against these labels to measure accuracy.
 
-20 items selected from the 25-item synthetic dataset. Excluded: 2 items with high thematic overlap with retained items, 2 praise items that added no new dimension coverage, 1 item too vague to label reliably.
+20 items selected from the original 25-item synthetic dataset. Excluded: 2 items with high thematic overlap with retained items, 2 praise items that added no new dimension coverage, 1 item too vague to label reliably. The four clustering positive-control items added later were not retroactively added to the classification golden set.
 
 **Composition:**
 - 40% (8/20) have source_refs pointing to known context doc clauses — tests RAG citation behavior
@@ -301,7 +301,7 @@ After the offline eval was complete, the pipeline was deployed as a live product
 
 - **Vercel Python serverless function** (`api/pipeline.py`) runs all 8 stages on user-submitted input in real time — paste text or upload CSV, get real work packs back, not pre-computed results. Context-independent runtime guardrails are shared with the evaluated pipeline and hard failures are excluded from export.
 - **CFPB public dataset** — 150 real consumer financial complaints from the Consumer Financial Protection Bureau. Each run samples 1 complaint and runs it through the live pipeline with no product context. The generation prompt expects empty `source_refs` when no context is loaded; generic live clause validation remains deferred until a context schema exists.
-- **Runtime observability** — each successful live run exposes an `AST-XXXX` correlation ID, model-call count, and elapsed time in the UI. The same ID links to its production trace. Stage latency, token usage, cost, and safe operational metadata remain observable while production trace inputs and outputs are hidden; tracing failures are isolated from the product path rather than turning a valid run into a user-facing failure.
+- **Runtime observability** — each successful live run exposes an `AST-XXXX` correlation ID, model-call count, and elapsed time in the UI. The same ID correlates the UI receipt with its production trace. Stage latency, token usage, cost, and safe operational metadata remain observable while production trace inputs and outputs are hidden; tracing failures are isolated from the product path rather than turning a valid run into a user-facing failure.
 - **Rate and reliability limits** — paste/CSV runs accept up to 3 items, CFPB runs process exactly 1, and each IP receives 5 runs per day. The daily cap controls demo-stage cost. A separate post-clustering runtime boundary prevents the synchronous demo from attempting more generated work packs than the measured interactive envelope supports.
 
 The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation), without adding model calls for validation. It intentionally differs in three places: anonymous input has no account identity, so multi-item signal uses the conservative `Medium` fallback unless severity alone justifies `High`; arbitrary uploaded context documents do not yet run Vela-specific clause-ID checks; and live PII regex does not attempt name detection.
@@ -348,7 +348,7 @@ The prompts went through 17+ versions total. Each change traces to a specific ev
 
 **Anonymous live input and arbitrary context docs.** Paste/CSV input currently carries text only, so live signal strength does not claim account diversity: repeated anonymous items fall back to `Medium` unless severity alone supports `High`. Uploaded context documents have no required clause-ID schema, so Vela-specific source-reference and clause-language checks remain offline. Adding structured metadata or a generic context schema is deferred until the product contract is defined.
 
-**No ingest validation.** v1 has no field validation or discard logic at the ingest step. One item with a missing timestamp was included deliberately to observe pipeline behavior. v2 should add explicit validation with defined behavior for missing required fields (reject with error vs. flag and proceed).
+**No schema-level ingest validation.** The live endpoint validates request shape, non-empty input, item count, and length, but feedback metadata is not validated against a structured schema. The offline dataset deliberately includes one item with a missing timestamp to observe this gap. A future structured ingest path should define required fields and explicit reject-vs-flag behavior.
 
 **Context document scale.** RAG is implemented as direct prompt stuffing (4 documents, ~4,000 tokens). This works for demo purposes but doesn't scale. Upgrade trigger: >4 context documents or >8,000 tokens of context → switch to vector retrieval with citation.
 
@@ -360,7 +360,7 @@ The prompts went through 17+ versions total. Each change traces to a specific ev
 
 **No live integrations (v1).** Export is Markdown + JSON with Jira/Linear-shaped fields. No live API push to any issue tracker. v2 path: optional webhook or direct integration, with user-provided credentials.
 
-**Overall v2 direction.** The limitations above share a common pattern: each was deliberately held at the simplest viable implementation in v1 to keep scope bounded and the eval signal clean. None is architecturally expensive to address. The decision in each case was about what to build *now* vs. what to validate first — and the upgrade triggers above make the path to v2 explicit, not aspirational.
+**Overall v2 direction.** These limitations range from small implementation gaps to meaningful architecture changes. The common principle is not that they are cheap to solve, but that each has a concrete trigger for when added complexity becomes justified.
 
 ---
 
