@@ -1209,6 +1209,14 @@ class Component extends DCLogic {
     ];
   }
 
+  livePipelineErrorMessage(status, data, raw) {
+    if (status === 422 && data && data.error === "synchronous_runtime_limit") {
+      return data.message || "The current live demo supports up to 2 generated work packs per synchronous run. Split the feedback into smaller batches and try again.";
+    }
+    const firstLine = (raw || "").trim().split("\n")[0];
+    return (data && data.error) || (firstLine ? "Pipeline request failed (HTTP " + status + "): " + firstLine : "Pipeline request failed (HTTP " + status + ").");
+  }
+
   runLivePipeline(items, label, liveFb, hasCtx) {
     const n = items.length;
     const stageCounts = this.liveStageCounts(n, hasCtx);
@@ -1231,8 +1239,7 @@ class Component extends DCLogic {
       }
       if (res.status === 429) throw new Error((data && data.error) || "Rate limit reached — max 5 runs per day.");
       if (!res.ok) {
-        const firstLine = raw.trim().split("\n")[0];
-        throw new Error((data && data.error) || (firstLine ? "Pipeline request failed (HTTP " + res.status + "): " + firstLine : "Pipeline request failed (HTTP " + res.status + ")."));
+        throw new Error(this.livePipelineErrorMessage(res.status, data, raw));
       }
       if (!data) throw new Error("Pipeline returned an invalid response (expected JSON).");
       return data;

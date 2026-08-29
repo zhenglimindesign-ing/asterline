@@ -1,3 +1,5 @@
+import io
+import json
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -138,6 +140,128 @@ class LivePipelineTest(unittest.TestCase):
         self.assertEqual(result["meta"]["llm_calls"], 2)
         self.assertEqual(result["meta"]["hard_fails"], 1)
         generate_workpack.assert_not_called()
+
+    @patch.object(live_pipeline, "get_current_run_tree")
+    @patch.object(live_pipeline, "generate_workpack")
+    @patch.object(live_pipeline, "run_clustering")
+    @patch.object(live_pipeline, "classify_item")
+    @patch.object(live_pipeline, "_get_client", return_value=object())
+    def test_three_clusters_stop_before_generation(
+        self,
+        get_client,
+        classify_item,
+        run_clustering,
+        generate_workpack,
+        get_current_run_tree,
+    ):
+        trace_run = SimpleNamespace(metadata={}, ls_client=None)
+        get_current_run_tree.return_value = trace_run
+        classify_item.side_effect = [
+            _classification("UI-001"),
+            _classification("UI-002"),
+            _classification("UI-003"),
+        ]
+        run_clustering.return_value = [
+            {"cluster_id": "CLU-001", "cluster_members": ["UI-001"]},
+            {"cluster_id": "CLU-002", "cluster_members": ["UI-002"]},
+            {"cluster_id": "CLU-003", "cluster_members": ["UI-003"]},
+        ]
+
+        result = live_pipeline.run_pipeline([
+            "The upload fails during submission.",
+            "The dashboard filters reset after refresh.",
+            "The export omits the selected date range.",
+        ])
+
+        self.assertEqual(classify_item.call_count, 3)
+        run_clustering.assert_called_once()
+        generate_workpack.assert_not_called()
+        self.assertEqual(result["error"], live_pipeline.SYNC_RUNTIME_LIMIT_ERROR)
+        self.assertIn("formed 3 distinct issues", result["message"])
+        self.assertIn("Split the feedback into smaller batches", result["message"])
+        self.assertRegex(result["meta"]["run_id"], r"^AST-[0-9A-F]{4}$")
+        self.assertEqual(result["meta"]["items_processed"], 3)
+        self.assertEqual(result["meta"]["clusters_formed"], 3)
+        self.assertEqual(result["meta"]["max_sync_clusters"], 2)
+        self.assertEqual(result["meta"]["llm_calls"], 4)
+        self.assertGreaterEqual(result["meta"]["elapsed_ms"], 0)
+        self.assertEqual(trace_run.metadata["run_id"], result["meta"]["run_id"])
+        self.assertEqual(trace_run.metadata["item_count"], 3)
+        self.assertFalse(trace_run.metadata["has_context"])
+        self.assertEqual(trace_run.metadata["classify_model"], live_pipeline.CLASSIFY_MODEL)
+        self.assertEqual(trace_run.metadata["cluster_model"], live_pipeline.CLASSIFY_MODEL)
+        self.assertEqual(trace_run.metadata["generate_model"], live_pipeline.GENERATE_MODEL)
+        self.assertEqual(trace_run.metadata["cluster_count"], 3)
+        self.assertEqual(trace_run.metadata["llm_call_count"], 4)
+        self.assertEqual(trace_run.metadata["max_sync_clusters"], 2)
+        self.assertTrue(trace_run.metadata["operating_limit_exceeded"])
+        self.assertGreaterEqual(trace_run.metadata["elapsed_ms"], 0)
+
+    @patch.object(live_pipeline, "generate_workpack")
+    @patch.object(live_pipeline, "run_clustering")
+    @patch.object(live_pipeline, "classify_item")
+    @patch.object(live_pipeline, "_get_client", return_value=object())
+    def test_two_clusters_still_generate_normally(
+        self, get_client, classify_item, run_clustering, generate_workpack
+    ):
+        classify_item.side_effect = [
+            _classification("UI-001"),
+            _classification("UI-002"),
+            _classification("UI-003"),
+        ]
+        run_clustering.return_value = [
+            {"cluster_id": "CLU-001", "cluster_members": ["UI-001", "UI-002"]},
+            {"cluster_id": "CLU-002", "cluster_members": ["UI-003"]},
+        ]
+        generate_workpack.side_effect = [_valid_workpack(), _valid_workpack()]
+
+        result = live_pipeline.run_pipeline([
+            "The upload fails during submission.",
+            "The same upload fails during submission.",
+            "The third upload fails during submission.",
+        ])
+
+        self.assertNotIn("error", result)
+        self.assertEqual(classify_item.call_count, 3)
+        run_clustering.assert_called_once()
+        self.assertEqual(generate_workpack.call_count, 2)
+        self.assertEqual(len(result["clusters"]), 2)
+        self.assertEqual(result["meta"]["llm_calls"], 6)
+
+
+class PipelineHandlerTest(unittest.TestCase):
+    @patch.object(live_pipeline, "check_rate_limit", return_value=True)
+    @patch.object(live_pipeline, "run_pipeline")
+    def test_operating_limit_result_is_returned_as_structured_422(
+        self, run_pipeline, check_rate_limit
+    ):
+        boundary = {
+            "error": live_pipeline.SYNC_RUNTIME_LIMIT_ERROR,
+            "message": "Split the feedback into smaller batches and try again.",
+            "meta": {
+                "run_id": "AST-7F2A",
+                "items_processed": 3,
+                "clusters_formed": 3,
+                "max_sync_clusters": 2,
+                "llm_calls": 4,
+                "elapsed_ms": 1200,
+            },
+        }
+        run_pipeline.return_value = boundary
+        body = json.dumps({"items": ["one", "two", "three"]}).encode()
+        request = object.__new__(live_pipeline.handler)
+        request.headers = {"Content-Length": str(len(body))}
+        request.client_address = ("test-client", 0)
+        request.rfile = io.BytesIO(body)
+        request.wfile = io.BytesIO()
+        request.send_response = Mock()
+        request.send_header = Mock()
+        request.end_headers = Mock()
+
+        request.do_POST()
+
+        request.send_response.assert_called_once_with(422)
+        self.assertEqual(json.loads(request.wfile.getvalue()), boundary)
 
 
 class LangSmithLifecycleTest(unittest.TestCase):

@@ -30,6 +30,8 @@ _rate_limit: dict[str, list[float]] = {}
 MAX_RUNS_PER_IP_PER_DAY = 5
 MAX_ITEMS = 3
 MAX_ITEM_LENGTH = 2000
+MAX_SYNC_CLUSTERS = 2
+SYNC_RUNTIME_LIMIT_ERROR = "synchronous_runtime_limit"
 
 # Paths — Vercel deploys the entire project
 ROOT = Path(__file__).parent.parent
@@ -241,6 +243,39 @@ def _run_pipeline_traced(items: list[str], context_doc: str = "") -> dict:
         trace_run.metadata["llm_call_count"] = llm_calls
     clusters = run_clustering(client, items_block, run_id)
 
+    # The measured synchronous demo envelope supports at most two serial
+    # Sonnet generations. Stop before attempting any generation when clustering
+    # identifies more distinct issues.
+    if len(clusters) > MAX_SYNC_CLUSTERS:
+        elapsed_ms = max(0, round((time.perf_counter() - started_at) * 1000))
+        if trace_run:
+            trace_run.metadata.update({
+                "cluster_count": len(clusters),
+                "llm_call_count": llm_calls,
+                "max_sync_clusters": MAX_SYNC_CLUSTERS,
+                "operating_limit_exceeded": True,
+                "elapsed_ms": elapsed_ms,
+                "hard_fail_count": 0,
+                "quality_flag_count": 0,
+            })
+        return {
+            "error": SYNC_RUNTIME_LIMIT_ERROR,
+            "message": (
+                f"This feedback formed {len(clusters)} distinct issues. "
+                f"The current live demo supports up to {MAX_SYNC_CLUSTERS} "
+                "generated work packs per synchronous run. Split the feedback "
+                "into smaller batches and try again."
+            ),
+            "meta": {
+                "run_id": run_id,
+                "items_processed": len(processed),
+                "clusters_formed": len(clusters),
+                "max_sync_clusters": MAX_SYNC_CLUSTERS,
+                "llm_calls": llm_calls,
+                "elapsed_ms": elapsed_ms,
+            },
+        }
+
     items_by_id = {item["id"]: item for item in processed}
 
     # 4. Compute signal strength + generate and validate work packs
@@ -408,7 +443,12 @@ class handler(BaseHTTPRequestHandler):
             # Run pipeline
             result = run_pipeline(items, context_doc)
 
-            self.send_response(200)
+            status = (
+                422
+                if result.get("error") == SYNC_RUNTIME_LIMIT_ERROR
+                else 200
+            )
+            self.send_response(status)
             self._cors_headers()
             self.send_header("Content-Type", "application/json")
             self.end_headers()
