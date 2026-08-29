@@ -689,6 +689,10 @@
             </div>
           </div>
 
+          <sc-if value="{{ hasLiveReceipt }}">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.06em; color:#76746A; margin:12px 0 4px;">{{ liveReceipt }}</div>
+          </sc-if>
+
           <sc-if value="{{ noContext }}">
           <div style="display:flex; align-items:center; gap:10px; background:#F6EFDD; border:1px solid #E6D6AE; border-radius:6px; padding:12px 16px; margin:18px 0 4px;">
             <span style="width:7px; height:7px; border-radius:50%; background:#936412; flex:none;"></span>
@@ -1237,9 +1241,17 @@ class Component extends DCLogic {
       const clusters = this.transformApiClusters(data.clusters || []);
       const qf = clusters.reduce((n, c) => n + (c.qualityFlags || []).length, 0);
       const cl = clusters.length;
-      const hardFails = data.meta?.hard_fails || 0;
+      const meta = data.meta || {};
+      const hardFails = meta.hard_fails || 0;
+      const liveMeta = {
+        runId: meta.run_id,
+        elapsedMs: meta.elapsed_ms,
+        llmCalls: meta.llm_calls,
+        itemCount: meta.items_processed,
+        clusterCount: meta.clusters_formed,
+      };
       this.setState({ stageCounts: [n + " items · PII stripped", n + " items classified · 5 intent types", "dimensions + severity tagged", cl + " clusters formed", "signal strength computed", cl + " work packs generated", qf + " quality flags · " + hardFails + " hard fails", "ready · live results"], runStageIdx: 7 });
-      setTimeout(() => { this.finishRun(clusters, label, !hasCtx, data.meta?.items_processed || n, qf, hardFails); }, 600);
+      setTimeout(() => { this.finishRun(clusters, label, !hasCtx, meta.items_processed || n, qf, hardFails, liveMeta); }, 600);
     })
     .catch((err) => { clearInterval(interval); this.setState({ pstage: "pick", liveError: err.name === "AbortError" ? "Request timed out — the pipeline took too long. Try again." : (err.message || "Pipeline failed.") }); });
   }
@@ -1310,12 +1322,13 @@ class Component extends DCLogic {
     }
   }
 
-  finishRun(clusters, label, noCtx, items, qf, hardFails = 0) {
+  finishRun(clusters, label, noCtx, items, qf, hardFails = 0, liveMeta = null) {
     const run = {
       id: "RUN-" + (this.state.runs.length + 1),
       label, noCtx, clusters,
       ts: Date.now(),
       itemCount: items, clusterCount: clusters.length, flagCount: qf, hardFailCount: hardFails,
+      liveMeta,
     };
     this.setState({ runs: [run, ...this.state.runs], activeRun: run, pstage: "results", runStageIdx: 8, selected: null, cleared: {} });
   }
@@ -1512,6 +1525,14 @@ class Component extends DCLogic {
 
     // ---- product: results ----
     const run = s.activeRun;
+    const liveReceipt = run && run.liveMeta ? [
+      "LIVE RUN",
+      run.liveMeta.runId,
+      run.liveMeta.itemCount + (run.liveMeta.itemCount === 1 ? " item" : " items"),
+      run.liveMeta.clusterCount + (run.liveMeta.clusterCount === 1 ? " cluster" : " clusters"),
+      run.liveMeta.llmCalls + (run.liveMeta.llmCalls === 1 ? " model call" : " model calls"),
+      (run.liveMeta.elapsedMs / 1000).toFixed(1) + "s",
+    ].join(" · ") : "";
     const { filterIntent, filterSignal, filterFlag } = s;
     const allClusters = run ? run.clusters : [];
     const filteredClusters = allClusters.filter((c) => {
@@ -1627,6 +1648,8 @@ class Component extends DCLogic {
       // results
       listMode: !s.selected, detailMode: !!s.selected,
       noContext: !!(run && run.noCtx),
+      hasLiveReceipt: !!(run && run.liveMeta && run.liveMeta.runId),
+      liveReceipt,
       resultCount: filterActive ? filteredClusters.length + " of " + allClusters.length : (run ? run.clusters.length : 0),
       resultRows,
       flagSummary: run ? (run.clusters.reduce((n,c) => n + (c.reviewFlags||[]).length, 0) + " review · " + (run.flagCount || 0) + " quality · " + (run.hardFailCount || 0) + " hard fails") : "",

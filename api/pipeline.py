@@ -15,9 +15,15 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 import re
+import secrets
 import sys
 import time
 from pathlib import Path
+
+from langsmith import Client as LangSmithClient
+from langsmith import traceable, tracing_context
+from langsmith.run_helpers import get_current_run_tree
+from langsmith.wrappers import wrap_anthropic
 
 # Rate limiting (in-memory — resets on cold start, good enough for demo)
 _rate_limit: dict[str, list[float]] = {}
@@ -45,12 +51,43 @@ CLASSIFY_MODEL = "claude-haiku-4-5-20251001"
 GENERATE_MODEL = "claude-sonnet-4-6"
 
 
-def _get_client():
+_TRUTHY_ENV_VALUES = {"1", "true", "yes", "on"}
+
+
+def _create_langsmith_client():
+    tracing_enabled = (
+        os.environ.get("LANGSMITH_TRACING", "").strip().lower()
+        in _TRUTHY_ENV_VALUES
+    )
+    if not tracing_enabled or not os.environ.get("LANGSMITH_API_KEY"):
+        return None
+    try:
+        return LangSmithClient()
+    except Exception:
+        return None
+
+
+def _flush_langsmith_client(client) -> None:
+    if client is None:
+        return
+    try:
+        client.flush()
+    except Exception:
+        pass
+
+
+def _get_client(langsmith_client=None):
     import anthropic
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY not set")
-    return anthropic.Anthropic(api_key=api_key)
+    tracing_extra = (
+        {"client": langsmith_client} if langsmith_client is not None else None
+    )
+    return wrap_anthropic(
+        anthropic.Anthropic(api_key=api_key),
+        tracing_extra=tracing_extra,
+    )
 
 
 def _strip_code_fence(text: str) -> str:
@@ -80,12 +117,13 @@ def redact_pii(text: str) -> str:
 
 VALID_INTENTS = {"actionable_bug", "feature_request", "complaint", "praise", "noise"}
 
-def classify_item(client, item_id: str, raw_text: str) -> dict:
+def classify_item(client, item_id: str, raw_text: str, run_id: str) -> dict:
     prompt_template = CLASSIFY_PROMPT.read_text(encoding="utf-8")
     prompt = prompt_template.replace("{raw_text}", raw_text)
     response = client.messages.create(
         model=CLASSIFY_MODEL, max_tokens=256,
         messages=[{"role": "user", "content": prompt}],
+        langsmith_extra={"name": "classify", "metadata": {"run_id": run_id}},
     )
     parsed = json.loads(_strip_code_fence(response.content[0].text))
     if isinstance(parsed, list):
@@ -109,12 +147,13 @@ def build_items_block(items: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def run_clustering(client, items_block: str) -> list[dict]:
+def run_clustering(client, items_block: str, run_id: str) -> list[dict]:
     prompt_template = CLUSTER_PROMPT.read_text(encoding="utf-8")
     prompt = prompt_template.replace("{items}", items_block)
     response = client.messages.create(
         model=CLASSIFY_MODEL, max_tokens=2048,
         messages=[{"role": "user", "content": prompt}],
+        langsmith_extra={"name": "cluster", "metadata": {"run_id": run_id}},
     )
     parsed = json.loads(_strip_code_fence(response.content[0].text))
     if isinstance(parsed, list):
@@ -124,7 +163,9 @@ def run_clustering(client, items_block: str) -> list[dict]:
 
 # --- Generate ---
 
-def generate_workpack(client, intent_type: str, members_block: str, context_docs: str) -> dict:
+def generate_workpack(
+    client, intent_type: str, members_block: str, context_docs: str, run_id: str
+) -> dict:
     prompt_template = GENERATE_PROMPT.read_text(encoding="utf-8")
     prompt = (
         prompt_template
@@ -135,6 +176,7 @@ def generate_workpack(client, intent_type: str, members_block: str, context_docs
     response = client.messages.create(
         model=GENERATE_MODEL, max_tokens=2048,
         messages=[{"role": "user", "content": prompt}],
+        langsmith_extra={"name": "generate", "metadata": {"run_id": run_id}},
     )
     return json.loads(_strip_code_fence(response.content[0].text))
 
@@ -155,8 +197,25 @@ def check_rate_limit(ip: str) -> bool:
 
 # --- Main pipeline ---
 
-def run_pipeline(items: list[str], context_doc: str = "") -> dict:
-    client = _get_client()
+@traceable(name="run_pipeline", run_type="chain")
+def _run_pipeline_traced(items: list[str], context_doc: str = "") -> dict:
+    started_at = time.perf_counter()
+    run_id = f"AST-{secrets.token_hex(2).upper()}"
+    llm_calls = 0
+    trace_run = get_current_run_tree()
+    if trace_run:
+        trace_run.metadata.update({
+            "run_id": run_id,
+            "item_count": len(items),
+            "has_context": bool(context_doc),
+            "classify_model": CLASSIFY_MODEL,
+            "cluster_model": CLASSIFY_MODEL,
+            "generate_model": GENERATE_MODEL,
+            "llm_call_count": llm_calls,
+        })
+
+    langsmith_client = trace_run.ls_client if trace_run else None
+    client = _get_client(langsmith_client)
 
     # 1. PII redaction + assign IDs
     processed = []
@@ -167,12 +226,20 @@ def run_pipeline(items: list[str], context_doc: str = "") -> dict:
 
     # 2. Classify each item
     for item in processed:
-        classification = classify_item(client, item["id"], item["redacted_text"])
+        llm_calls += 1
+        if trace_run:
+            trace_run.metadata["llm_call_count"] = llm_calls
+        classification = classify_item(
+            client, item["id"], item["redacted_text"], run_id
+        )
         item["classification"] = classification
 
     # 3. Cluster
     items_block = build_items_block(processed)
-    clusters = run_clustering(client, items_block)
+    llm_calls += 1
+    if trace_run:
+        trace_run.metadata["llm_call_count"] = llm_calls
+    clusters = run_clustering(client, items_block, run_id)
 
     items_by_id = {item["id"]: item for item in processed}
 
@@ -216,7 +283,12 @@ def run_pipeline(items: list[str], context_doc: str = "") -> dict:
 
         try:
             ctx = context_doc if context_doc else "(no context documents loaded)"
-            content = generate_workpack(client, intent_type, members_text, ctx)
+            llm_calls += 1
+            if trace_run:
+                trace_run.metadata["llm_call_count"] = llm_calls
+            content = generate_workpack(
+                client, intent_type, members_text, ctx, run_id
+            )
         except Exception as exc:
             content = {
                 "title": f"Generation failed: {str(exc)[:100]}",
@@ -250,17 +322,48 @@ def run_pipeline(items: list[str], context_doc: str = "") -> dict:
             continue
         workpacks.append(workpack)
 
+    quality_flag_count = sum(
+        len(wp.get("quality_flags") or []) for wp in workpacks
+    )
+    elapsed_ms = max(0, round((time.perf_counter() - started_at) * 1000))
+    if trace_run:
+        trace_run.metadata.update({
+            "cluster_count": len(clusters),
+            "llm_call_count": llm_calls,
+            "elapsed_ms": elapsed_ms,
+            "hard_fail_count": len(hard_failures),
+            "quality_flag_count": quality_flag_count,
+        })
+
     return {
         "clusters": workpacks,
         "meta": {
             "items_received": len(items),
             "items_processed": len(processed),
             "clusters_formed": len(clusters),
-            "quality_flags": sum(len(wp.get("quality_flags") or []) for wp in workpacks),
+            "quality_flags": quality_flag_count,
             "hard_fails": len(hard_failures),
             "hard_failures": hard_failures,
+            "run_id": run_id,
+            "elapsed_ms": elapsed_ms,
+            "llm_calls": llm_calls,
         }
     }
+
+
+def run_pipeline(items: list[str], context_doc: str = "") -> dict:
+    langsmith_client = _create_langsmith_client()
+    try:
+        if langsmith_client is not None:
+            return _run_pipeline_traced(
+                items,
+                context_doc,
+                langsmith_extra={"client": langsmith_client},
+            )
+        with tracing_context(enabled=False):
+            return _run_pipeline_traced(items, context_doc)
+    finally:
+        _flush_langsmith_client(langsmith_client)
 
 
 # --- Vercel handler ---

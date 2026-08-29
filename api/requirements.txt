@@ -1,1 +1,2 @@
-anthropic
+anthropic>=0.50.0,<1
+langsmith>=0.11.2
