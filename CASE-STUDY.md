@@ -164,8 +164,8 @@ Cluster hypotheses — which items should merge, which should stay separate — 
 |---|---|---|---|---|
 | Run | Initial cluster prompt + 29 classified items | Clustered all items via Haiku (single call) | 22 clusters (all singletons) | Automated |
 | Compare | Clusters + hypotheses | `cluster.py` compared output to hypothesis table | Merges expected but didn't happen | Automated + I judged |
-| Diagnose | Wrong clusters | Identified why specific items were mis-clustered | Merge rules were too conservative | I judged |
-| Fix prompt | Diagnosis | Changed merge threshold rules + added examples | Updated cluster prompt | Claude Code wrote, I reviewed |
+| Diagnose | Comparison results | Identified wrong design assumption ("praise almost always singletons") and eval gap (no positive-merge test data) | Two issues: prompt assumption + dataset coverage gap | I judged |
+| Fix | Diagnosis | Changed merge threshold rules + added 4 test items (FB-26/27/28/29) to dataset | Updated cluster prompt + expanded dataset | Claude Code wrote, I reviewed; I decided to add test data |
 | Validate | Updated prompt + data | Re-ran clustering | Praise merged ✓ Adversarial split held ✓ Positive controls merged ✓ | Automated + I verified |
 
 **Stage 3 — Generation iteration (9 prompt versions, 4 human eval rounds)**
