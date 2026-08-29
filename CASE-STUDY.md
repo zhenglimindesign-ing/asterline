@@ -4,7 +4,7 @@
 
 > **What:** An 8-stage pipeline that turns raw user feedback into traceable work packs — each backed by source quotes, grounded in policy documents when context is supplied, and flagged for human review where stakes are high. Deployed live at [asterline.liminzheng.com](https://asterline.liminzheng.com).
 >
-> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. The evaluated Vela path runs all 14 automated rubric checks; 7 additional checks are scored by human judgment. The live path reuses the context-independent guardrails.
+> **How I know it works:** Classification accuracy improved from 40% to 65% across 5 prompt versions (one reverted), scored against a 20-item hand-labeled golden set (ground truth used to measure pipeline accuracy). Generation: 22/22 clusters produced work packs, 0 fabricated quotes, 9 prompt versions across 4 rounds of human eval. The evaluated Vela path runs all 14 automated rubric checks; 7 additional checks are scored by human judgment. The live path reuses the context-independent guardrails. Production tracing also measures live runtime behavior; targeted runs identified serial work-pack generation — not raw input count by itself — as the interactive bottleneck.
 >
 > **What I owned:** Pipeline architecture, prompt design and iteration (17+ versions), evaluation system, output schema, and all product decisions. Claude Code (AI coding tool) wrote the Python and frontend; I directed what to build, how to evaluate it, and when to revert.
 
@@ -79,7 +79,7 @@ Intent and dimension are orthogonal axes: intent answers "should this become an 
 
 **Noise produces an audit trail, not a reply.** When feedback is classified as noise, the pipeline generates a minimal work pack (title and brief only) for traceability, but no tasks and no reply draft. Customer-facing responses to noise items are a support team responsibility — the pipeline is a triage tool, not a customer service system.
 
-**Severity as two axes (impact × urgency).** A single severity score cannot distinguish between a high-impact event with no time pressure (a known bug affecting reconciliation) and a low-impact event with immediate urgency (a potential policy breach on a small transaction). Splitting severity into impact and urgency allows the pipeline to correctly label both without forcing a comparison between incommensurable cases. Impact and urgency are labeled per feedback item during classification. Task priority and deadline in the work pack are set separately by the model during generation, based on the content and applicable SLA — not derived from the classification labels.
+**Severity as two axes (impact × urgency).** A single severity score cannot distinguish between a high-impact event with no time pressure (a known bug affecting reconciliation) and a low-impact event with immediate urgency (a potential policy breach on a small transaction). Splitting severity into impact × urgency allows the pipeline to correctly label both without forcing a comparison between incommensurable cases. Impact and urgency are labeled per feedback item during classification. Task priority and deadline in the work pack are set separately by the model during generation, based on the content and applicable SLA — not derived from the classification labels.
 
 **Signal-strength scoring (deterministic).** Signal-strength is computed in Python, not by the model. The rules, in priority order: (1) ≥2 items from ≥2 different accounts → High. (2) 1 item with impact=High → High. (3) ≥2 items from the same account → Medium. (4) 1 item with impact=Medium → Medium. (5) Otherwise → Low.
 
@@ -295,15 +295,29 @@ Bug 4 (pre-v8): Tone check fired for non-payment clauses. "Money/timing first se
 
 ---
 
-## 5.4 Live pipeline and public dataset
+## 5.4 Live pipeline, observability, and operating envelope
 
 After the offline eval was complete, the pipeline was deployed as a live product:
 
 - **Vercel Python serverless function** (`api/pipeline.py`) runs all 8 stages on user-submitted input in real time — paste text or upload CSV, get real work packs back, not pre-computed results. Context-independent runtime guardrails are shared with the evaluated pipeline and hard failures are excluded from export.
 - **CFPB public dataset** — 150 real consumer financial complaints from the Consumer Financial Protection Bureau. Each run samples 1 complaint and runs it through the live pipeline with no product context. The generation prompt expects empty `source_refs` when no context is loaded; generic live clause validation remains deferred until a context schema exists.
-- **Rate and reliability limits** — paste/CSV runs process up to 3 items, CFPB runs process exactly 1, and each IP receives 5 runs per day. The item caps protect serverless timeout reliability; the daily cap controls demo-stage cost.
+- **Runtime observability** — each successful live run exposes an `AST-XXXX` correlation ID, model-call count, and elapsed time in the UI. The same ID links to its production trace. Stage latency, token usage, cost, and safe operational metadata remain observable while production trace inputs and outputs are hidden; tracing failures are isolated from the product path rather than turning a valid run into a user-facing failure.
+- **Rate and reliability limits** — paste/CSV runs accept up to 3 items, CFPB runs process exactly 1, and each IP receives 5 runs per day. The daily cap controls demo-stage cost. A separate post-clustering runtime boundary prevents the synchronous demo from attempting more generated work packs than the measured interactive envelope supports.
 
-The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation), without adding model calls for validation. It intentionally differs in three places: anonymous input has no account identity, so multi-item signal uses the conservative `Medium` fallback unless severity alone justifies `High`; arbitrary uploaded context documents do not yet run Vela-specific clause-ID checks; and live PII regex does not attempt name detection. CFPB remains limited to one complaint per run for timeout reliability; paste and CSV remain capped at three items.
+The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation), without adding model calls for validation. It intentionally differs in three places: anonymous input has no account identity, so multi-item signal uses the conservative `Medium` fallback unless severity alone justifies `High`; arbitrary uploaded context documents do not yet run Vela-specific clause-ID checks; and live PII regex does not attempt name detection.
+
+**Targeted production probes.** These were one measured run per input shape, designed to locate the interactive boundary — not a benchmark suite, latency SLA, or claim of linear scaling.
+
+| Input shape | LLM calls | Observed latency | Outcome |
+|---|---:|---:|---|
+| 1 item → 1 cluster | 3 | 16.6s | Completed |
+| 3 items → 1 cluster | 5 | 21.9s | Completed |
+| 3 items → 2 clusters | 6 | 31.5s | Completed |
+| 3 items → 3 clusters | 7 | 44.4s traced / ~46s HTTP | Crossed the 45s client timeout |
+
+The comparison separated raw input count from downstream generation count. Three similar items that merged into one cluster completed in 21.9s; three distinct items that produced three clusters crossed the client timeout. In the measured 3-cluster trace, classification took ~2.73s total, clustering ~1.53s, and the three serial Sonnet generation calls ~38.83s — about **87% of traced pipeline latency**. The dominant interactive bottleneck was therefore per-cluster generation, not classification or clustering.
+
+**Decision:** measure the boundary before changing the architecture. v1 stays synchronous rather than adding concurrency or queue infrastructure without demand. When clustering produces more than two clusters, the deployed path now stops before any Sonnet generation and returns an explicit operating-limit response; it does not generate partial work packs. This guardrail is test-covered and deployed, with final manual production verification of the new 422 boundary path still pending after the measurement session exhausted the live-run quota. If real usage later requires larger batches, the architecture trigger is bounded parallel generation for small batches or asynchronous job execution for larger ones.
 
 ---
 
@@ -339,6 +353,8 @@ The prompts went through 17+ versions total. Each change traces to a specific ev
 **Context document scale.** RAG is implemented as direct prompt stuffing (4 documents, ~4,000 tokens). This works for demo purposes but doesn't scale. Upgrade trigger: >4 context documents or >8,000 tokens of context → switch to vector retrieval with citation.
 
 **Clustering scale.** Single-call clustering (all items reasoned about in one model call, no embeddings) is validated only up to 29 items. A guard rail (`MAX_SINGLE_CALL_ITEMS=50`) fails loudly rather than silently degrading past that. Upgrade trigger: a 100+ item stress test showing under 90% recall on known duplicate pairs. Not built now because the stress-test dataset doesn't exist yet and vector embeddings would add infrastructure complexity not justified at this scale. Full reasoning in [`docs/11-cluster-spec.md`](docs/11-cluster-spec.md).
+
+**Interactive runtime envelope.** Targeted live probes showed that serial per-cluster Sonnet generation dominates interactive latency. v1 therefore keeps synchronous execution and bounds live generation after clustering rather than pretending larger batches are reliable; if real usage requires more generated work packs per run, the trigger is bounded parallelism or asynchronous job execution rather than a larger timeout.
 
 **Signal-strength edge case.** Whether a single-member cluster can count external evidence (e.g. a known-issues document saying "this is recurring") toward High signal-strength was resolved in practice by adding real duplicate items to the dataset, not by deciding the general principle. The general question remains open for future single-member clusters with only external evidence.
 
