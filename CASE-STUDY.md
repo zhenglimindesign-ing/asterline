@@ -164,8 +164,8 @@ Cluster hypotheses — which items should merge, which should stay separate — 
 |---|---|---|---|---|
 | Run | Initial cluster prompt + 29 classified items | Clustered all items via Haiku (single call) | 22 clusters (all singletons) | Automated |
 | Compare | Clusters + hypotheses | `cluster.py` compared output to hypothesis table | Merges expected but didn't happen | Automated + I judged |
-| Diagnose | Comparison results | Identified wrong design assumption ("praise almost always singletons") and eval gap (no positive-merge test data) | Two issues: prompt assumption + dataset coverage gap | I judged |
-| Fix | Diagnosis | Changed merge threshold rules + added 4 test items (FB-26/27/28/29) to dataset | Updated cluster prompt + expanded dataset | Claude Code wrote, I reviewed; I decided to add test data |
+| Diagnose | Wrong clusters | Identified why specific items were mis-clustered | Merge rules were too conservative | I judged |
+| Fix prompt | Diagnosis | Changed merge threshold rules + added examples | Updated cluster prompt | Claude Code wrote, I reviewed |
 | Validate | Updated prompt + data | Re-ran clustering | Praise merged ✓ Adversarial split held ✓ Positive controls merged ✓ | Automated + I verified |
 
 **Stage 3 — Generation iteration (9 prompt versions, 4 human eval rounds)**
@@ -301,7 +301,7 @@ After the offline eval was complete, the pipeline was deployed as a live product
 
 - **Vercel Python serverless function** (`api/pipeline.py`) runs all 8 stages on user-submitted input in real time — paste text or upload CSV, get real work packs back, not pre-computed results. Context-independent runtime guardrails are shared with the evaluated pipeline and hard failures are excluded from export.
 - **CFPB public dataset** — 150 real consumer financial complaints from the Consumer Financial Protection Bureau. Each run samples 1 complaint and runs it through the live pipeline with no product context. The generation prompt expects empty `source_refs` when no context is loaded; generic live clause validation remains deferred until a context schema exists.
-- **Runtime observability** — each successful live run exposes an `AST-XXXX` correlation ID, model-call count, and elapsed time in the UI. The same ID correlates the UI receipt with its production trace. Stage latency, token usage, cost, and safe operational metadata remain observable while production trace inputs and outputs are hidden; tracing failures are isolated from the product path rather than turning a valid run into a user-facing failure.
+- **Runtime observability** — production runs are traced with LangSmith. Each successful live run exposes an `AST-XXXX` correlation ID, model-call count, and elapsed time in the UI; the same ID correlates the UI receipt with its production trace. Stage latency, token usage, cost, and safe operational metadata remain observable while production trace inputs and outputs are hidden; tracing failures are isolated from the product path rather than turning a valid run into a user-facing failure.
 - **Rate and reliability limits** — paste/CSV runs accept up to 3 items, CFPB runs process exactly 1, and each IP receives 5 runs per day. The daily cap controls demo-stage cost. A separate post-clustering runtime boundary prevents the synchronous demo from attempting more generated work packs than the measured interactive envelope supports.
 
 The live pipeline uses the same prompts and models as the offline pipeline (Haiku for classification and clustering, Sonnet for generation), without adding model calls for validation. It intentionally differs in three places: anonymous input has no account identity, so multi-item signal uses the conservative `Medium` fallback unless severity alone justifies `High`; arbitrary uploaded context documents do not yet run Vela-specific clause-ID checks; and live PII regex does not attempt name detection.
@@ -317,7 +317,7 @@ The live pipeline uses the same prompts and models as the offline pipeline (Haik
 
 The comparison separated raw input count from downstream generation count. Three similar items that merged into one cluster completed in 21.9s; three distinct items that produced three clusters crossed the client timeout. In the measured 3-cluster trace, classification took ~2.73s total, clustering ~1.53s, and the three serial Sonnet generation calls ~38.83s — about **87% of traced pipeline latency**. The dominant interactive bottleneck was therefore per-cluster generation, not classification or clustering.
 
-**Decision:** measure the boundary before changing the architecture. v1 stays synchronous rather than adding concurrency or queue infrastructure without demand. When clustering produces more than two clusters, the deployed path now stops before any Sonnet generation and returns an explicit operating-limit response; it does not generate partial work packs. This guardrail is test-covered and deployed, with final manual production verification of the new 422 boundary path still pending after the measurement session exhausted the live-run quota. If real usage later requires larger batches, the architecture trigger is bounded parallel generation for small batches or asynchronous job execution for larger ones.
+**Decision:** measure the boundary before changing the architecture. v1 stays synchronous rather than adding concurrency or queue infrastructure without demand. When clustering produces more than two clusters, the deployed path stops before any Sonnet generation and returns an explicit operating-limit response; it does not generate partial work packs. If real usage later requires larger batches, the architecture trigger is bounded parallel generation for small batches or asynchronous job execution for larger ones.
 
 ---
 
