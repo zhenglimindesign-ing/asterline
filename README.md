@@ -56,6 +56,8 @@ Python computes everything else: cluster_id, cluster_members, signal_strength, i
 **Live-path boundaries.**
 The evaluated Vela path runs all 14 automated rubric checks. The live endpoint reuses the context-independent guardrails without adding model calls; Vela-specific clause checks remain offline until arbitrary uploaded context documents have a defined clause schema. Live paste/CSV input has no account identity, so repeated anonymous items use the conservative `Medium` fallback rather than claiming cross-account evidence. CFPB remains one complaint per run for demo reliability.
 
+Live runs also expose a per-run receipt with a correlation ID, model-call count, and elapsed time. Matching production traces keep stage latency, token usage, cost, and safe runtime metadata observable while trace inputs and outputs are hidden. Targeted production probes showed that serial per-cluster Sonnet generation — not raw feedback count by itself — is the interactive bottleneck; the measured envelope and architecture trigger are documented in [case study §5.4](CASE-STUDY.md#54-live-pipeline-observability-and-operating-envelope).
+
 **Nothing sends itself.**  
 Tasks are recommendations, not filed tickets.  
 The pipeline never sends a reply. High-stakes money, timing, and policy drafts are designed to carry review flags; low-confidence output receives one deterministically, and the human rubric checks whether other required flags are present.
